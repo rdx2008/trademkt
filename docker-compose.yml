@@ -1,0 +1,126 @@
+# Deploy no Coolify: "Docker Compose" apontando para este repositório.
+# No Coolify, defina os domínios no serviço "app" (painel central + domínios dos clientes).
+# As variáveis de ambiente (APP_KEY, senhas etc.) ficam no Coolify.
+
+x-env: &env
+  APP_NAME: ${APP_NAME:-Trade Promo}
+  APP_ENV: ${APP_ENV:-production}
+  APP_KEY: ${APP_KEY}
+  APP_DEBUG: ${APP_DEBUG:-false}
+  APP_URL: ${APP_URL}
+  APP_LOCALE: pt_BR
+  APP_TIMEZONE: America/Sao_Paulo
+  CENTRAL_DOMAINS: ${CENTRAL_DOMAINS}
+  TRADE_ESQUEMA_URL: ${TRADE_ESQUEMA_URL:-https}
+  SUPER_ADMIN_NOME: ${SUPER_ADMIN_NOME:-Super admin}
+  SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL}
+  SUPER_ADMIN_SENHA: ${SUPER_ADMIN_SENHA}
+  LOG_CHANNEL: stderr
+  LOG_LEVEL: ${LOG_LEVEL:-warning}
+  DB_CONNECTION: mysql
+  DB_HOST: mysql
+  DB_PORT: 3306
+  DB_DATABASE: ${DB_DATABASE:-trade_central}
+  DB_USERNAME: ${DB_USERNAME:-trade}
+  DB_PASSWORD: ${DB_PASSWORD}
+  TENANT_DB_PREFIX: ${TENANT_DB_PREFIX:-cli_}
+  SESSION_DRIVER: redis
+  SESSION_LIFETIME: 480
+  SESSION_SECURE_COOKIE: "true"
+  CACHE_STORE: redis
+  QUEUE_CONNECTION: redis
+  REDIS_CLIENT: predis
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  FILESYSTEM_DISK: ${FILESYSTEM_DISK:-local}
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+  AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+  AWS_BUCKET: ${AWS_BUCKET:-}
+  AWS_ENDPOINT: ${AWS_ENDPOINT:-}
+  AWS_USE_PATH_STYLE_ENDPOINT: ${AWS_USE_PATH_STYLE_ENDPOINT:-false}
+  MAIL_MAILER: ${MAIL_MAILER:-smtp}
+  MAIL_HOST: ${MAIL_HOST:-}
+  MAIL_PORT: ${MAIL_PORT:-587}
+  MAIL_USERNAME: ${MAIL_USERNAME:-}
+  MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+  MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+
+x-app: &app
+  build:
+    context: .
+    dockerfile: Dockerfile
+  restart: unless-stopped
+  volumes:
+    - storage:/var/www/html/storage
+  depends_on:
+    mysql:
+      condition: service_healthy
+    redis:
+      condition: service_started
+
+services:
+  app:
+    <<: *app
+    expose:
+      - "8080"
+    environment:
+      <<: *env
+      CONTAINER_ROLE: web
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/up"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  worker:
+    <<: *app
+    environment:
+      <<: *env
+      CONTAINER_ROLE: worker
+    command: ["php", "artisan", "queue:work", "redis", "--sleep=1", "--tries=3", "--max-time=3600"]
+    depends_on:
+      app:
+        condition: service_healthy
+
+  scheduler:
+    <<: *app
+    environment:
+      <<: *env
+      CONTAINER_ROLE: scheduler
+    command: ["php", "artisan", "schedule:work"]
+    depends_on:
+      app:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE:-trade_central}
+      MYSQL_USER: ${DB_USERNAME:-trade}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      TENANT_DB_PREFIX: ${TENANT_DB_PREFIX:-cli_}
+    volumes:
+      - mysql:/var/lib/mysql
+      - ./docker/mysql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis:/data
+
+volumes:
+  storage:
+  mysql:
+  redis:

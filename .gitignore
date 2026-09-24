@@ -1,0 +1,11 @@
+/vendor
+/node_modules
+/.env
+/.env.backup
+/.phpunit.cache
+/database/*.sqlite
+/database/teste_cli_*
+/storage/*.key
+.DS_Store
+.idea
+.vscode
