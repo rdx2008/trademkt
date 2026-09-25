@@ -3,7 +3,11 @@
 Sistema de trade marketing: controle da execução de promotores de venda nos PDVs
 (supermercados). Dono: Rodolfo de Angelis (mastervps). Responda sempre em português do Brasil.
 
-Escopo completo: https://claude.ai/code/artifact/333ed85c-0d9c-4b22-96b3-3a9c783e0874
+**Referência oficial do escopo: [`docs/ESCOPO.md`](docs/ESCOPO.md).** Mudança de escopo: atualizar
+esse arquivo primeiro. (Origem: https://claude.ai/code/artifact/333ed85c-0d9c-4b22-96b3-3a9c783e0874)
+
+**Antes de começar cada fase, leia `docs/FASE-N.md`** (ex.: `docs/FASE-2.md`), que detalha os itens,
+as tabelas e os critérios de aceite. Um commit por item, sempre com testes.
 
 ## Modelo de negócio
 
@@ -54,8 +58,8 @@ Só o promotor usa o app; os demais usam o painel web (responsivo).
 
 ## Fases
 
-1. Base e infraestrutura — **feita** (este repositório)
-2. Cadastros e roteiros: PDVs, importador de catálogo (OpenAI), contratos de visita, roteiros
+1. Base e infraestrutura — **concluída**
+2. Cadastros e roteiros (`docs/FASE-2.md`): PDVs, importador de catálogo (OpenAI), contratos de visita, roteiros
 3. App do promotor (Android, Flutter)
 4. Demandas e alertas: painel do supermercado, ruptura, pedido de visita, notificações
 5. Indicadores: dashboards, produção SKU/dia, galeria antes/depois, Excel
@@ -76,6 +80,6 @@ php artisan tenants:migrate
 
 ## Estado
 
-- Fase 1 validada: `composer install` ok, `composer.lock` commitado, `php artisan test` verde (24 testes).
+- Fase 1 concluída: `composer install` ok, `composer.lock` commitado, `php artisan test` verde (24 testes).
   Antes de rodar os testes num clone novo: `cp .env.example .env`.
 - Código e mensagens em português. Pint para formatação.
