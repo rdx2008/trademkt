@@ -6,6 +6,9 @@
 @if ($eu->temPerfil(\App\Enums\Perfil::AdminInstalacao, \App\Enums\Perfil::AdminAgencia, \App\Enums\Perfil::Supervisor, \App\Enums\Perfil::GerenteTrade, \App\Enums\Perfil::Representante, \App\Enums\Perfil::GerentePdv))
     <a href="{{ route('pdvs.index') }}" @class(['ativo' => request()->routeIs('pdvs.*')])>PDVs</a>
 @endif
+@if ($eu->temPerfil(\App\Enums\Perfil::AdminInstalacao, \App\Enums\Perfil::AdminAgencia, \App\Enums\Perfil::Supervisor, \App\Enums\Perfil::GerenteTrade, \App\Enums\Perfil::Representante))
+    <a href="{{ route('skus.index') }}" @class(['ativo' => request()->routeIs('skus.*')])>Catálogo</a>
+@endif
 @if ($eu->temPerfil(\App\Enums\Perfil::AdminInstalacao, \App\Enums\Perfil::AdminAgencia))
     <a href="{{ route('regioes.index') }}" @class(['ativo' => request()->routeIs('regioes.*')])>Regiões</a>
     <a href="{{ route('redes.index') }}" @class(['ativo' => request()->routeIs('redes.*')])>Redes</a>

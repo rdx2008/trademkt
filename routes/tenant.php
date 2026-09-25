@@ -11,6 +11,7 @@ use App\Http\Controllers\Tenant\IndustriaController;
 use App\Http\Controllers\Tenant\PdvController;
 use App\Http\Controllers\Tenant\RedeController;
 use App\Http\Controllers\Tenant\RegiaoController;
+use App\Http\Controllers\Tenant\SkuController;
 use App\Http\Controllers\Tenant\UsuarioController;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
@@ -48,6 +49,15 @@ Route::middleware([
         Route::get('/pdvs', [PdvController::class, 'index'])
             ->middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante,gerente_pdv')
             ->name('pdvs.index');
+
+        // Catálogo de SKUs: consulta para admin, agência e indústria; cadastro para o admin da
+        // instalação e o gerente de trade (só a própria marca), conferido no controller.
+        Route::middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante')->group(function () {
+            Route::resource('skus', SkuController::class)
+                ->except(['show', 'destroy'])
+                ->parameters(['skus' => 'sku']);
+            Route::get('/skus/{sku}/foto', [SkuController::class, 'foto'])->name('skus.foto');
+        });
 
         // Cadastro de PDVs, regiões e redes
         Route::middleware('perfil:admin_instalacao,admin_agencia')->group(function () {

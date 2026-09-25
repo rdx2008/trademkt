@@ -82,7 +82,8 @@ php artisan tenants:migrate
 
 - Fase 1 concluída: `composer install` ok, `composer.lock` commitado, `php artisan test` verde (24 testes).
   Antes de rodar os testes num clone novo: `cp .env.example .env`.
-- Fase 2 em andamento: 2.1 (regiões, redes, PDVs, importação por planilha, vínculos) feito.
+- Fase 2 em andamento: 2.1 (regiões, redes, PDVs, importação por planilha, vínculos) e
+  2.2 (catálogo de SKUs e embalagens, regra `App\Rules\Gtin`) feitos.
   A tabela `contratos_visita` já existe (criada no 2.1 para a visibilidade da indústria); o
   cadastro dos contratos é o 2.4. Geocoding: `GOOGLE_MAPS_API_KEY` (sem chave, pino manual no mapa).
 - Código e mensagens em português (traduções em `lang/pt_BR`). Pint para formatação.

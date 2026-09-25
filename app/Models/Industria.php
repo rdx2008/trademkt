@@ -16,6 +16,11 @@ class Industria extends Model
         return ['ativo' => 'boolean'];
     }
 
+    public function skus(): HasMany
+    {
+        return $this->hasMany(Sku::class);
+    }
+
     public function usuarios(): HasMany
     {
         return $this->hasMany(User::class);
