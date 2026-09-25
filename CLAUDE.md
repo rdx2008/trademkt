@@ -76,6 +76,6 @@ php artisan tenants:migrate
 
 ## Estado
 
-- Fase 1 escrita sem conseguir rodar `composer install` (ambiente sem acesso ao packagist).
-  Primeiro passo: `composer install`, `php artisan test`, corrigir o que falhar e commitar o `composer.lock`.
+- Fase 1 validada: `composer install` ok, `composer.lock` commitado, `php artisan test` verde (24 testes).
+  Antes de rodar os testes num clone novo: `cp .env.example .env`.
 - Código e mensagens em português. Pint para formatação.

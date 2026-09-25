@@ -21,6 +21,20 @@ class Tenant extends BaseTenant implements TenantWithDatabase
 {
     use HasDatabase, HasDomains;
 
+    /**
+     * O id é o slug informado no provisionamento (sem gerador de id). Sem isto o
+     * pacote trata a chave como autoincremento e sobrescreve o id após o insert.
+     */
+    public function getIncrementing(): bool
+    {
+        return false;
+    }
+
+    public function getKeyType(): string
+    {
+        return 'string';
+    }
+
     protected $casts = [
         'tipo' => TipoInstalacao::class,
         'ativo' => 'boolean',
