@@ -6,7 +6,11 @@ use App\Http\Controllers\Api\AuthController as ApiAuthController;
 use App\Http\Controllers\Tenant\AgenciaController;
 use App\Http\Controllers\Tenant\AuthController;
 use App\Http\Controllers\Tenant\DashboardController;
+use App\Http\Controllers\Tenant\ImportacaoPdvController;
 use App\Http\Controllers\Tenant\IndustriaController;
+use App\Http\Controllers\Tenant\PdvController;
+use App\Http\Controllers\Tenant\RedeController;
+use App\Http\Controllers\Tenant\RegiaoController;
 use App\Http\Controllers\Tenant\UsuarioController;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
@@ -38,6 +42,32 @@ Route::middleware([
             Route::resource('usuarios', UsuarioController::class)
                 ->except(['show', 'destroy'])
                 ->parameters(['usuarios' => 'usuario']);
+        });
+
+        // PDVs: consulta para quem acompanha (cada perfil vê só o que lhe cabe)
+        Route::get('/pdvs', [PdvController::class, 'index'])
+            ->middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante,gerente_pdv')
+            ->name('pdvs.index');
+
+        // Cadastro de PDVs, regiões e redes
+        Route::middleware('perfil:admin_instalacao,admin_agencia')->group(function () {
+            Route::get('/pdvs/importar', [ImportacaoPdvController::class, 'create'])->name('pdvs.importar');
+            Route::post('/pdvs/importar', [ImportacaoPdvController::class, 'store'])->name('pdvs.importar.enviar');
+            Route::get('/pdvs/importar/{importacao}', [ImportacaoPdvController::class, 'show'])->name('pdvs.importar.revisar');
+            Route::post('/pdvs/importar/{importacao}', [ImportacaoPdvController::class, 'update'])->name('pdvs.importar.gravar');
+            Route::delete('/pdvs/importar/{importacao}', [ImportacaoPdvController::class, 'destroy'])->name('pdvs.importar.descartar');
+
+            Route::resource('pdvs', PdvController::class)
+                ->only(['create', 'store', 'edit', 'update'])
+                ->parameters(['pdvs' => 'pdv']);
+
+            foreach (['regioes' => RegiaoController::class, 'redes' => RedeController::class] as $prefixo => $controller) {
+                Route::get("/{$prefixo}", [$controller, 'index'])->name("{$prefixo}.index");
+                Route::get("/{$prefixo}/novo", [$controller, 'create'])->name("{$prefixo}.create");
+                Route::post("/{$prefixo}", [$controller, 'store'])->name("{$prefixo}.store");
+                Route::get("/{$prefixo}/{id}/editar", [$controller, 'edit'])->whereNumber('id')->name("{$prefixo}.edit");
+                Route::put("/{$prefixo}/{id}", [$controller, 'update'])->whereNumber('id')->name("{$prefixo}.update");
+            }
         });
 
         Route::middleware('perfil:admin_instalacao')->group(function () {

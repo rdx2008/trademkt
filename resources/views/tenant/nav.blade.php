@@ -3,6 +3,13 @@
 @if ($eu->temPerfil(\App\Enums\Perfil::AdminInstalacao, \App\Enums\Perfil::AdminAgencia, \App\Enums\Perfil::GerenteTrade))
     <a href="{{ route('usuarios.index') }}" @class(['ativo' => request()->routeIs('usuarios.*')])>Usuários</a>
 @endif
+@if ($eu->temPerfil(\App\Enums\Perfil::AdminInstalacao, \App\Enums\Perfil::AdminAgencia, \App\Enums\Perfil::Supervisor, \App\Enums\Perfil::GerenteTrade, \App\Enums\Perfil::Representante, \App\Enums\Perfil::GerentePdv))
+    <a href="{{ route('pdvs.index') }}" @class(['ativo' => request()->routeIs('pdvs.*')])>PDVs</a>
+@endif
+@if ($eu->temPerfil(\App\Enums\Perfil::AdminInstalacao, \App\Enums\Perfil::AdminAgencia))
+    <a href="{{ route('regioes.index') }}" @class(['ativo' => request()->routeIs('regioes.*')])>Regiões</a>
+    <a href="{{ route('redes.index') }}" @class(['ativo' => request()->routeIs('redes.*')])>Redes</a>
+@endif
 @if ($eu->temPerfil(\App\Enums\Perfil::AdminInstalacao))
     <a href="{{ route('industrias.index') }}" @class(['ativo' => request()->routeIs('industrias.*')])>Indústrias</a>
     <a href="{{ route('agencias.index') }}" @class(['ativo' => request()->routeIs('agencias.*')])>Agências</a>

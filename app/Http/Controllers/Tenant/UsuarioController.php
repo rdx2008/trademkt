@@ -7,12 +7,14 @@ use App\Enums\TipoVinculo;
 use App\Http\Controllers\Controller;
 use App\Models\Agencia;
 use App\Models\Industria;
+use App\Models\Pdv;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class UsuarioController extends Controller
@@ -49,8 +51,10 @@ class UsuarioController extends Controller
     {
         $eu = $request->user();
         $dados = $this->validar($request, $eu);
+        $pdvs = $this->validarPdvs($request, $eu);
 
-        User::create($dados);
+        $usuario = User::create($dados);
+        $this->vincularPdvs($usuario, $pdvs);
 
         return redirect()->route('usuarios.index')->with('status', 'Usuário cadastrado.');
     }
@@ -68,11 +72,13 @@ class UsuarioController extends Controller
         abort_unless($eu->podeGerenciar($usuario), 403);
 
         $dados = $this->validar($request, $eu, $usuario);
+        $pdvs = $this->validarPdvs($request, $eu);
         if (empty($dados['password'])) {
             unset($dados['password']);
         }
 
         $usuario->update($dados);
+        $this->vincularPdvs($usuario, $pdvs);
 
         // Desativado: derruba os acessos do app na hora.
         if (! $usuario->ativo) {
@@ -142,8 +148,51 @@ class UsuarioController extends Controller
         return $dados;
     }
 
+    /**
+     * PDVs do gerente do supermercado ou da carteira do representante.
+     * Só aceita PDVs que quem cadastra consegue ver.
+     *
+     * @return list<int>
+     */
+    private function validarPdvs(Request $request, User $eu): array
+    {
+        $request->validate([
+            'pdvs' => ['nullable', 'array'],
+            'pdvs.*' => ['integer', 'distinct'],
+        ]);
+
+        $ids = array_map('intval', $request->input('pdvs', []));
+        if ($ids === []) {
+            return [];
+        }
+
+        $visiveis = Pdv::visiveisPara($eu)->whereIn('id', $ids)->count();
+        if ($visiveis !== count($ids)) {
+            throw ValidationException::withMessages(['pdvs' => 'Há PDV inválido ou fora do seu acesso.']);
+        }
+
+        return $ids;
+    }
+
+    /** @param  list<int>  $pdvs */
+    private function vincularPdvs(User $usuario, array $pdvs): void
+    {
+        $usuario->pdvsGerenciados()->sync($usuario->perfil === Perfil::GerentePdv ? $pdvs : []);
+        $usuario->carteiraPdvs()->sync($usuario->perfil === Perfil::Representante ? $pdvs : []);
+    }
+
     private function dadosFormulario(User $eu, User $usuario): array
     {
+        $gerenciaveis = $eu->perfil->podeGerenciar();
+        $vinculaPdvs = in_array(Perfil::GerentePdv, $gerenciaveis, true)
+            || in_array(Perfil::Representante, $gerenciaveis, true);
+
+        $selecionados = match ($usuario->perfil) {
+            Perfil::GerentePdv => $usuario->pdvsGerenciados()->pluck('pdvs.id')->all(),
+            Perfil::Representante => $usuario->carteiraPdvs()->pluck('pdvs.id')->all(),
+            default => [],
+        };
+
         $perfis = [];
         foreach ($eu->perfil->podeGerenciar() as $perfil) {
             $perfis[$perfil->value] = $perfil->label();
@@ -156,6 +205,10 @@ class UsuarioController extends Controller
             'industrias' => Industria::where('ativo', true)->orderBy('nome')->pluck('nome', 'id'),
             'agencias' => Agencia::where('ativo', true)->orderBy('nome')->pluck('nome', 'id'),
             'vinculos' => TipoVinculo::cases(),
+            'pdvs' => $vinculaPdvs
+                ? Pdv::visiveisPara($eu)->where('ativo', true)->orderBy('nome')->get(['id', 'nome', 'cidade', 'uf'])
+                : collect(),
+            'pdvsSelecionados' => array_map('intval', old('pdvs', $selecionados)),
         ];
     }
 }

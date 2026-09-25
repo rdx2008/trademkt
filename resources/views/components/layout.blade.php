@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $titulo ?? 'Trade' }} · {{ $marca ?? config('app.name') }}</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    @stack('head')
 </head>
 <body>
     @isset($nav)
@@ -32,5 +33,7 @@
 
         {{ $slot }}
     </main>
+
+    @stack('scripts')
 </body>
 </html>
