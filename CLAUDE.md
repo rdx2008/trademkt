@@ -83,7 +83,10 @@ php artisan tenants:migrate
 - Fase 1 concluída: `composer install` ok, `composer.lock` commitado, `php artisan test` verde (24 testes).
   Antes de rodar os testes num clone novo: `cp .env.example .env`.
 - Fase 2 em andamento: feitos 2.1 (regiões, redes, PDVs, importação por planilha, vínculos),
-  2.2 (catálogo de SKUs e embalagens, regra `App\Rules\Gtin`) e 2.4 (contratos de visita).
+  2.2 (catálogo de SKUs e embalagens, regra `App\Rules\Gtin`), 2.4 (contratos de visita) e
+  2.5 (roteiros: `roteiros:gerar` diário às 04:30, tela semanal do supervisor, `GET /api/v1/roteiro`).
+  Visita tem `data` (quando será feita) e `data_prevista` (dia do contrato); a geração se guia por
+  `data_prevista`, então mover a visita de dia não é desfeito.
   **2.3 (importador de catálogo com OpenAI) adiado**: o dono ainda não tem créditos na OpenAI.
   Fazer depois do 2.5. Notas para quando retomar: `docker/php.ini` limita upload a 50 MB (o 2.3
   pede 60 MB) e o `retry_after` do Redis é 90 s (processar uma página por job ou aumentar). Geocoding: `GOOGLE_MAPS_API_KEY` (sem chave, pino manual no mapa).

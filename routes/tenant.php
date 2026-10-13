@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\AuthController as ApiAuthController;
+use App\Http\Controllers\Api\RoteiroController as ApiRoteiroController;
 use App\Http\Controllers\Tenant\AgenciaController;
 use App\Http\Controllers\Tenant\AuthController;
 use App\Http\Controllers\Tenant\ContratoVisitaController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Tenant\IndustriaController;
 use App\Http\Controllers\Tenant\PdvController;
 use App\Http\Controllers\Tenant\RedeController;
 use App\Http\Controllers\Tenant\RegiaoController;
+use App\Http\Controllers\Tenant\RoteiroController;
 use App\Http\Controllers\Tenant\SkuController;
 use App\Http\Controllers\Tenant\UsuarioController;
 use Illuminate\Support\Facades\Route;
@@ -71,6 +73,16 @@ Route::middleware([
                 ->parameters(['contratos' => 'contrato']);
         });
 
+        // Roteiros: agência e indústria acompanham; só supervisor e admin da agência atribuem
+        // (regra trabalhista, conferida no controller).
+        Route::get('/roteiros', [RoteiroController::class, 'semana'])
+            ->middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante')
+            ->name('roteiros.semana');
+        Route::middleware('perfil:admin_agencia,supervisor')->group(function () {
+            Route::post('/roteiros/gerar', [RoteiroController::class, 'gerar'])->name('roteiros.gerar');
+            Route::put('/visitas/{visita}/mover', [RoteiroController::class, 'mover'])->name('visitas.mover');
+        });
+
         // Cadastro de PDVs, regiões e redes
         Route::middleware('perfil:admin_instalacao,admin_agencia')->group(function () {
             Route::get('/pdvs/importar', [ImportacaoPdvController::class, 'create'])->name('pdvs.importar');
@@ -115,5 +127,7 @@ Route::middleware([
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [ApiAuthController::class, 'me'])->name('me');
         Route::post('/logout', [ApiAuthController::class, 'logout'])->name('logout');
+        Route::get('/roteiro', [ApiRoteiroController::class, 'show'])->name('roteiro');
+        Route::get('/skus/{sku}/foto', [ApiRoteiroController::class, 'fotoSku'])->name('skus.foto');
     });
 });

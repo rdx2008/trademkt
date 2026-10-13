@@ -113,3 +113,19 @@ tr.alerta td { background: #fff8e1; }
 .selo.alerta { background: #fff3cd; color: #7a5b00; border-color: transparent; }
 .erros-linha { margin: 0; padding-left: 16px; white-space: normal; color: var(--err-text); font-size: 13px; }
 select[multiple] { min-height: 160px; }
+
+.grade-roteiro th, .grade-roteiro td { vertical-align: top; white-space: normal; min-width: 130px; }
+.grade-roteiro thead th.hoje { color: var(--primary); }
+.grade-roteiro .celula { min-height: 60px; height: 60px; }
+.grade-roteiro .celula[data-soltar] { background: #fafbfc; }
+.visita { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--muted); border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; font-size: 13px; line-height: 1.3; }
+.visita .rotulo { display: block; font-size: 12px; }
+.visita[data-movel] { cursor: grab; }
+.visita.arrastando { opacity: .5; }
+.visita.status-realizada { border-left-color: var(--ok-text); }
+.visita.status-nao_executada { border-left-color: var(--err-text); background: var(--err-bg); }
+.visita.status-em_atencao { border-left-color: #b8860b; background: #fff8e1; }
+.visita.status-em_andamento { border-left-color: #1565c0; }
+.pino-numero { background: var(--primary); color: #fff; border-radius: 50%; text-align: center; line-height: 26px; font-weight: 700; font-size: 13px; border: 2px solid #fff; }
+dialog { border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; width: min(420px, 92vw); }
+dialog::backdrop { background: rgba(0, 0, 0, .35); }
