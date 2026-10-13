@@ -7,6 +7,7 @@
     <a href="{{ route('pdvs.index') }}" @class(['ativo' => request()->routeIs('pdvs.*')])>PDVs</a>
 @endif
 @if ($eu->temPerfil(\App\Enums\Perfil::AdminInstalacao, \App\Enums\Perfil::AdminAgencia, \App\Enums\Perfil::Supervisor, \App\Enums\Perfil::GerenteTrade, \App\Enums\Perfil::Representante))
+    <a href="{{ route('contratos.index') }}" @class(['ativo' => request()->routeIs('contratos.*')])>Contratos</a>
     <a href="{{ route('skus.index') }}" @class(['ativo' => request()->routeIs('skus.*')])>Catálogo</a>
 @endif
 @if ($eu->temPerfil(\App\Enums\Perfil::AdminInstalacao, \App\Enums\Perfil::AdminAgencia))

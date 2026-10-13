@@ -69,8 +69,11 @@
                         </td>
                         <td><span @class(['selo', 'ok' => $pdv->ativo, 'off' => ! $pdv->ativo])>{{ $pdv->ativo ? 'Ativo' : 'Inativo' }}</span></td>
                         <td>
+                            @if ($verContratos)
+                                <a href="{{ route('contratos.index', ['pdv_id' => $pdv->id]) }}">Contratos</a>
+                            @endif
                             @if ($podeEditar)
-                                <a href="{{ route('pdvs.edit', $pdv) }}">Editar</a>
+                                · <a href="{{ route('pdvs.edit', $pdv) }}">Editar</a>
                             @endif
                         </td>
                     </tr>

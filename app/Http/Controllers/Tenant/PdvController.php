@@ -51,6 +51,7 @@ class PdvController extends Controller
         return view('tenant.pdvs.index', [
             'pdvs' => $pdvs,
             'podeEditar' => $this->podeEditar($eu->perfil),
+            'verContratos' => $eu->perfil !== Perfil::GerentePdv,
             'redes' => Rede::orderBy('nome')->pluck('nome', 'id'),
             'regioes' => Regiao::orderBy('nome')->pluck('nome', 'id'),
             'canais' => CanalPdv::opcoes(),

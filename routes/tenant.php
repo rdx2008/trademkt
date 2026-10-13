@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\AuthController as ApiAuthController;
 use App\Http\Controllers\Tenant\AgenciaController;
 use App\Http\Controllers\Tenant\AuthController;
+use App\Http\Controllers\Tenant\ContratoVisitaController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\ImportacaoPdvController;
 use App\Http\Controllers\Tenant\IndustriaController;
@@ -57,6 +58,17 @@ Route::middleware([
                 ->except(['show', 'destroy'])
                 ->parameters(['skus' => 'sku']);
             Route::get('/skus/{sku}/foto', [SkuController::class, 'foto'])->name('skus.foto');
+        });
+
+        // Contratos de visita: consulta para agência e indústria (cada uma vê os seus);
+        // cadastro pelo admin da instalação e pelo admin da agência.
+        Route::get('/contratos', [ContratoVisitaController::class, 'index'])
+            ->middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante')
+            ->name('contratos.index');
+        Route::middleware('perfil:admin_instalacao,admin_agencia')->group(function () {
+            Route::resource('contratos', ContratoVisitaController::class)
+                ->only(['create', 'store', 'edit', 'update'])
+                ->parameters(['contratos' => 'contrato']);
         });
 
         // Cadastro de PDVs, regiões e redes
