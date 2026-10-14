@@ -3,7 +3,11 @@
 Sistema de trade marketing: controle da execução de promotores de venda nos PDVs
 (supermercados). Dono: Rodolfo de Angelis (mastervps). Responda sempre em português do Brasil.
 
-Escopo completo: https://claude.ai/code/artifact/333ed85c-0d9c-4b22-96b3-3a9c783e0874
+**Referência oficial do escopo: [`docs/ESCOPO.md`](docs/ESCOPO.md).** Mudança de escopo: atualizar
+esse arquivo primeiro. (Origem: https://claude.ai/code/artifact/333ed85c-0d9c-4b22-96b3-3a9c783e0874)
+
+**Antes de começar cada fase, leia `docs/FASE-N.md`** (ex.: `docs/FASE-2.md`), que detalha os itens,
+as tabelas e os critérios de aceite. Um commit por item, sempre com testes.
 
 ## Modelo de negócio
 
@@ -54,8 +58,8 @@ Só o promotor usa o app; os demais usam o painel web (responsivo).
 
 ## Fases
 
-1. Base e infraestrutura — **feita** (este repositório)
-2. Cadastros e roteiros: PDVs, importador de catálogo (OpenAI), contratos de visita, roteiros
+1. Base e infraestrutura — **concluída**
+2. Cadastros e roteiros (`docs/FASE-2.md`): PDVs, importador de catálogo (OpenAI), contratos de visita, roteiros
 3. App do promotor (Android, Flutter)
 4. Demandas e alertas: painel do supermercado, ruptura, pedido de visita, notificações
 5. Indicadores: dashboards, produção SKU/dia, galeria antes/depois, Excel
@@ -76,6 +80,14 @@ php artisan tenants:migrate
 
 ## Estado
 
-- Fase 1 escrita sem conseguir rodar `composer install` (ambiente sem acesso ao packagist).
-  Primeiro passo: `composer install`, `php artisan test`, corrigir o que falhar e commitar o `composer.lock`.
-- Código e mensagens em português. Pint para formatação.
+- Fase 1 concluída: `composer install` ok, `composer.lock` commitado, `php artisan test` verde (24 testes).
+  Antes de rodar os testes num clone novo: `cp .env.example .env`.
+- Fase 2 em andamento: feitos 2.1 (regiões, redes, PDVs, importação por planilha, vínculos),
+  2.2 (catálogo de SKUs e embalagens, regra `App\Rules\Gtin`), 2.4 (contratos de visita) e
+  2.5 (roteiros: `roteiros:gerar` diário às 04:30, tela semanal do supervisor, `GET /api/v1/roteiro`).
+  Visita tem `data` (quando será feita) e `data_prevista` (dia do contrato); a geração se guia por
+  `data_prevista`, então mover a visita de dia não é desfeito.
+  **2.3 (importador de catálogo com OpenAI) adiado**: o dono ainda não tem créditos na OpenAI.
+  Fazer depois do 2.5. Notas para quando retomar: `docker/php.ini` limita upload a 50 MB (o 2.3
+  pede 60 MB) e o `retry_after` do Redis é 90 s (processar uma página por job ou aumentar). Geocoding: `GOOGLE_MAPS_API_KEY` (sem chave, pino manual no mapa).
+- Código e mensagens em português (traduções em `lang/pt_BR`). Pint para formatação.

@@ -62,6 +62,23 @@ abstract class TestCase extends BaseTestCase
         return $resultado['tenant'];
     }
 
+    /** Gera um CNPJ válido (só dígitos) a partir de um número base. */
+    protected static function cnpj(int $base): string
+    {
+        $numeros = str_pad((string) $base, 8, '0', STR_PAD_LEFT).'0001';
+
+        foreach ([[5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2], [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]] as $pesos) {
+            $soma = 0;
+            foreach ($pesos as $i => $peso) {
+                $soma += (int) $numeros[$i] * $peso;
+            }
+            $resto = $soma % 11;
+            $numeros .= $resto < 2 ? '0' : (string) (11 - $resto);
+        }
+
+        return $numeros;
+    }
+
     /** Cria um usuário dentro do cliente (fora do contexto dele). */
     protected function criarUsuario(Tenant $tenant, Perfil $perfil, array $extra = []): User
     {

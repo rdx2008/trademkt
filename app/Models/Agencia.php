@@ -16,6 +16,11 @@ class Agencia extends Model
         return ['ativo' => 'boolean'];
     }
 
+    public function contratos(): HasMany
+    {
+        return $this->hasMany(ContratoVisita::class);
+    }
+
     public function usuarios(): HasMany
     {
         return $this->hasMany(User::class);

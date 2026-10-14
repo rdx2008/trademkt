@@ -68,6 +68,19 @@
             </div>
         </div>
 
+        @if ($pdvs->isNotEmpty())
+            <div class="campo">
+                <label for="pdvs">PDVs</label>
+                <select id="pdvs" name="pdvs[]" multiple>
+                    @foreach ($pdvs as $pdv)
+                        <option value="{{ $pdv->id }}" @selected(in_array($pdv->id, $pdvsSelecionados, true))>{{ $pdv->nome }} — {{ $pdv->cidade }}/{{ $pdv->uf }}</option>
+                    @endforeach
+                </select>
+                <div class="dica">Gerente do supermercado: lojas que ele acompanha. Representante: carteira de PDVs (recebe os avisos de ruptura).
+                    Use Ctrl (ou Cmd) para marcar vários.</div>
+            </div>
+        @endif
+
         <div class="linha">
             <div class="campo">
                 <label for="password">{{ $editando ? 'Nova senha' : 'Senha' }}</label>

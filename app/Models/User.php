@@ -6,6 +6,7 @@ use App\Enums\Perfil;
 use App\Enums\TipoVinculo;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -53,6 +54,18 @@ class User extends Authenticatable
     public function agencia(): BelongsTo
     {
         return $this->belongsTo(Agencia::class);
+    }
+
+    /** Lojas do gerente do supermercado. */
+    public function pdvsGerenciados(): BelongsToMany
+    {
+        return $this->belongsToMany(Pdv::class, 'pdv_usuarios')->withTimestamps();
+    }
+
+    /** Carteira de PDVs do representante comercial. */
+    public function carteiraPdvs(): BelongsToMany
+    {
+        return $this->belongsToMany(Pdv::class, 'representante_pdv')->withTimestamps();
     }
 
     public function temPerfil(Perfil ...$perfis): bool

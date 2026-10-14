@@ -61,7 +61,8 @@ php artisan test
 1. **Novo recurso → Docker Compose**, apontando para este repositório.
 2. **Variáveis de ambiente** (no Coolify): `APP_KEY` (gere com `php artisan key:generate --show`),
    `APP_URL`, `CENTRAL_DOMAINS`, `DB_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `SUPER_ADMIN_EMAIL`,
-   `SUPER_ADMIN_SENHA`. As demais têm padrão no `docker-compose.yml`.
+   `SUPER_ADMIN_SENHA`. Opcional: `GOOGLE_MAPS_API_KEY` (localiza o endereço do PDV; sem ela, o
+   pino é posicionado à mão no mapa). As demais têm padrão no `docker-compose.yml`.
 3. **Domínios do serviço `app`**: o domínio do painel central e os domínios de cada cliente,
    separados por vírgula, na porta 8080 (ex.: `https://painel.seudominio.com.br:8080,https://trade.gaboardi.com.br:8080`).
    O Coolify gera o SSL de cada um.

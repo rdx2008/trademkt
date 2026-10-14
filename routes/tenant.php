@@ -3,10 +3,18 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\AuthController as ApiAuthController;
+use App\Http\Controllers\Api\RoteiroController as ApiRoteiroController;
 use App\Http\Controllers\Tenant\AgenciaController;
 use App\Http\Controllers\Tenant\AuthController;
+use App\Http\Controllers\Tenant\ContratoVisitaController;
 use App\Http\Controllers\Tenant\DashboardController;
+use App\Http\Controllers\Tenant\ImportacaoPdvController;
 use App\Http\Controllers\Tenant\IndustriaController;
+use App\Http\Controllers\Tenant\PdvController;
+use App\Http\Controllers\Tenant\RedeController;
+use App\Http\Controllers\Tenant\RegiaoController;
+use App\Http\Controllers\Tenant\RoteiroController;
+use App\Http\Controllers\Tenant\SkuController;
 use App\Http\Controllers\Tenant\UsuarioController;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
@@ -40,6 +48,62 @@ Route::middleware([
                 ->parameters(['usuarios' => 'usuario']);
         });
 
+        // PDVs: consulta para quem acompanha (cada perfil vê só o que lhe cabe)
+        Route::get('/pdvs', [PdvController::class, 'index'])
+            ->middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante,gerente_pdv')
+            ->name('pdvs.index');
+
+        // Catálogo de SKUs: consulta para admin, agência e indústria; cadastro para o admin da
+        // instalação e o gerente de trade (só a própria marca), conferido no controller.
+        Route::middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante')->group(function () {
+            Route::resource('skus', SkuController::class)
+                ->except(['show', 'destroy'])
+                ->parameters(['skus' => 'sku']);
+            Route::get('/skus/{sku}/foto', [SkuController::class, 'foto'])->name('skus.foto');
+        });
+
+        // Contratos de visita: consulta para agência e indústria (cada uma vê os seus);
+        // cadastro pelo admin da instalação e pelo admin da agência.
+        Route::get('/contratos', [ContratoVisitaController::class, 'index'])
+            ->middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante')
+            ->name('contratos.index');
+        Route::middleware('perfil:admin_instalacao,admin_agencia')->group(function () {
+            Route::resource('contratos', ContratoVisitaController::class)
+                ->only(['create', 'store', 'edit', 'update'])
+                ->parameters(['contratos' => 'contrato']);
+        });
+
+        // Roteiros: agência e indústria acompanham; só supervisor e admin da agência atribuem
+        // (regra trabalhista, conferida no controller).
+        Route::get('/roteiros', [RoteiroController::class, 'semana'])
+            ->middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante')
+            ->name('roteiros.semana');
+        Route::middleware('perfil:admin_agencia,supervisor')->group(function () {
+            Route::post('/roteiros/gerar', [RoteiroController::class, 'gerar'])->name('roteiros.gerar');
+            Route::put('/visitas/{visita}/mover', [RoteiroController::class, 'mover'])->name('visitas.mover');
+        });
+
+        // Cadastro de PDVs, regiões e redes
+        Route::middleware('perfil:admin_instalacao,admin_agencia')->group(function () {
+            Route::get('/pdvs/importar', [ImportacaoPdvController::class, 'create'])->name('pdvs.importar');
+            Route::post('/pdvs/importar', [ImportacaoPdvController::class, 'store'])->name('pdvs.importar.enviar');
+            Route::get('/pdvs/importar/{importacao}', [ImportacaoPdvController::class, 'show'])->name('pdvs.importar.revisar');
+            Route::post('/pdvs/importar/{importacao}', [ImportacaoPdvController::class, 'update'])->name('pdvs.importar.gravar');
+            Route::delete('/pdvs/importar/{importacao}', [ImportacaoPdvController::class, 'destroy'])->name('pdvs.importar.descartar');
+
+            Route::resource('pdvs', PdvController::class)
+                ->only(['create', 'store', 'edit', 'update'])
+                ->parameters(['pdvs' => 'pdv']);
+
+            foreach (['regioes' => RegiaoController::class, 'redes' => RedeController::class] as $prefixo => $controller) {
+                Route::get("/{$prefixo}", [$controller, 'index'])->name("{$prefixo}.index");
+                Route::get("/{$prefixo}/novo", [$controller, 'create'])->name("{$prefixo}.create");
+                Route::post("/{$prefixo}", [$controller, 'store'])->name("{$prefixo}.store");
+                Route::get("/{$prefixo}/{id}/editar", [$controller, 'edit'])->whereNumber('id')->name("{$prefixo}.edit");
+                Route::put("/{$prefixo}/{id}", [$controller, 'update'])->whereNumber('id')->name("{$prefixo}.update");
+            }
+        });
+
         Route::middleware('perfil:admin_instalacao')->group(function () {
             Route::resource('industrias', IndustriaController::class)
                 ->except(['show', 'destroy'])
@@ -63,5 +127,7 @@ Route::middleware([
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [ApiAuthController::class, 'me'])->name('me');
         Route::post('/logout', [ApiAuthController::class, 'logout'])->name('logout');
+        Route::get('/roteiro', [ApiRoteiroController::class, 'show'])->name('roteiro');
+        Route::get('/skus/{sku}/foto', [ApiRoteiroController::class, 'fotoSku'])->name('skus.foto');
     });
 });
