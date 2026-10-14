@@ -3,8 +3,11 @@ FROM php:8.4-fpm-alpine
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# Só o que o projeto usa e não vem na imagem oficial (opcache já vem). Compilar extensões
+# pesadas (intl, gd, redis) fazia o build passar de 3 minutos e ser interrompido no VPS.
+# O Redis é acessado pelo predis (PHP puro), sem extensão.
 RUN apk add --no-cache nginx supervisor su-exec \
-    && install-php-extensions pdo_mysql redis intl gd zip opcache pcntl bcmath exif
+    && install-php-extensions pdo_mysql zip pcntl
 
 WORKDIR /var/www/html
 
