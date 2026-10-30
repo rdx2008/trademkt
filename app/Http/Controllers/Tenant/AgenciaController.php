@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Enums\Perfil;
 use App\Http\Controllers\Controller;
 use App\Models\Agencia;
 use Illuminate\Http\RedirectResponse;
@@ -11,10 +12,11 @@ use Illuminate\View\View;
 
 class AgenciaController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         return view('tenant.agencias.index', [
-            'agencias' => Agencia::withCount('usuarios')->orderBy('nome')->get(),
+            'agencias' => Agencia::visiveisPara($request->user())->withCount('usuarios')->orderBy('nome')->get(),
+            'podeCadastrar' => $request->user()->perfil === Perfil::AdminInstalacao,
         ]);
     }
 

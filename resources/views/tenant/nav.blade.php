@@ -10,6 +10,7 @@
     <a href="{{ route('roteiros.semana') }}" @class(['ativo' => request()->routeIs('roteiros.*')])>Roteiros</a>
     <a href="{{ route('contratos.index') }}" @class(['ativo' => request()->routeIs('contratos.*')])>Contratos</a>
     <a href="{{ route('skus.index') }}" @class(['ativo' => request()->routeIs('skus.*')])>Catálogo</a>
+    <a href="{{ route('agencias.index') }}" @class(['ativo' => request()->routeIs('agencias.*')])>Agências</a>
 @endif
 @if ($eu->temPerfil(\App\Enums\Perfil::AdminInstalacao, \App\Enums\Perfil::AdminAgencia))
     <a href="{{ route('regioes.index') }}" @class(['ativo' => request()->routeIs('regioes.*')])>Regiões</a>
@@ -17,7 +18,6 @@
 @endif
 @if ($eu->temPerfil(\App\Enums\Perfil::AdminInstalacao))
     <a href="{{ route('industrias.index') }}" @class(['ativo' => request()->routeIs('industrias.*')])>Indústrias</a>
-    <a href="{{ route('agencias.index') }}" @class(['ativo' => request()->routeIs('agencias.*')])>Agências</a>
 @endif
 <span class="rotulo">{{ $eu->nome }} · {{ $eu->perfil->label() }}</span>
 <form method="POST" action="{{ route('logout') }}">

@@ -60,6 +60,10 @@ Na instalação de agência, cada usuário da indústria enxerga só os SKUs e P
   Contratos encerrados continuam permitindo identificar a agência do histórico.
 - Os filtros de agência em contratos e roteiros mostram somente agências com contratos da
   indústria. Nos roteiros, a indústria pode acompanhar todas elas ou filtrar uma prestadora.
+- A lista de agências fica disponível para consulta pelo gerente de trade e representante,
+  limitada às prestadoras da sua indústria, com CNPJ, tamanho da equipe e situação. Admin da
+  agência e supervisor consultam somente a própria agência. Apenas o admin da instalação
+  cadastra ou edita agências.
 - Consultar a equipe não dá permissão para alterá-la: cadastro de promotores e atribuição de
   visitas continuam sob responsabilidade da agência (e cadastro pelo admin da instalação).
 

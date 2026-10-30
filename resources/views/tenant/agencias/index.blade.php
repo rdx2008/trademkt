@@ -3,7 +3,9 @@
 
     <div class="cabecalho">
         <h1>Agências</h1>
-        <a class="botao" href="{{ route('agencias.create') }}">Nova agência</a>
+        @if ($podeCadastrar)
+            <a class="botao" href="{{ route('agencias.create') }}">Nova agência</a>
+        @endif
     </div>
 
     <div class="tabela-rolagem">
@@ -18,10 +20,14 @@
                         <td>{{ $agencia->cnpj ?? '—' }}</td>
                         <td>{{ $agencia->usuarios_count }}</td>
                         <td><span @class(['selo', 'ok' => $agencia->ativo, 'off' => ! $agencia->ativo])>{{ $agencia->ativo ? 'Ativa' : 'Inativa' }}</span></td>
-                        <td><a href="{{ route('agencias.edit', $agencia) }}">Editar</a></td>
+                        <td>
+                            @if ($podeCadastrar)
+                                <a href="{{ route('agencias.edit', $agencia) }}">Editar</a>
+                            @endif
+                        </td>
                     </tr>
                 @empty
-                    <tr><td colspan="5">Nenhuma agência cadastrada.</td></tr>
+                    <tr><td colspan="5">Nenhuma agência disponível para consulta.</td></tr>
                 @endforelse
             </tbody>
         </table>

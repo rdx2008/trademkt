@@ -104,12 +104,17 @@ Route::middleware([
             }
         });
 
+        // Agência e indústria consultam suas prestadoras; só o admin da instalação altera cadastros.
+        Route::get('/agencias', [AgenciaController::class, 'index'])
+            ->middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante')
+            ->name('agencias.index');
+
         Route::middleware('perfil:admin_instalacao')->group(function () {
             Route::resource('industrias', IndustriaController::class)
                 ->except(['show', 'destroy'])
                 ->parameters(['industrias' => 'industria']);
             Route::resource('agencias', AgenciaController::class)
-                ->except(['show', 'destroy'])
+                ->only(['create', 'store', 'edit', 'update'])
                 ->parameters(['agencias' => 'agencia']);
         });
     });
