@@ -31,13 +31,19 @@ class RoteiroController extends Controller
         $inicio = $this->inicioDaSemana($request->input('semana'));
         $dias = collect(CarbonPeriod::create($inicio, $inicio->addDays(6)))->map(fn ($d) => CarbonImmutable::parse($d));
 
-        // Admin da instalação acompanha uma agência por vez.
-        $agencias = $eu->perfil === Perfil::AdminInstalacao ? Agencia::orderBy('nome')->pluck('nome', 'id') : collect();
+        // A indústria acompanha todas as suas prestadoras, ou filtra uma delas.
+        $agencias = $eu->perfil === Perfil::AdminInstalacao || $eu->perfil->exigeIndustria()
+            ? Agencia::visiveisPara($eu)->orderBy('nome')->pluck('nome', 'id')
+            : collect();
         $agenciaId = match (true) {
             $eu->perfil->exigeAgencia() => $eu->agencia_id,
             $eu->perfil === Perfil::AdminInstalacao => $request->integer('agencia_id') ?: $agencias->keys()->first(),
             default => $request->integer('agencia_id') ?: null,
         };
+
+        if (! $eu->perfil->exigeAgencia() && $agenciaId !== null) {
+            abort_unless($agencias->has($agenciaId), 403);
+        }
 
         $visitas = Visita::query()
             ->visiveisPara($eu)

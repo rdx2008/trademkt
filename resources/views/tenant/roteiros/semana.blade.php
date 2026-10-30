@@ -31,10 +31,13 @@
         </div>
     </div>
 
-    @if ($agencias->count() > 1)
+    @if ($agencias->isNotEmpty() && ($agencias->count() > 1 || $eu->perfil->exigeIndustria()))
         <form method="GET" class="filtros">
             <input type="hidden" name="semana" value="{{ $inicio->toDateString() }}">
             <select name="agencia_id" onchange="this.form.submit()">
+                @if ($eu->perfil->exigeIndustria())
+                    <option value="">Todas as agências prestadoras</option>
+                @endif
                 @foreach ($agencias as $id => $nome)
                     <option value="{{ $id }}" @selected((int) $agenciaId === (int) $id)>{{ $nome }}</option>
                 @endforeach

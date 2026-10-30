@@ -48,6 +48,21 @@ promotor. A indústria sempre solicita à sua agência, que verifica e atribui a
 
 Na instalação de agência, cada usuário da indústria enxerga só os SKUs e PDVs da sua marca.
 
+### Visibilidade da indústria sobre a agência
+
+- O contrato de visita registra o vínculo entre indústria e agência responsável, inclusive
+  quando a agência atende exclusivamente essa indústria. Não existe vínculo direto entre
+  indústria e promotor: o promotor continua pertencendo à agência.
+- A indústria acompanha contratos, roteiros e visitas da sua marca com a mesma informação
+  operacional disponível à agência. Operações de outras indústrias permanecem separadas.
+- Na lista de usuários, o gerente de trade vê os usuários da própria indústria e a equipe
+  (admin da agência, supervisores e promotores) das agências com contratos da sua indústria.
+  Contratos encerrados continuam permitindo identificar a agência do histórico.
+- Os filtros de agência em contratos e roteiros mostram somente agências com contratos da
+  indústria. Nos roteiros, a indústria pode acompanhar todas elas ou filtrar uma prestadora.
+- Consultar a equipe não dá permissão para alterá-la: cadastro de promotores e atribuição de
+  visitas continuam sob responsabilidade da agência (e cadastro pelo admin da instalação).
+
 Cadeia de notificação (ruptura, impedimento, não executada):
 indústria → representante comercial → gerente de trade → supervisor.
 

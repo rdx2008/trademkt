@@ -50,7 +50,7 @@ class ContratoVisitaController extends Controller
             'podeCadastrar' => $eu->temPerfil(Perfil::AdminInstalacao, Perfil::AdminAgencia),
             'industrias' => $eu->perfil->exigeIndustria() ? collect() : Industria::orderBy('nome')->pluck('nome', 'id'),
             'agencias' => $eu->perfil === Perfil::AdminInstalacao || $eu->perfil->exigeIndustria()
-                ? Agencia::orderBy('nome')->pluck('nome', 'id')
+                ? Agencia::visiveisPara($eu)->orderBy('nome')->pluck('nome', 'id')
                 : collect(),
             'pdvFiltrado' => $request->filled('pdv_id') ? Pdv::visiveisPara($eu)->find($request->integer('pdv_id')) : null,
         ]);

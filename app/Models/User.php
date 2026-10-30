@@ -93,17 +93,21 @@ class User extends Authenticatable
 
     /**
      * Restringe uma listagem de usuários ao que este usuário pode ver.
-     * Indústria vê a sua indústria; agência vê a sua agência.
+     * Indústria vê a sua indústria e a equipe das prestadoras; agência vê a sua agência.
      */
     public function scopeVisiveisPara(Builder $query, User $usuario): Builder
     {
         return match ($usuario->perfil) {
             Perfil::AdminInstalacao => $query,
             Perfil::AdminAgencia, Perfil::Supervisor => $query->where('agencia_id', $usuario->agencia_id),
-            Perfil::GerenteTrade => $query->where(function (Builder $q) use ($usuario) {
-                $q->where('industria_id', $usuario->industria_id)
-                    ->orWhereIn('perfil', [Perfil::Supervisor->value, Perfil::Promotor->value]);
-            }),
+            Perfil::GerenteTrade => $usuario->industria_id === null
+                ? $query->whereKey($usuario->getKey())
+                : $query->where(function (Builder $q) use ($usuario) {
+                    $q->where('industria_id', $usuario->industria_id)
+                        ->orWhere(fn (Builder $equipe) => $equipe
+                            ->whereIn('perfil', [Perfil::AdminAgencia->value, Perfil::Supervisor->value, Perfil::Promotor->value])
+                            ->whereIn('agencia_id', Agencia::visiveisPara($usuario)->select('agencias.id')));
+                }),
             default => $query->whereKey($usuario->getKey()),
         };
     }
