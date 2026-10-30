@@ -56,6 +56,15 @@ Testes (SQLite, não precisam de MySQL):
 php artisan test
 ```
 
+### Testes automáticos no GitHub
+
+O workflow **Testes**, na aba **Actions**, executa a suíte unitária e funcional em cada push
+e pull request. Usa Linux, PHP 8.4 (como o Docker de produção), as versões do `composer.lock`
+e bancos SQLite de teste. Não precisa de MySQL, Redis nem credenciais de produção.
+
+O resultado inclui os testes de visibilidade da indústria e de separação entre as operações
+das agências. Confira a execução correspondente ao commit antes de incorporar a branch à `main`.
+
 ## Deploy no Coolify
 
 1. **Novo recurso → Docker Compose**, apontando para este repositório.
