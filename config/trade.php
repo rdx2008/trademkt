@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'dominio_clientes' => env('TRADE_DOMINIO_CLIENTES', 'trade.mastervps.online'),
     // Tipos de instalação vendidos
     'tipos_instalacao' => [
         'agencia' => 'Agência',

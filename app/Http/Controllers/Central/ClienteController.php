@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Central;
 
 use App\Enums\TipoInstalacao;
 use App\Http\Controllers\Controller;
+use App\Models\Rede\AgenciaRede;
 use App\Models\Tenant;
+use App\Services\DominiosCliente;
 use App\Services\ProvisionarCliente;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,12 +25,13 @@ class ClienteController extends Controller
     {
         return view('central.clientes.create', [
             'tipos' => TipoInstalacao::cases(),
+            'agenciasRede' => AgenciaRede::where('aprovada', true)->where('disponivel', true)->whereHas('tenant', fn ($q) => $q->where('ativo', true))->with('tenant')->get(),
         ]);
     }
 
-    public function store(Request $request, ProvisionarCliente $provisionar): RedirectResponse
+    public function store(Request $request, ProvisionarCliente $provisionar, DominiosCliente $enderecos): RedirectResponse
     {
-        $dominios = preg_split('/[\s,]+/', (string) $request->input('dominios'), -1, PREG_SPLIT_NO_EMPTY);
+        $dominios = $enderecos->resolver($request->only(['tipo_endereco', 'subdominio', 'dominios']));
 
         $resultado = $provisionar->executar([
             'id' => (string) $request->input('id'),
@@ -39,6 +42,9 @@ class ClienteController extends Controller
             'admin_nome' => (string) $request->input('admin_nome'),
             'admin_email' => (string) $request->input('admin_email'),
             'admin_senha' => $request->input('admin_senha'),
+            'agencia_rede_id' => $request->input('agencia_rede_id'),
+            'regiao_parceria' => $request->input('regiao_parceria'),
+            'mensagem_parceria' => $request->input('mensagem_parceria'),
         ]);
 
         return redirect()->route('central.clientes.index')->with('criado', [

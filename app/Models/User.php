@@ -56,6 +56,11 @@ class User extends Authenticatable
         return $this->belongsTo(Agencia::class);
     }
 
+    public function agenciaDaRede(): bool
+    {
+        return $this->agencia_id !== null && $this->agencia?->agencia_rede_id !== null;
+    }
+
     /** Lojas do gerente do supermercado. */
     public function pdvsGerenciados(): BelongsToMany
     {

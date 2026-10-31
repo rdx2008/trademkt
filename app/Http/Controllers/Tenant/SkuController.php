@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Tenant;
 use App\Enums\Perfil;
 use App\Enums\TipoEmbalagem;
 use App\Http\Controllers\Controller;
+use App\Models\ContratoVisita;
 use App\Models\Industria;
 use App\Models\Sku;
 use App\Models\User;
@@ -47,7 +48,7 @@ class SkuController extends Controller
 
         $industrias = in_array($eu->perfil, [Perfil::GerenteTrade, Perfil::Representante], true)
             ? collect()
-            : Industria::orderBy('nome')->pluck('nome', 'id');
+            : Industria::when($eu->agenciaDaRede(), fn ($q) => $q->whereIn('id', ContratoVisita::where('agencia_id', $eu->agencia_id)->select('industria_id')))->orderBy('nome')->pluck('nome', 'id');
 
         return view('tenant.skus.index', [
             'skus' => $skus,

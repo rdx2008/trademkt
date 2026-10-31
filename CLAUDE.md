@@ -80,6 +80,11 @@ php artisan tenants:migrate
 
 ## Estado
 
+- Rede de agências e domínios implementados (`docs/REDE-E-DOMINIOS.md`): diretório central
+  aprovado pelo fornecedor, cobertura por UF/município, solicitações com aceite/recusa,
+  acesso administrativo entre instalações com escopo de agência e subdomínio/domínio próprio.
+  Base inicial `TRADE_DOMINIO_CLIENTES=trade.mastervps.online`. Cadastros locais legados preservados.
+
 - Painéis por nível implementados (`docs/PAINEIS.md`): super admin em `/visao-geral`,
   todos os perfis do cliente em `/painel`, com resumo por data, gráficos de agenda,
   filtros e atalhos autorizados. Promotor tem consulta web complementar; execução segue no app.

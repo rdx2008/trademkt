@@ -9,7 +9,7 @@
         \App\Enums\Perfil::AdminAgencia => [
             ['Minha equipe', 'Promotores e supervisores da agência', route('usuarios.index')],
             ['Planejar a semana', 'Distribua visitas entre os promotores', route('roteiros.semana', $semana)],
-            ['Novo contrato', 'Defina os dias de atendimento do PDV', route('contratos.create')],
+            [$usuario->agenciaDaRede() ? 'Meus contratos' : 'Novo contrato', 'Consulte os dias de atendimento do PDV', $usuario->agenciaDaRede() ? route('contratos.index') : route('contratos.create')],
         ],
         \App\Enums\Perfil::Supervisor => [
             ['Distribuir visitas', 'Ajuste o roteiro e os responsáveis', route('roteiros.semana', $semana)],

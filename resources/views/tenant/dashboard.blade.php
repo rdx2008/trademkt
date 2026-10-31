@@ -1,5 +1,6 @@
 <x-layout :titulo="$titulo" :marca="$cliente->nome">
     <x-slot:nav>@include('tenant.nav')</x-slot:nav>
+    @if ($precisaAgencia)<div class="painel-pendencias"><strong>Configure sua agência para iniciar a operação</strong><span>Escolha uma prestadora no diretório e aguarde o aceite da parceria.</span><a href="{{ route('parcerias.index') }}">Buscar agências →</a></div>@endif
     <div class="painel-cabecalho">
         <div><div class="sobretitulo">{{ $usuario->perfil->label() }} / {{ $cliente->nome }}</div><h1>{{ $titulo }}</h1><p class="texto-apoio">{{ $descricao }}</p></div>
         <form method="GET" action="{{ route('dashboard') }}" class="seletor-dia"><label for="painel-data">Dia da operação</label><div class="acoes"><input id="painel-data" type="date" name="data" value="{{ $data->toDateString() }}" required><button class="botao" type="submit">Consultar</button></div></form>

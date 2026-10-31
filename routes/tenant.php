@@ -5,18 +5,21 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\AuthController as ApiAuthController;
 use App\Http\Controllers\Api\CheckInController;
 use App\Http\Controllers\Api\RoteiroController as ApiRoteiroController;
+use App\Http\Controllers\Tenant\AcessoParceriaController;
 use App\Http\Controllers\Tenant\AgenciaController;
 use App\Http\Controllers\Tenant\AuthController;
 use App\Http\Controllers\Tenant\ContratoVisitaController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\ImportacaoPdvController;
 use App\Http\Controllers\Tenant\IndustriaController;
+use App\Http\Controllers\Tenant\ParceriaController;
 use App\Http\Controllers\Tenant\PdvController;
 use App\Http\Controllers\Tenant\RedeController;
 use App\Http\Controllers\Tenant\RegiaoController;
 use App\Http\Controllers\Tenant\RoteiroController;
 use App\Http\Controllers\Tenant\SkuController;
 use App\Http\Controllers\Tenant\UsuarioController;
+use App\Http\Middleware\EnsureAcessoParceiro;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
@@ -39,7 +42,15 @@ Route::middleware([
         Route::post('/entrar', [AuthController::class, 'store'])->middleware('throttle:login');
     });
 
-    Route::middleware('auth')->group(function () {
+    Route::get('/parcerias/entrar', [AcessoParceriaController::class, 'entrar'])->middleware('throttle:20,1')->name('parcerias.entrar');
+
+    Route::middleware(['auth', EnsureAcessoParceiro::class])->group(function () {
+        Route::get('/parcerias', [ParceriaController::class, 'index'])->name('parcerias.index');
+        Route::post('/parcerias', [ParceriaController::class, 'solicitar'])->name('parcerias.solicitar');
+        Route::patch('/parcerias/{parceria}/responder', [ParceriaController::class, 'responder'])->whereNumber('parceria')->name('parcerias.responder');
+        Route::delete('/parcerias/{parceria}', [ParceriaController::class, 'cancelar'])->whereNumber('parceria')->name('parcerias.cancelar');
+        Route::put('/parcerias/perfil/agencia', [ParceriaController::class, 'perfil'])->name('parcerias.perfil');
+        Route::post('/parcerias/{parceria}/abrir', [AcessoParceriaController::class, 'abrir'])->whereNumber('parceria')->name('parcerias.abrir');
         Route::post('/sair', [AuthController::class, 'destroy'])->name('logout');
         Route::get('/painel', DashboardController::class)->name('dashboard');
 
@@ -130,7 +141,7 @@ Route::middleware([
 ])->prefix('api/v1')->name('api.')->group(function () {
     Route::post('/login', [ApiAuthController::class, 'login'])->middleware('throttle:login')->name('login');
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', EnsureAcessoParceiro::class])->group(function () {
         Route::get('/me', [ApiAuthController::class, 'me'])->name('me');
         Route::post('/logout', [ApiAuthController::class, 'logout'])->name('logout');
         Route::get('/roteiro', [ApiRoteiroController::class, 'show'])->name('roteiro');

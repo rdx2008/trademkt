@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Enums\Perfil;
 use App\Enums\StatusVisita;
+use App\Enums\TipoInstalacao;
 use App\Http\Controllers\Controller;
+use App\Models\ContratoVisita;
+use App\Models\Rede\Parceria;
 use App\Services\Painel\ResumoOperacional;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -39,6 +42,9 @@ class DashboardController extends Controller
             'descricao' => $descricao,
             'data' => $data,
             'filtroStatus' => $dados['status'] ?? '',
+            'precisaAgencia' => tenant()->tipo === TipoInstalacao::Industria && $usuario->temPerfil(Perfil::AdminInstalacao, Perfil::GerenteTrade)
+                && ! Parceria::where('industria_tenant_id', tenant('id'))->where('industria_local_id', $usuario->industria_id)->where('status', 'aceita')->exists()
+                && ! ContratoVisita::where('industria_id', $usuario->industria_id)->exists(),
             'resumo' => $resumo->gerar($usuario, $data, $dados['status'] ?? null),
         ]);
     }

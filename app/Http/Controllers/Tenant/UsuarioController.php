@@ -6,6 +6,7 @@ use App\Enums\Perfil;
 use App\Enums\TipoVinculo;
 use App\Http\Controllers\Controller;
 use App\Models\Agencia;
+use App\Models\ContratoVisita;
 use App\Models\Industria;
 use App\Models\Pdv;
 use App\Models\User;
@@ -202,8 +203,8 @@ class UsuarioController extends Controller
             'usuario' => $usuario,
             'eu' => $eu,
             'perfis' => $perfis,
-            'industrias' => Industria::where('ativo', true)->orderBy('nome')->pluck('nome', 'id'),
-            'agencias' => Agencia::where('ativo', true)->orderBy('nome')->pluck('nome', 'id'),
+            'industrias' => Industria::where('ativo', true)->when($eu->agenciaDaRede(), fn ($q) => $q->whereIn('id', ContratoVisita::where('agencia_id', $eu->agencia_id)->select('industria_id')))->orderBy('nome')->pluck('nome', 'id'),
+            'agencias' => Agencia::where('ativo', true)->when($eu->agenciaDaRede(), fn ($q) => $q->whereKey($eu->agencia_id))->orderBy('nome')->pluck('nome', 'id'),
             'vinculos' => TipoVinculo::cases(),
             'pdvs' => $vinculaPdvs
                 ? Pdv::visiveisPara($eu)->where('ativo', true)->orderBy('nome')->get(['id', 'nome', 'cidade', 'uf'])

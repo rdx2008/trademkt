@@ -12,8 +12,13 @@ aviso de ruptura e indicadores.
 - **Foco:** execução no PDV. Incentivo ao revendedor, verbas de trade e treinamento ficam fora.
 - **Modelo de venda:** o mesmo produto é vendido para agências de promoção e para indústrias,
   cada uma em instalação isolada.
-- **Regra comercial:** não vender para uma agência e para uma indústria atendida por ela
-  (controle do fornecedor, fora do sistema).
+- **Rede de parcerias:** indústrias e agências podem ter instalações próprias na plataforma.
+  Agências aprovadas pelo fornecedor aparecem num diretório com áreas de atendimento.
+  A indústria solicita parceria; a agência aceita ou recusa. Uma agência pode atender várias
+  indústrias, e uma indústria pode contratar várias agências. O aceite não cria contratos de PDVs.
+- **Endereços:** cada instalação pode usar subdomínio do sistema ou domínio próprio, inclusive
+  trocar o endereço principal posteriormente sem mudar o banco ou perder os dados.
+  Especificação e limites: `docs/REDE-E-DOMINIOS.md`.
 - **Hospedagem:** tudo no VPS próprio (Coolify). O cliente não tem acesso ao código-fonte.
 - **Primeiro cliente:** Gaboardi (bazar/limpeza), com até 30 usuários no início.
 

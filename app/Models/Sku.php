@@ -62,7 +62,10 @@ class Sku extends Model
     public function scopeVisiveisPara(Builder $query, User $usuario): Builder
     {
         return match ($usuario->perfil) {
-            Perfil::AdminInstalacao, Perfil::AdminAgencia, Perfil::Supervisor => $query,
+            Perfil::AdminInstalacao => $query,
+            Perfil::AdminAgencia, Perfil::Supervisor => $usuario->agenciaDaRede()
+                ? $query->whereIn('industria_id', ContratoVisita::where('agencia_id', $usuario->agencia_id)->select('industria_id'))
+                : $query,
             Perfil::GerenteTrade, Perfil::Representante => $query->where('industria_id', $usuario->industria_id),
             default => $query->whereRaw('1 = 0'),
         };

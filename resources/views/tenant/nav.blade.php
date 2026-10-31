@@ -1,5 +1,12 @@
 @php($eu = auth()->user())
+@if ($eu->parceiro_origem_tenant)
+    @php($origemParceiro = \App\Models\Tenant::find($eu->parceiro_origem_tenant))
+    @if ($origemParceiro?->url())<a href="{{ $origemParceiro->url() }}/parcerias">← Voltar à minha agência</a>@endif
+@endif
 <a href="{{ route('dashboard') }}" @class(['ativo' => request()->routeIs('dashboard')])>{{ match ($eu->perfil) { \App\Enums\Perfil::Promotor => 'Minha agenda', \App\Enums\Perfil::GerentePdv => 'Minhas lojas', \App\Enums\Perfil::Representante => 'Minha carteira', default => 'Visão geral' } }}</a>
+@if ((tenant()->tipo === \App\Enums\TipoInstalacao::Industria && $eu->temPerfil(\App\Enums\Perfil::AdminInstalacao, \App\Enums\Perfil::GerenteTrade)) || (tenant()->tipo === \App\Enums\TipoInstalacao::Agencia && $eu->temPerfil(\App\Enums\Perfil::AdminInstalacao, \App\Enums\Perfil::AdminAgencia)))
+    <a href="{{ route('parcerias.index') }}" @class(['ativo' => request()->routeIs('parcerias.*')])>{{ tenant()->tipo === \App\Enums\TipoInstalacao::Industria ? 'Buscar agências' : 'Parcerias com indústrias' }}</a>
+@endif
 @if ($eu->temPerfil(\App\Enums\Perfil::AdminInstalacao, \App\Enums\Perfil::AdminAgencia, \App\Enums\Perfil::GerenteTrade))
     <a href="{{ route('usuarios.index') }}" @class(['ativo' => request()->routeIs('usuarios.*')])>Usuários</a>
 @endif
@@ -12,7 +19,7 @@
     <a href="{{ route('skus.index') }}" @class(['ativo' => request()->routeIs('skus.*')])>Catálogo</a>
     <a href="{{ route('agencias.index') }}" @class(['ativo' => request()->routeIs('agencias.*')])>Agências</a>
 @endif
-@if ($eu->temPerfil(\App\Enums\Perfil::AdminInstalacao, \App\Enums\Perfil::AdminAgencia))
+@if ($eu->temPerfil(\App\Enums\Perfil::AdminInstalacao, \App\Enums\Perfil::AdminAgencia) && ! $eu->agenciaDaRede())
     <a href="{{ route('regioes.index') }}" @class(['ativo' => request()->routeIs('regioes.*')])>Regiões</a>
     <a href="{{ route('redes.index') }}" @class(['ativo' => request()->routeIs('redes.*')])>Redes</a>
 @endif

@@ -122,7 +122,10 @@ class Pdv extends Model
     public function scopeVisiveisPara(Builder $query, User $usuario): Builder
     {
         return match ($usuario->perfil) {
-            Perfil::AdminInstalacao, Perfil::AdminAgencia, Perfil::Supervisor => $query,
+            Perfil::AdminInstalacao => $query,
+            Perfil::AdminAgencia, Perfil::Supervisor => $usuario->agenciaDaRede()
+                ? $query->whereHas('contratos', fn (Builder $c) => $c->where('agencia_id', $usuario->agencia_id))
+                : $query,
             Perfil::GerenteTrade, Perfil::Representante => tenant()?->tipo === TipoInstalacao::Agencia
                 ? $query->whereHas('contratos', fn (Builder $c) => $c->ativos()->where('industria_id', $usuario->industria_id))
                 : $query,

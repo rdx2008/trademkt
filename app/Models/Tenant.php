@@ -54,6 +54,10 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     /** Domínio principal (o primeiro cadastrado). */
     public function dominioPrincipal(): ?string
     {
+        if ($this->dominio_principal && $this->domains()->where('domain', $this->dominio_principal)->exists()) {
+            return $this->dominio_principal;
+        }
+
         return $this->domains()->orderBy('id')->value('domain');
     }
 
