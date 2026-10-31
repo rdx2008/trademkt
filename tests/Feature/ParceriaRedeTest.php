@@ -42,7 +42,7 @@ class ParceriaRedeTest extends TestCase
 
     private function solicitar(): Parceria
     {
-        $this->actingAs($this->adminIndustria)->post('http://marca.test/parcerias', ['agencia_rede_id' => $this->perfil->id, 'regiao' => 'Caxias do Sul, RS', 'mensagem' => 'Atendimento de bazar'])->assertRedirect()->assertSessionHasNoErrors();
+        $this->actingAs($this->adminIndustria)->post('http://marca.test/parcerias', ['agencia_rede_id' => $this->perfil->id, 'uf' => 'RS', 'cidade' => 'Caxias do Sul', 'mensagem' => 'Atendimento de bazar'])->assertRedirect()->assertSessionHasNoErrors();
 
         return Parceria::sole();
     }
@@ -67,12 +67,12 @@ class ParceriaRedeTest extends TestCase
     {
         foreach ([['aprovada' => false, 'disponivel' => true], ['aprovada' => true, 'disponivel' => false]] as $dados) {
             $this->perfil->update($dados);
-            $this->actingAs($this->adminIndustria)->postJson('http://marca.test/parcerias', ['agencia_rede_id' => $this->perfil->id, 'regiao' => 'RS'])->assertUnprocessable();
+            $this->actingAs($this->adminIndustria)->postJson('http://marca.test/parcerias', ['agencia_rede_id' => $this->perfil->id, 'uf' => 'RS'])->assertUnprocessable();
             $this->get('http://marca.test/parcerias')->assertOk()->assertDontSee('Equipe especializada no Sul');
         }
         $this->perfil->update(['aprovada' => true, 'disponivel' => true]);
         $this->agencia->update(['ativo' => false]);
-        $this->postJson('http://marca.test/parcerias', ['agencia_rede_id' => $this->perfil->id, 'regiao' => 'RS'])->assertUnprocessable();
+        $this->postJson('http://marca.test/parcerias', ['agencia_rede_id' => $this->perfil->id, 'uf' => 'RS'])->assertUnprocessable();
         $this->assertSame(0, Parceria::count());
     }
 
@@ -86,7 +86,7 @@ class ParceriaRedeTest extends TestCase
         });
         $this->actingAs($this->adminAgencia)->patchJson('http://agencia.test/parcerias/'.$parceria->id.'/responder', ['decisao' => 'aceita'])->assertConflict();
         $this->actingAs($this->adminIndustria)->get('http://marca.test/agencias')->assertOk()->assertSee('Agencia');
-        $this->postJson('http://marca.test/parcerias', ['agencia_rede_id' => $this->perfil->id, 'regiao' => 'RS'])->assertUnprocessable();
+        $this->postJson('http://marca.test/parcerias', ['agencia_rede_id' => $this->perfil->id, 'uf' => 'RS'])->assertUnprocessable();
     }
 
     public function test_recusa_exige_motivo_e_permite_nova_solicitacao(): void
@@ -231,7 +231,7 @@ class ParceriaRedeTest extends TestCase
     {
         $usuario = $this->criarUsuario($this->industria, Perfil::Representante, ['industria_id' => $this->adminIndustria->industria_id]);
         $this->actingAs($usuario)->getJson('http://marca.test/parcerias')->assertForbidden();
-        $this->postJson('http://marca.test/parcerias', ['agencia_rede_id' => $this->perfil->id, 'regiao' => 'RS'])->assertForbidden();
+        $this->postJson('http://marca.test/parcerias', ['agencia_rede_id' => $this->perfil->id, 'uf' => 'RS'])->assertForbidden();
     }
 
     public function test_super_admin_publica_agencia_e_regiao_invalida_nao_e_gravada(): void
@@ -275,5 +275,63 @@ class ParceriaRedeTest extends TestCase
             }
             file_put_contents($pasta.'/'.$nome.'.html', preg_replace('~https?://[^/]+/css/app\.css~', '/app.css', $html));
         }
+    }
+
+    public function test_estado_e_obrigatorio_e_nao_aceita_texto_livre_na_solicitacao(): void
+    {
+        foreach ([['regiao' => 'qualquer lugar'], ['uf' => 'XX'], ['uf' => 'Rio Grande do Sul']] as $extra) {
+            $this->actingAs($this->adminIndustria)->postJson('http://marca.test/parcerias', array_merge(['agencia_rede_id' => $this->perfil->id], $extra))->assertUnprocessable()->assertJsonValidationErrors('uf');
+        }
+        $this->assertSame(0, Parceria::count());
+        $resposta = $this->get('http://marca.test/parcerias')->assertOk()->assertSee('Rio Grande do Sul (RS)')->assertSee('Selecione um estado');
+        $this->salvarPrevia('industria-selecionar-estado', $resposta->getContent());
+    }
+
+    public function test_industria_pode_editar_regiao_pendente_e_agencia_ve_a_alteracao(): void
+    {
+        $parceria = $this->solicitar();
+        $this->patch('http://marca.test/parcerias/'.$parceria->id.'/regiao', ['uf' => 'SC', 'cidade' => 'Chapecó'])->assertSessionHasNoErrors();
+        $parceria->refresh();
+        $this->assertSame('SC', $parceria->uf);
+        $this->assertSame('Chapecó', $parceria->cidade);
+        $this->assertSame('Chapecó, SC', $parceria->regiao);
+        $this->assertSame('Caxias do Sul, RS', $parceria->regiao_anterior);
+        $this->assertSame($this->adminIndustria->id, $parceria->regiao_alterada_por);
+        $this->assertNotNull($parceria->regiao_atualizada_em);
+        $this->assertSame('pendente', $parceria->status);
+        $this->actingAs($this->adminAgencia)->get('http://agencia.test/parcerias')->assertOk()->assertSee('Chapecó, SC')->assertSee('Preferência de região atualizada');
+    }
+
+    public function test_alterar_preferencia_aceita_nao_muda_status_ou_cria_contratos(): void
+    {
+        $parceria = $this->aceitar();
+        $this->actingAs($this->adminIndustria)->patch('http://marca.test/parcerias/'.$parceria->id.'/regiao', ['uf' => 'SP', 'cidade' => ''])->assertSessionHasNoErrors();
+        $this->assertSame('aceita', $parceria->fresh()->status);
+        $this->assertSame('SP', $parceria->fresh()->regiao);
+        $this->assertNull($parceria->fresh()->cidade);
+        $this->industria->run(fn () => $this->assertSame(0, ContratoVisita::count()));
+        $this->get('http://marca.test/parcerias')->assertOk()->assertSee('Editar região');
+    }
+
+    public function test_regiao_so_pode_ser_alterada_pela_industria_dona_e_com_uf_valida(): void
+    {
+        $parceria = $this->solicitar();
+        $this->patchJson('http://marca.test/parcerias/'.$parceria->id.'/regiao', ['uf' => 'XX'])->assertUnprocessable();
+        $this->actingAs($this->adminAgencia)->patchJson('http://agencia.test/parcerias/'.$parceria->id.'/regiao', ['uf' => 'SP'])->assertForbidden();
+        tenancy()->end();
+        $outra = $this->criarCliente('outramarca', 'industria');
+        $this->actingAs($outra->run(fn () => User::first()))->patchJson('http://outramarca.test/parcerias/'.$parceria->id.'/regiao', ['uf' => 'SP'])->assertNotFound();
+        $this->assertSame('RS', $parceria->fresh()->uf);
+    }
+
+    public function test_solicitacao_cancelada_nao_pode_ser_editada_e_reenvio_limpa_aviso(): void
+    {
+        $parceria = $this->solicitar();
+        $this->patch('http://marca.test/parcerias/'.$parceria->id.'/regiao', ['uf' => 'SC'])->assertSessionHasNoErrors();
+        $this->delete('http://marca.test/parcerias/'.$parceria->id)->assertSessionHasNoErrors();
+        $this->patchJson('http://marca.test/parcerias/'.$parceria->id.'/regiao', ['uf' => 'SP'])->assertConflict();
+        $this->post('http://marca.test/parcerias', ['agencia_rede_id' => $this->perfil->id, 'uf' => 'RS'])->assertSessionHasNoErrors();
+        $this->assertSame('RS', $parceria->fresh()->uf);
+        $this->assertNull($parceria->fresh()->regiao_atualizada_em);
     }
 }

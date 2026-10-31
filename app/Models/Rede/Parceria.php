@@ -16,7 +16,7 @@ class Parceria extends Model
 
     protected function casts(): array
     {
-        return ['respondida_em' => 'datetime'];
+        return ['respondida_em' => 'datetime', 'regiao_atualizada_em' => 'datetime'];
     }
 
     public function agencia()

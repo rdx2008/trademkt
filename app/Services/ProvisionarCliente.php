@@ -9,6 +9,7 @@ use App\Models\Industria;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Rede\Parcerias;
+use App\Services\Rede\PerfilAgencia;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -80,7 +81,7 @@ class ProvisionarCliente
             });
             if (! empty($validados['agencia_rede_id'])) {
                 $admin = $tenant->run(fn () => User::where('perfil', Perfil::AdminInstalacao->value)->first()->only(['id', 'industria_id']));
-                app(Parcerias::class)->solicitar($tenant, $admin['industria_id'], $admin['id'], $validados['agencia_rede_id'], $validados['regiao_parceria'], $validados['mensagem_parceria'] ?? null);
+                app(Parcerias::class)->solicitar($tenant, $admin['industria_id'], $admin['id'], $validados['agencia_rede_id'], '', $validados['mensagem_parceria'] ?? null, $validados['regiao_parceria'], $validados['cidade_parceria'] ?? null);
             }
         } catch (Throwable $e) {
             // Desfaz tudo (o evento de exclusão apaga o banco do cliente).
@@ -116,7 +117,8 @@ class ProvisionarCliente
             'admin_email' => ['required', 'email'],
             'admin_senha' => ['nullable', 'string', 'min:8'],
             'agencia_rede_id' => ['nullable', 'integer', Rule::prohibitedIf(($dados['tipo'] ?? null) !== 'industria'), Rule::exists('agencias_rede', 'id')->where('aprovada', true)->where('disponivel', true)],
-            'regiao_parceria' => ['nullable', 'required_with:agencia_rede_id', 'string', 'max:200'],
+            'regiao_parceria' => ['nullable', 'required_with:agencia_rede_id', Rule::in(PerfilAgencia::UFS)],
+            'cidade_parceria' => ['nullable', 'string', 'max:100'],
             'mensagem_parceria' => ['nullable', 'string', 'max:2000'],
         ], [
             'id.regex' => 'O identificador deve começar com letra e ter só letras minúsculas, números e _ (3 a 40).',

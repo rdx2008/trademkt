@@ -49,8 +49,8 @@ class ParceriaController extends Controller
     public function solicitar(Request $request, Parcerias $servico)
     {
         $industria = $servico->industriaDoUsuario($request->user());
-        $dados = $request->validate(['agencia_rede_id' => ['required', 'integer'], 'regiao' => ['required', 'string', 'max:200'], 'mensagem' => ['nullable', 'string', 'max:2000']]);
-        $servico->solicitar(tenant(), $industria, $request->user()->id, $dados['agencia_rede_id'], $dados['regiao'], $dados['mensagem'] ?? null);
+        $dados = $request->validate(['agencia_rede_id' => ['required', 'integer'], 'uf' => ['required', Rule::in(PerfilAgencia::UFS)], 'cidade' => ['nullable', 'string', 'max:100'], 'mensagem' => ['nullable', 'string', 'max:2000']]);
+        $servico->solicitar(tenant(), $industria, $request->user()->id, $dados['agencia_rede_id'], '', $dados['mensagem'] ?? null, $dados['uf'], $dados['cidade'] ?? null);
 
         return redirect()->route('parcerias.index')->with('status', 'Solicitação enviada. Aguarde a resposta da agência.');
     }
@@ -62,6 +62,23 @@ class ParceriaController extends Controller
         $servico->responder($parceria, $perfil, $request->user(), $dados['decisao'], $dados['resposta'] ?? null);
 
         return back()->with('status', $dados['decisao'] === 'aceita' ? 'Parceria aceita. Os contratos de PDVs são definidos separadamente.' : 'Solicitação recusada.');
+    }
+
+    public function regiao(Request $request, Parceria $parceria, Parcerias $servico)
+    {
+        $industria = $servico->industriaDoUsuario($request->user());
+        abort_unless($parceria->industria_tenant_id === tenant('id') && $parceria->industria_local_id === $industria, 404);
+        $dados = $request->validate(['uf' => ['required', Rule::in(PerfilAgencia::UFS)], 'cidade' => ['nullable', 'string', 'max:100']]);
+        DB::connection(config('tenancy.database.central_connection'))->transaction(function () use ($parceria, $dados, $request) {
+            $parceria = Parceria::lockForUpdate()->findOrFail($parceria->id);
+            abort_unless(in_array($parceria->status, ['pendente', 'aceita'], true), 409, 'Reenvie a solicitação para alterar uma parceria recusada ou cancelada.');
+            $cidade = trim((string) ($dados['cidade'] ?? '')) ?: null;
+            if ($parceria->uf !== $dados['uf'] || $parceria->cidade !== $cidade) {
+                $parceria->update(['uf' => $dados['uf'], 'cidade' => $cidade, 'regiao' => $cidade ? $cidade.', '.$dados['uf'] : $dados['uf'], 'regiao_anterior' => $parceria->regiao, 'regiao_atualizada_em' => now(), 'regiao_alterada_por' => $request->user()->id]);
+            }
+        });
+
+        return back()->with('status', 'Preferência de região salva e disponível para a agência. Contratos e roteiros não foram alterados.');
     }
 
     public function cancelar(Request $request, Parceria $parceria, Parcerias $servico)

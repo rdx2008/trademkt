@@ -46,6 +46,7 @@ Route::middleware([
 
     Route::middleware(['auth', EnsureAcessoParceiro::class])->group(function () {
         Route::get('/parcerias', [ParceriaController::class, 'index'])->name('parcerias.index');
+        Route::patch('/parcerias/{parceria}/regiao', [ParceriaController::class, 'regiao'])->whereNumber('parceria')->name('parcerias.regiao');
         Route::post('/parcerias', [ParceriaController::class, 'solicitar'])->name('parcerias.solicitar');
         Route::patch('/parcerias/{parceria}/responder', [ParceriaController::class, 'responder'])->whereNumber('parceria')->name('parcerias.responder');
         Route::delete('/parcerias/{parceria}', [ParceriaController::class, 'cancelar'])->whereNumber('parceria')->name('parcerias.cancelar');

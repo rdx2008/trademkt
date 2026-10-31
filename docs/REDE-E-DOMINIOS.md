@@ -13,7 +13,9 @@ por este modelo, conforme aprovado pelo dono.
 2. Em **Rede de agências**, cadastra o perfil, contato comercial, cobertura e aprovação.
 3. A indústria pode escolher uma agência no cadastro inicial (opcional) ou depois em
    **Buscar agências**. A escolha envia uma solicitação, nunca um aceite automático.
-4. A indústria informa a região desejada e uma mensagem. O filtro de município exige UF;
+4. A indústria seleciona o estado desejado numa lista de UFs e nomes completos; pode informar
+   um município e uma mensagem. O mesmo seletor aparece no cadastro inicial do super admin.
+   O filtro de município exige UF;
    a busca ignora diferenças de maiúsculas e acentuação. Cobertura estadual inclui os municípios.
 5. A agência entra na própria instalação e abre **Parcerias com indústrias** para aceitar
    ou recusar. Recusa exige motivo. A indústria pode cancelar apenas uma solicitação pendente.
@@ -22,6 +24,14 @@ por este modelo, conforme aprovado pelo dono.
 7. A indústria define os contratos de PDVs com a agência aceita. A agência usa **Abrir operação
    da indústria** para gerenciar sua equipe local, ajustar frequências e montar roteiros.
    Cadastros de PDVs e produtos e novos contratos continuam sob administração da indústria.
+
+A indústria pode usar **Editar região** em suas solicitações pendentes ou parcerias aceitas.
+UF é obrigatória e validada; município é opcional. A agência vê a última alteração, com a
+preferência anterior e a data. Alterar essa preferência não modifica o aceite, a cobertura
+declarada da agência, os PDVs, os contratos ou os roteiros. Novo atendimento precisa ser
+combinado com a agência e refletido nos contratos. Solicitações recusadas ou canceladas devem
+ser reenviadas para informar uma nova região. Dados antigos em texto livre são preservados;
+ao editar, o usuário escolhe explicitamente o estado.
 
 Administradores da agência autorizados na instalação de origem podem abrir as operações das
 parcerias aceitas sem compartilhar senhas. Cada operação mantém sua própria equipe local.

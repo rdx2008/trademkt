@@ -33,11 +33,16 @@ class Parcerias
         return (int) $id;
     }
 
-    public function solicitar(Tenant $industria, int $industriaId, int $usuarioId, int $agenciaId, string $regiao, ?string $mensagem): Parceria
+    public function solicitar(Tenant $industria, int $industriaId, int $usuarioId, int $agenciaId, string $regiao, ?string $mensagem, ?string $uf = null, ?string $cidade = null): Parceria
     {
         abort_unless($industria->tipo === TipoInstalacao::Industria && $industria->ativo, 403);
 
-        return DB::connection(config('tenancy.database.central_connection'))->transaction(function () use ($industria, $industriaId, $usuarioId, $agenciaId, $regiao, $mensagem) {
+        if ($uf !== null) {
+            $cidade = trim((string) $cidade) ?: null;
+            $regiao = $cidade ? $cidade.', '.$uf : $uf;
+        }
+
+        return DB::connection(config('tenancy.database.central_connection'))->transaction(function () use ($industria, $industriaId, $usuarioId, $agenciaId, $regiao, $mensagem, $uf, $cidade) {
             $agencia = AgenciaRede::whereKey($agenciaId)->where('aprovada', true)->where('disponivel', true)
                 ->whereHas('tenant', fn ($q) => $q->where('ativo', true)->where('tipo', 'agencia'))->lockForUpdate()->first();
             if (! $agencia) {
@@ -48,7 +53,7 @@ class Parcerias
             if ($parceria->exists && in_array($parceria->status, ['pendente', 'aceita'], true)) {
                 throw ValidationException::withMessages(['agencia_rede_id' => 'Já existe uma parceria aceita ou uma solicitação pendente para esta agência.']);
             }
-            $parceria->fill(['status' => 'pendente', 'regiao' => $regiao, 'mensagem' => $mensagem, 'solicitante_id' => $usuarioId, 'respondente_id' => null, 'resposta' => null, 'respondida_em' => null])->save();
+            $parceria->fill(['status' => 'pendente', 'regiao' => $regiao, 'uf' => $uf, 'cidade' => $cidade, 'regiao_anterior' => null, 'regiao_atualizada_em' => null, 'regiao_alterada_por' => null, 'mensagem' => $mensagem, 'solicitante_id' => $usuarioId, 'respondente_id' => null, 'resposta' => null, 'respondida_em' => null])->save();
 
             return $parceria;
         });
