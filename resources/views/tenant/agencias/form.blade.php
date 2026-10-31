@@ -1,8 +1,10 @@
 @php($editando = $agencia->exists)
-<x-layout :titulo="$editando ? 'Editar agência' : 'Nova agência'" :marca="tenant('nome')">
+@php($interna = tenant()->tipo === \App\Enums\TipoInstalacao::Industria)
+@php($titulo = $editando ? ($interna ? 'Editar agência interna' : 'Editar agência') : ($interna ? 'Nova agência interna' : 'Nova agência'))
+<x-layout :titulo="$titulo" :marca="tenant('nome')">
     <x-slot:nav>@include('tenant.nav')</x-slot:nav>
 
-    <h1>{{ $editando ? 'Editar agência' : 'Nova agência' }}</h1>
+    <h1>{{ $titulo }}</h1>
 
     <form method="POST" action="{{ $editando ? route('agencias.update', $agencia) : route('agencias.store') }}" class="cartao">
         @csrf

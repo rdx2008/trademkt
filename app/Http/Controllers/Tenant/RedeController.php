@@ -18,6 +18,6 @@ class RedeController extends CadastroSimplesController
 
     protected function rotulos(): array
     {
-        return ['singular' => 'Rede', 'plural' => 'Redes', 'novo' => 'Nova rede', 'feminino' => true];
+        return ['singular' => 'Rede de supermercados', 'plural' => 'Redes de supermercados', 'novo' => 'Nova rede de supermercados', 'feminino' => true];
     }
 }

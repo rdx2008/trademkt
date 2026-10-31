@@ -14,7 +14,7 @@
     <form method="GET" class="filtros">
         <input type="search" name="busca" value="{{ request('busca') }}" placeholder="Nome, CNPJ, cidade ou bairro">
         <select name="rede_id">
-            <option value="">Todas as redes</option>
+            <option value="">Todas as redes de supermercados</option>
             @foreach ($redes as $id => $nome)
                 <option value="{{ $id }}" @selected((string) request('rede_id') === (string) $id)>{{ $nome }}</option>
             @endforeach

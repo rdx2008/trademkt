@@ -1,10 +1,11 @@
-<x-layout titulo="Agências" :marca="tenant('nome')">
+@php($interna = tenant()->tipo === \App\Enums\TipoInstalacao::Industria)
+<x-layout :titulo="$interna ? 'Agências internas' : 'Agências'" :marca="tenant('nome')">
     <x-slot:nav>@include('tenant.nav')</x-slot:nav>
 
     <div class="cabecalho">
-        <h1>Agências</h1>
+        <h1>{{ $interna ? 'Agências internas' : 'Agências' }}</h1>
         @if ($podeCadastrar)
-            <a class="botao" href="{{ route('agencias.create') }}">Nova agência</a>
+            <a class="botao" href="{{ route('agencias.create') }}">{{ $interna ? 'Nova agência interna' : 'Nova agência' }}</a>
         @endif
     </div>
 

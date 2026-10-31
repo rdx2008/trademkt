@@ -16,7 +16,7 @@
             ['Consultar PDVs', 'Confira endereços e localização', route('pdvs.index')],
         ],
         \App\Enums\Perfil::GerenteTrade => [
-            ['Agências prestadoras', 'Consulte as responsáveis pela sua marca', route('agencias.index')],
+            [tenant()->tipo === \App\Enums\TipoInstalacao::Industria ? 'Agências internas' : 'Agências prestadoras', 'Consulte as responsáveis pela sua marca', route('agencias.index')],
             ['Catálogo da indústria', 'Organize produtos e embalagens', route('skus.index')],
             ['Representantes e equipe', 'Consulte os acessos da sua operação', route('usuarios.index')],
         ],

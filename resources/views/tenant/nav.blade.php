@@ -17,11 +17,11 @@
     <a href="{{ route('roteiros.semana') }}" @class(['ativo' => request()->routeIs('roteiros.*')])>Roteiros</a>
     <a href="{{ route('contratos.index') }}" @class(['ativo' => request()->routeIs('contratos.*')])>Contratos</a>
     <a href="{{ route('skus.index') }}" @class(['ativo' => request()->routeIs('skus.*')])>Catálogo</a>
-    <a href="{{ route('agencias.index') }}" @class(['ativo' => request()->routeIs('agencias.*')])>Agências</a>
+    <a href="{{ route('agencias.index') }}" @class(['ativo' => request()->routeIs('agencias.*')])>{{ tenant()->tipo === \App\Enums\TipoInstalacao::Industria ? 'Agências internas' : 'Agências' }}</a>
 @endif
 @if ($eu->temPerfil(\App\Enums\Perfil::AdminInstalacao, \App\Enums\Perfil::AdminAgencia) && ! $eu->agenciaDaRede())
     <a href="{{ route('regioes.index') }}" @class(['ativo' => request()->routeIs('regioes.*')])>Regiões</a>
-    <a href="{{ route('redes.index') }}" @class(['ativo' => request()->routeIs('redes.*')])>Redes</a>
+    <a href="{{ route('redes.index') }}" @class(['ativo' => request()->routeIs('redes.*')])>Redes de supermercados</a>
 @endif
 @if ($eu->temPerfil(\App\Enums\Perfil::AdminInstalacao))
     <a href="{{ route('industrias.index') }}" @class(['ativo' => request()->routeIs('industrias.*')])>Indústrias</a>

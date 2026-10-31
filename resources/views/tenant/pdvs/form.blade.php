@@ -26,7 +26,7 @@
 
         <div class="linha">
             <div class="campo">
-                <label for="rede_id">Rede</label>
+                <label for="rede_id">Rede de supermercados</label>
                 <select id="rede_id" name="rede_id">
                     <option value="">—</option>
                     @foreach ($redes as $id => $nome)
