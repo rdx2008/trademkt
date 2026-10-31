@@ -80,6 +80,10 @@ php artisan tenants:migrate
 
 ## Estado
 
+- Fase 3 iniciada (`docs/FASE-3.md`): 3.1 implementado, API de check-in por GPS com
+  validação de raio no servidor, registro dos horários e reenvio idempotente.
+  Próximo item: 3.2, fotos antes/depois, SKUs trabalhados e conclusão da visita.
+
 - Fase 1 concluída: `composer install` ok, `composer.lock` commitado, `php artisan test` verde (24 testes).
   Antes de rodar os testes num clone novo: `cp .env.example .env`.
 - Fase 2 em andamento: feitos 2.1 (regiões, redes, PDVs, importação por planilha, vínculos),

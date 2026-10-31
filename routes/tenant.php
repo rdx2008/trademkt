@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\AuthController as ApiAuthController;
+use App\Http\Controllers\Api\CheckInController;
 use App\Http\Controllers\Api\RoteiroController as ApiRoteiroController;
 use App\Http\Controllers\Tenant\AgenciaController;
 use App\Http\Controllers\Tenant\AuthController;
@@ -133,6 +134,8 @@ Route::middleware([
         Route::get('/me', [ApiAuthController::class, 'me'])->name('me');
         Route::post('/logout', [ApiAuthController::class, 'logout'])->name('logout');
         Route::get('/roteiro', [ApiRoteiroController::class, 'show'])->name('roteiro');
+        Route::post('/visitas/{visita}/check-in', CheckInController::class)
+            ->whereNumber('visita')->name('visitas.check-in');
         Route::get('/skus/{sku}/foto', [ApiRoteiroController::class, 'fotoSku'])->name('skus.foto');
     });
 });

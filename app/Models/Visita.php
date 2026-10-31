@@ -37,6 +37,7 @@ class Visita extends Model
             'origem' => OrigemVisita::class,
             'status' => StatusVisita::class,
             'ordem' => 'integer',
+            'check_in' => 'array',
         ];
     }
 

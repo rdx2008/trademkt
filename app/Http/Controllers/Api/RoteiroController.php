@@ -67,6 +67,7 @@ class RoteiroController extends Controller
                 'ordem' => $i + 1,
                 'origem' => $v->origem->value,
                 'status' => $v->status->value,
+                'check_in' => $v->check_in,
                 'industria_id' => $v->industria_id,
                 'pdv' => [
                     'id' => $v->pdv->id,
