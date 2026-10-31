@@ -48,6 +48,16 @@ promotor. A indústria sempre solicita à sua agência, que verifica e atribui a
 
 Na instalação de agência, cada usuário da indústria enxerga só os SKUs e PDVs da sua marca.
 
+### Painéis por nível
+
+O super admin tem uma visão central das instalações e domínios, separada dos bancos dos clientes.
+Todos os perfis do cliente têm uma página inicial responsiva com os dados permitidos ao seu nível:
+admin da instalação (indústria ou agência), gerente de trade, admin da agência, supervisor,
+representante comercial, promotor e gerente do supermercado. O painel do representante resume
+sua carteira; o do supermercado resume as lojas vinculadas. O promotor dispõe de uma consulta
+web complementar do próprio roteiro; a execução offline continua sendo feita pelo app Android.
+Detalhamento dos painéis e limites dos módulos: `docs/PAINEIS.md`.
+
 ### Visibilidade da indústria sobre a agência
 
 - O contrato de visita registra o vínculo entre indústria e agência responsável, inclusive

@@ -1,27 +1,43 @@
-<x-layout titulo="Painel" :marca="$cliente->nome">
+<x-layout :titulo="$titulo" :marca="$cliente->nome">
     <x-slot:nav>@include('tenant.nav')</x-slot:nav>
-
-    <h1>Olá, {{ $usuario->nome }}</h1>
-
-    @if ($contagem)
-        <div class="grade">
-            @foreach ($contagem as $rotulo => $numero)
-                <div class="cartao">
-                    <div class="numero">{{ $numero }}</div>
-                    <div class="rotulo">{{ $rotulo }}</div>
-                </div>
-            @endforeach
-        </div>
-    @endif
-
-    <div class="cartao">
-        <p><strong>Perfil:</strong> {{ $usuario->perfil->label() }}</p>
-        @if ($usuario->industria)
-            <p><strong>Indústria:</strong> {{ $usuario->industria->nome }}</p>
-        @endif
-        @if ($usuario->agencia)
-            <p><strong>Agência:</strong> {{ $usuario->agencia->nome }}</p>
-        @endif
-        <p class="rotulo">Visitas, rupturas e indicadores entram nas próximas fases.</p>
+    <div class="painel-cabecalho">
+        <div><div class="sobretitulo">{{ $usuario->perfil->label() }} / {{ $cliente->nome }}</div><h1>{{ $titulo }}</h1><p class="texto-apoio">{{ $descricao }}</p></div>
+        <form method="GET" action="{{ route('dashboard') }}" class="seletor-dia"><label for="painel-data">Dia da operação</label><div class="acoes"><input id="painel-data" type="date" name="data" value="{{ $data->toDateString() }}" required><button class="botao" type="submit">Consultar</button></div></form>
     </div>
+    <div class="painel-boas-vindas"><div><span class="sobretitulo">SEU DIA, EM FOCO</span><h2>Olá, {{ $usuario->nome }}.</h2><p>{{ $data->translatedFormat('l, d \d\e F \d\e Y') }}</p></div><div class="progresso-resumo"><strong>{{ $resumo['percentual'] }}<small>%</small></strong><span>das visitas do dia realizadas</span><span>{{ $resumo['realizadas'] }} de {{ $resumo['total'] }} visitas</span></div></div>
+    <section class="grade indicadores" aria-label="Resumo das visitas do dia">
+        @foreach ([['Visitas no dia', $resumo['total'], 'Total da agenda selecionada', 'neutro'], ['Realizadas', $resumo['realizadas'], 'Visitas com status realizado', 'verde'], ['Em andamento', $resumo['emAndamento'], 'Atendimentos iniciados', 'azul'], ['Em atenção', $resumo['emAtencao'], 'Visitas que precisam de acompanhamento', 'amarelo']] as [$rotulo, $numero, $ajuda, $cor])
+            <article class="cartao indicador {{ $cor }}"><span class="rotulo">{{ $rotulo }}</span><strong class="numero">{{ $numero }}</strong><span class="indicador-ajuda">{{ $ajuda }}</span></article>
+        @endforeach
+    </section>
+    <section class="painel-atalhos" aria-label="Ações do seu perfil">
+        @include('tenant.painel.atalhos')
+    </section>
+    <div class="painel-colunas">
+        <section class="cartao"><div class="secao-titulo"><div><h2>Agenda dos últimos 7 dias</h2><p class="rotulo">Volume de visitas até {{ $data->format('d/m') }}</p></div><span class="selo">{{ $resumo['semana']->sum('total') }} visitas</span></div>
+            <div class="grafico-colunas" role="img" aria-label="Visitas por dia nos últimos sete dias">
+                @foreach ($resumo['semana'] as $dia)<div class="grafico-coluna"><strong>{{ $dia['total'] }}</strong><div class="grafico-trilho"><div class="grafico-barra" style="height: {{ $dia['total'] ? max(4, round($dia['total'] / max(1, $resumo['semana']->max('total')) * 100)) : 0 }}%"></div></div><span>{{ $dia['dia'] }}</span></div>@endforeach
+            </div>
+        </section>
+        <section class="cartao"><div class="secao-titulo"><div><h2>Situação do dia</h2><p class="rotulo">{{ $data->format('d/m/Y') }} · {{ $resumo['total'] }} visitas</p></div></div><div class="situacoes">
+            @foreach ($resumo['estados'] as $estado)<a class="situacao-item" href="{{ route('dashboard', ['data' => $data->toDateString(), 'status' => $estado['valor']]) }}#visitas-do-dia"><span class="ponto status-{{ $estado['valor'] }}"></span><span>{{ $estado['rotulo'] }}</span><strong>{{ $estado['total'] }}</strong></a>@endforeach
+        </div></section>
+    </div>
+    @if ($resumo['semPromotor'] || $resumo['pendentesAnteriores'])<section class="painel-pendencias" aria-label="Pontos de atenção"><strong>Pontos de atenção</strong>@if ($resumo['semPromotor'])<span>{{ $resumo['semPromotor'] }} visita(s) do dia sem promotor atribuído.</span>@endif @if ($resumo['pendentesAnteriores'])<span>{{ $resumo['pendentesAnteriores'] }} visita(s) dos 6 dias anteriores continuam previstas.</span>@endif @if ($usuario->temPerfil(\App\Enums\Perfil::AdminAgencia, \App\Enums\Perfil::Supervisor))<a href="{{ route('roteiros.semana', ['semana' => $data->copy()->startOfWeek()->toDateString()]) }}">Abrir roteiros →</a>@endif</section>@endif
+    @if ($usuario->perfil === \App\Enums\Perfil::GerentePdv)
+        <section id="minhas-lojas" class="secao-painel"><div class="secao-titulo"><div><h2>Lojas e marcas atendidas</h2><p class="rotulo">Contratos vigentes na data selecionada</p></div></div><div class="grade lojas-grade">
+            @forelse ($resumo['lojas'] as $loja)<article class="cartao loja-cartao"><span class="sobretitulo">PONTO DE VENDA</span><h3>{{ $loja->nome }}</h3><p class="rotulo">{{ $loja->enderecoCompleto() }}</p>@forelse ($loja->contratos as $contrato)<div class="marca-atendida"><strong>{{ $contrato->industria->nome }}</strong><span>{{ $contrato->agencia->nome }} · {{ $contrato->diasRotulo() }}</span></div>@empty<p class="rotulo">Nenhuma marca com contrato vigente nesta data.</p>@endforelse</article>
+            @empty<div class="cartao estado-vazio"><h3>Nenhuma loja vinculada</h3><p>Peça ao administrador para vincular seu usuário aos PDVs que você gerencia.</p></div>@endforelse
+        </div>{{ $resumo['lojas']->links('components.paginacao') }}</section>
+    @endif
+    <section id="visitas-do-dia" class="cartao secao-painel agenda-cartao">
+        <div class="secao-titulo"><div><h2>{{ $usuario->perfil === \App\Enums\Perfil::Promotor ? 'Meus atendimentos' : 'Visitas do dia' }}</h2><p class="rotulo">{{ $resumo['visitas']->total() }} atendimento(s) {{ $filtroStatus ? 'com o filtro aplicado' : 'na data selecionada' }}</p></div><form method="GET" action="{{ route('dashboard') }}#visitas-do-dia" class="filtro-situacao"><input type="hidden" name="data" value="{{ $data->toDateString() }}"><label for="painel-status" class="sr-only">Filtrar situação</label><select name="status" id="painel-status"><option value="">Todas as situações</option>@foreach ($resumo['estados'] as $estado)<option value="{{ $estado['valor'] }}" @selected($filtroStatus === $estado['valor'])>{{ $estado['rotulo'] }}</option>@endforeach</select><button type="submit" class="botao secundario">Filtrar</button></form></div>
+        <div class="tabela-rolagem"><table><thead><tr><th scope="col">Ponto de venda</th><th scope="col">Indústria / agência</th><th scope="col">Promotor</th><th scope="col">Situação</th><th scope="col">Check-in</th></tr></thead><tbody>
+            @forelse ($resumo['visitas'] as $visita)<tr><td><strong>{{ $visita->pdv->nome }}</strong><div class="rotulo endereco-agenda">{{ $visita->pdv->enderecoCompleto() }}</div></td><td>{{ $visita->industria->nome }}<div class="rotulo">{{ $visita->agencia->nome }}</div></td><td>{{ $visita->roteiro?->promotor?->nome ?? 'A atribuir' }}</td><td><span class="selo estado-{{ $visita->status->value }}">{{ $visita->status->label() }}</span></td><td>{{ $visita->check_in ? \Illuminate\Support\Carbon::parse($visita->check_in['gps_em'])->timezone(config('app.timezone'))->format('H:i') : '—' }}</td></tr>
+            @empty<tr><td colspan="5"><div class="estado-vazio"><span class="vazio-marca" aria-hidden="true">✓</span><h3>{{ $filtroStatus ? 'Nenhuma visita nesta situação' : 'Nenhuma visita nesta data' }}</h3><p>{{ $usuario->perfil === \App\Enums\Perfil::Promotor ? 'As visitas aparecem aqui quando o supervisor atribui seu roteiro.' : 'Selecione outro dia para consultar a agenda da operação.' }}</p>@if ($filtroStatus)<a href="{{ route('dashboard', ['data' => $data->toDateString()]) }}#visitas-do-dia">Limpar filtro</a>@endif</div></td></tr>@endforelse
+        </tbody></table></div>{{ $resumo['visitas']->links('components.paginacao') }}
+    </section>
+    @unless ($usuario->perfil === \App\Enums\Perfil::Promotor)<section class="secao-painel"><div class="secao-titulo"><div><h2>Base da operação</h2><p class="rotulo">Cadastros dentro do seu acesso · contratos vigentes na data consultada</p></div></div><div class="grade base-operacao">@foreach ($resumo['cadastros'] as $rotulo => $numero)@if ($numero !== null)<div class="cartao"><strong class="numero">{{ $numero }}</strong><span class="rotulo">{{ $rotulo }}</span></div>@endif @endforeach</div></section>@endunless
+    @if ($usuario->perfil === \App\Enums\Perfil::GerentePdv)<p class="nota-painel">Pedidos de visita e avisos de ruptura serão disponibilizados na etapa de demandas e alertas.</p>@endif
+    @if ($usuario->temPerfil(\App\Enums\Perfil::GerenteTrade, \App\Enums\Perfil::Representante))<p class="nota-painel">A atribuição de visitas aos promotores é feita pela agência responsável.</p>@endif
 </x-layout>

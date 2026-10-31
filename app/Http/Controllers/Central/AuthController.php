@@ -29,7 +29,7 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('central.clientes.index'));
+        return redirect()->intended(route('central.dashboard'));
     }
 
     public function destroy(Request $request): RedirectResponse

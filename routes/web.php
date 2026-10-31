@@ -2,13 +2,14 @@
 
 use App\Http\Controllers\Central\AuthController;
 use App\Http\Controllers\Central\ClienteController;
+use App\Http\Controllers\Central\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 /*
  * Painel central do fornecedor (só nos domínios em CENTRAL_DOMAINS).
  */
 
-Route::redirect('/', '/clientes');
+Route::redirect('/', '/visao-geral');
 
 Route::middleware('guest:admin')->group(function () {
     Route::get('/entrar', [AuthController::class, 'create'])->name('central.login');
@@ -16,6 +17,7 @@ Route::middleware('guest:admin')->group(function () {
 });
 
 Route::middleware('auth:admin')->group(function () {
+    Route::get('/visao-geral', DashboardController::class)->name('central.dashboard');
     Route::post('/sair', [AuthController::class, 'destroy'])->name('central.logout');
 
     Route::get('/clientes', [ClienteController::class, 'index'])->name('central.clientes.index');

@@ -80,6 +80,10 @@ php artisan tenants:migrate
 
 ## Estado
 
+- Painéis por nível implementados (`docs/PAINEIS.md`): super admin em `/visao-geral`,
+  todos os perfis do cliente em `/painel`, com resumo por data, gráficos de agenda,
+  filtros e atalhos autorizados. Promotor tem consulta web complementar; execução segue no app.
+
 - Fase 3 iniciada (`docs/FASE-3.md`): 3.1 implementado, API de check-in por GPS com
   validação de raio no servidor, registro dos horários e reenvio idempotente.
   Próximo item: 3.2, fotos antes/depois, SKUs trabalhados e conclusão da visita.

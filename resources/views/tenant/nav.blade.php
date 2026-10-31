@@ -1,5 +1,5 @@
 @php($eu = auth()->user())
-<a href="{{ route('dashboard') }}" @class(['ativo' => request()->routeIs('dashboard')])>Painel</a>
+<a href="{{ route('dashboard') }}" @class(['ativo' => request()->routeIs('dashboard')])>{{ match ($eu->perfil) { \App\Enums\Perfil::Promotor => 'Minha agenda', \App\Enums\Perfil::GerentePdv => 'Minhas lojas', \App\Enums\Perfil::Representante => 'Minha carteira', default => 'Visão geral' } }}</a>
 @if ($eu->temPerfil(\App\Enums\Perfil::AdminInstalacao, \App\Enums\Perfil::AdminAgencia, \App\Enums\Perfil::GerenteTrade))
     <a href="{{ route('usuarios.index') }}" @class(['ativo' => request()->routeIs('usuarios.*')])>Usuários</a>
 @endif
