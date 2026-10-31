@@ -310,7 +310,7 @@ class ParceriaRedeTest extends TestCase
         $this->assertSame('SP', $parceria->fresh()->regiao);
         $this->assertNull($parceria->fresh()->cidade);
         $this->industria->run(fn () => $this->assertSame(0, ContratoVisita::count()));
-        $this->get('http://marca.test/parcerias')->assertOk()->assertSee('Editar região');
+        $this->get('http://marca.test/parcerias')->assertOk()->assertSee('Editar regiões');
     }
 
     public function test_regiao_so_pode_ser_alterada_pela_industria_dona_e_com_uf_valida(): void
@@ -333,5 +333,70 @@ class ParceriaRedeTest extends TestCase
         $this->post('http://marca.test/parcerias', ['agencia_rede_id' => $this->perfil->id, 'uf' => 'RS'])->assertSessionHasNoErrors();
         $this->assertSame('RS', $parceria->fresh()->uf);
         $this->assertNull($parceria->fresh()->regiao_atualizada_em);
+    }
+
+    public function test_solicita_varios_estados_e_municipios_para_a_mesma_agencia(): void
+    {
+        $regioes = [['uf' => 'RS'], ['uf' => 'SC', 'cidade' => 'Chapecó'], ['uf' => 'SC', 'cidade' => 'Joaçaba']];
+        $this->actingAs($this->adminIndustria)->post('http://marca.test/parcerias', ['agencia_rede_id' => $this->perfil->id, 'regioes' => $regioes])->assertSessionHasNoErrors();
+        $parceria = Parceria::sole();
+        $this->assertSame([['uf' => 'RS', 'cidade' => null], ['uf' => 'SC', 'cidade' => 'Chapecó'], ['uf' => 'SC', 'cidade' => 'Joaçaba']], $parceria->regioesInteresse());
+        $this->assertSame('RS; Chapecó, SC; Joaçaba, SC', $parceria->regioesRotulo());
+        $this->actingAs($this->adminAgencia)->get('http://agencia.test/parcerias')->assertOk()->assertSee('RS; Chapecó, SC; Joaçaba, SC');
+    }
+
+    public function test_edita_lista_completa_sem_alterar_parceria_de_outra_agencia(): void
+    {
+        $parceria = $this->aceitar();
+        tenancy()->end();
+        $segunda = $this->criarCliente('segunda', 'agencia');
+        $admin = $segunda->run(fn () => User::first());
+        $perfil = new AgenciaRede(['tenant_id' => 'segunda', 'agencia_local_id' => $admin->agencia_id]);
+        app(PerfilAgencia::class)->salvar($perfil, ['regioes' => "SP\nPR", 'aprovada' => true, 'disponivel' => true], true);
+        $this->actingAs($this->adminIndustria)->post('http://marca.test/parcerias', ['agencia_rede_id' => $perfil->id, 'regioes' => [['uf' => 'SP'], ['uf' => 'PR']]])->assertSessionHasNoErrors();
+        $outra = Parceria::where('agencia_rede_id', $perfil->id)->sole();
+        $this->patch('http://marca.test/parcerias/'.$parceria->id.'/regiao', ['regioes' => [['uf' => 'RS'], ['uf' => 'SC']]])->assertSessionHasNoErrors();
+        $this->assertSame('RS; SC', $parceria->fresh()->regioesRotulo());
+        $this->assertSame('aceita', $parceria->fresh()->status);
+        $this->assertSame('Caxias do Sul, RS', $parceria->fresh()->regioesAnterioresRotulo());
+        $this->assertSame('SP; PR', $outra->fresh()->regioesRotulo());
+        $resposta = $this->get('http://marca.test/parcerias')->assertOk()->assertSee('Adicionar região')->assertSee('Editar regiões');
+        $this->salvarPrevia('industria-multiplas-regioes', $resposta->getContent());
+    }
+
+    public function test_rejeita_listas_vazias_invalidas_duplicadas_ou_excessivas(): void
+    {
+        foreach ([[], [['uf' => 'XX']], [['uf' => 'RS'], ['uf' => 'RS']], [['uf' => 'SC', 'cidade' => 'Chapecó'], ['uf' => 'SC', 'cidade' => ' chapeco ']], array_fill(0, 31, ['uf' => 'RS'])] as $regioes) {
+            $this->actingAs($this->adminIndustria)->postJson('http://marca.test/parcerias', ['agencia_rede_id' => $this->perfil->id, 'regioes' => $regioes])->assertUnprocessable();
+        }
+        $this->assertSame(0, Parceria::count());
+    }
+
+    public function test_cadastro_inicial_aceita_lista_de_regioes(): void
+    {
+        $admin = Admin::create(['nome' => 'Admin central', 'email' => 'rede@central.test', 'password' => 'senha1234']);
+        $this->actingAs($admin, 'admin')->post('http://central.test/clientes', ['id' => 'novamarca', 'nome' => 'Nova marca', 'tipo' => 'industria', 'tipo_endereco' => 'subdominio', 'subdominio' => 'novamarca', 'admin_nome' => 'Gestor', 'admin_email' => 'gestor@novamarca.test', 'agencia_rede_id' => $this->perfil->id, 'regioes_parceria' => [['uf' => 'RS'], ['uf' => 'SC']]])->assertSessionHasNoErrors();
+        $this->assertSame('RS; SC', Parceria::sole()->regioesRotulo());
+        $this->assertSame('pendente', Parceria::sole()->status);
+    }
+
+    public function test_listas_longas_nao_perdem_dados_e_resumo_cabe_na_coluna_legada(): void
+    {
+        $regioes = array_map(fn ($letra) => ['uf' => 'RS', 'cidade' => str_repeat($letra, 100)], ['A', 'B', 'C']);
+        $this->actingAs($this->adminIndustria)->post('http://marca.test/parcerias', ['agencia_rede_id' => $this->perfil->id, 'regioes' => $regioes])->assertSessionHasNoErrors();
+        $parceria = Parceria::sole();
+        $this->assertSame($regioes, $parceria->regioesInteresse());
+        $this->assertLessThanOrEqual(200, mb_strlen($parceria->regiao));
+        $this->assertGreaterThan(200, mb_strlen($parceria->regioesRotulo()));
+    }
+
+    public function test_migracao_preserva_regiao_unica_ja_cadastrada(): void
+    {
+        $parceria = $this->solicitar();
+        tenancy()->end();
+        $migracao = require database_path('migrations/2026_10_31_000005_permitir_multiplas_regioes_por_parceria.php');
+        $migracao->down();
+        $migracao->up();
+        $this->assertSame([['uf' => 'RS', 'cidade' => 'Caxias do Sul']], $parceria->fresh()->regioesInteresse());
     }
 }

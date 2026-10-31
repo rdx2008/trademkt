@@ -45,6 +45,7 @@ class ClienteController extends Controller
             'agencia_rede_id' => $request->input('agencia_rede_id'),
             'regiao_parceria' => $request->input('regiao_parceria'),
             'cidade_parceria' => $request->input('cidade_parceria'),
+            'regioes_parceria' => $request->input('regioes_parceria'),
             'mensagem_parceria' => $request->input('mensagem_parceria'),
         ]);
 

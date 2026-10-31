@@ -9,6 +9,7 @@ use App\Models\Rede\AgenciaRede;
 use App\Models\Rede\Parceria;
 use App\Services\Rede\Parcerias;
 use App\Services\Rede\PerfilAgencia;
+use App\Services\Rede\RegioesParceria;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -49,8 +50,9 @@ class ParceriaController extends Controller
     public function solicitar(Request $request, Parcerias $servico)
     {
         $industria = $servico->industriaDoUsuario($request->user());
-        $dados = $request->validate(['agencia_rede_id' => ['required', 'integer'], 'uf' => ['required', Rule::in(PerfilAgencia::UFS)], 'cidade' => ['nullable', 'string', 'max:100'], 'mensagem' => ['nullable', 'string', 'max:2000']]);
-        $servico->solicitar(tenant(), $industria, $request->user()->id, $dados['agencia_rede_id'], '', $dados['mensagem'] ?? null, $dados['uf'], $dados['cidade'] ?? null);
+        $dados = $request->validate(['agencia_rede_id' => ['required', 'integer'], 'mensagem' => ['nullable', 'string', 'max:2000']]);
+        $regioes = RegioesParceria::doRequest($request);
+        $servico->solicitar(tenant(), $industria, $request->user()->id, $dados['agencia_rede_id'], '', $dados['mensagem'] ?? null, regioes: $regioes);
 
         return redirect()->route('parcerias.index')->with('status', 'Solicitação enviada. Aguarde a resposta da agência.');
     }
@@ -68,13 +70,12 @@ class ParceriaController extends Controller
     {
         $industria = $servico->industriaDoUsuario($request->user());
         abort_unless($parceria->industria_tenant_id === tenant('id') && $parceria->industria_local_id === $industria, 404);
-        $dados = $request->validate(['uf' => ['required', Rule::in(PerfilAgencia::UFS)], 'cidade' => ['nullable', 'string', 'max:100']]);
-        DB::connection(config('tenancy.database.central_connection'))->transaction(function () use ($parceria, $dados, $request) {
+        $regioes = RegioesParceria::doRequest($request);
+        DB::connection(config('tenancy.database.central_connection'))->transaction(function () use ($parceria, $regioes, $request) {
             $parceria = Parceria::lockForUpdate()->findOrFail($parceria->id);
             abort_unless(in_array($parceria->status, ['pendente', 'aceita'], true), 409, 'Reenvie a solicitação para alterar uma parceria recusada ou cancelada.');
-            $cidade = trim((string) ($dados['cidade'] ?? '')) ?: null;
-            if ($parceria->uf !== $dados['uf'] || $parceria->cidade !== $cidade) {
-                $parceria->update(['uf' => $dados['uf'], 'cidade' => $cidade, 'regiao' => $cidade ? $cidade.', '.$dados['uf'] : $dados['uf'], 'regiao_anterior' => $parceria->regiao, 'regiao_atualizada_em' => now(), 'regiao_alterada_por' => $request->user()->id]);
+            if ($parceria->regioesInteresse() !== $regioes) {
+                $parceria->update(['uf' => $regioes[0]['uf'], 'cidade' => $regioes[0]['cidade'], 'regiao' => RegioesParceria::resumo($regioes), 'regioes_anteriores' => $parceria->regioesInteresse(), 'regioes_interesse' => $regioes, 'regiao_anterior' => $parceria->regiao, 'regiao_atualizada_em' => now(), 'regiao_alterada_por' => $request->user()->id]);
             }
         });
 

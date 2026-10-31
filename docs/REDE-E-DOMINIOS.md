@@ -13,8 +13,9 @@ por este modelo, conforme aprovado pelo dono.
 2. Em **Rede de agências**, cadastra o perfil, contato comercial, cobertura e aprovação.
 3. A indústria pode escolher uma agência no cadastro inicial (opcional) ou depois em
    **Buscar agências**. A escolha envia uma solicitação, nunca um aceite automático.
-4. A indústria seleciona o estado desejado numa lista de UFs e nomes completos; pode informar
-   um município e uma mensagem. O mesmo seletor aparece no cadastro inicial do super admin.
+4. A indústria adiciona uma ou várias regiões por agência, escolhendo estados numa lista de
+   UFs e nomes completos; cada linha pode informar um município opcional. O mesmo editor aparece
+   no cadastro inicial do super admin. Ex.: agência A atende RS/SC, agência B atende SP/PR.
    O filtro de município exige UF;
    a busca ignora diferenças de maiúsculas e acentuação. Cobertura estadual inclui os municípios.
 5. A agência entra na própria instalação e abre **Parcerias com indústrias** para aceitar
@@ -25,13 +26,19 @@ por este modelo, conforme aprovado pelo dono.
    da indústria** para gerenciar sua equipe local, ajustar frequências e montar roteiros.
    Cadastros de PDVs e produtos e novos contratos continuam sob administração da indústria.
 
-A indústria pode usar **Editar região** em suas solicitações pendentes ou parcerias aceitas.
-UF é obrigatória e validada; município é opcional. A agência vê a última alteração, com a
+A indústria pode usar **Editar regiões** em suas solicitações pendentes ou parcerias aceitas,
+adicionando e removendo linhas. Cada parceria tem sua própria lista (até 30 regiões), sem afetar
+as listas de outras agências. UF é obrigatória e validada; município é opcional. Regiões repetidas,
+incluindo diferenças apenas de acentuação ou maiúsculas no município, são recusadas.
+A agência vê a última alteração, com a
 preferência anterior e a data. Alterar essa preferência não modifica o aceite, a cobertura
 declarada da agência, os PDVs, os contratos ou os roteiros. Novo atendimento precisa ser
 combinado com a agência e refletido nos contratos. Solicitações recusadas ou canceladas devem
 ser reenviadas para informar uma nova região. Dados antigos em texto livre são preservados;
 ao editar, o usuário escolhe explicitamente o estado.
+
+A lista completa fica armazenada de forma estruturada. O resumo antigo é mantido para
+compatibilidade; regiões únicas já cadastradas são migradas sem alterar a preferência existente.
 
 Administradores da agência autorizados na instalação de origem podem abrir as operações das
 parcerias aceitas sem compartilhar senhas. Cada operação mantém sua própria equipe local.

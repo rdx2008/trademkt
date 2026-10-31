@@ -10,6 +10,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Rede\Parcerias;
 use App\Services\Rede\PerfilAgencia;
+use App\Services\Rede\RegioesParceria;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -81,7 +82,7 @@ class ProvisionarCliente
             });
             if (! empty($validados['agencia_rede_id'])) {
                 $admin = $tenant->run(fn () => User::where('perfil', Perfil::AdminInstalacao->value)->first()->only(['id', 'industria_id']));
-                app(Parcerias::class)->solicitar($tenant, $admin['industria_id'], $admin['id'], $validados['agencia_rede_id'], '', $validados['mensagem_parceria'] ?? null, $validados['regiao_parceria'], $validados['cidade_parceria'] ?? null);
+                app(Parcerias::class)->solicitar($tenant, $admin['industria_id'], $admin['id'], $validados['agencia_rede_id'], '', $validados['mensagem_parceria'] ?? null, regioes: $validados['regioes_parceria']);
             }
         } catch (Throwable $e) {
             // Desfaz tudo (o evento de exclusão apaga o banco do cliente).
@@ -101,7 +102,7 @@ class ProvisionarCliente
     {
         $centrais = config('tenancy.central_domains');
 
-        return Validator::make($dados, [
+        $validados = Validator::make($dados, [
             'id' => ['required', 'regex:/^[a-z][a-z0-9_]{2,39}$/', Rule::unique('tenants', 'id')],
             'nome' => ['required', 'string', 'max:120'],
             'tipo' => ['required', Rule::enum(TipoInstalacao::class)],
@@ -117,8 +118,9 @@ class ProvisionarCliente
             'admin_email' => ['required', 'email'],
             'admin_senha' => ['nullable', 'string', 'min:8'],
             'agencia_rede_id' => ['nullable', 'integer', Rule::prohibitedIf(($dados['tipo'] ?? null) !== 'industria'), Rule::exists('agencias_rede', 'id')->where('aprovada', true)->where('disponivel', true)],
-            'regiao_parceria' => ['nullable', 'required_with:agencia_rede_id', Rule::in(PerfilAgencia::UFS)],
+            'regiao_parceria' => ['nullable', Rule::requiredIf(! empty($dados['agencia_rede_id']) && ! isset($dados['regioes_parceria'])), Rule::in(PerfilAgencia::UFS)],
             'cidade_parceria' => ['nullable', 'string', 'max:100'],
+            'regioes_parceria' => ['nullable', 'array', 'min:1', 'max:30'],
             'mensagem_parceria' => ['nullable', 'string', 'max:2000'],
         ], [
             'id.regex' => 'O identificador deve começar com letra e ter só letras minúsculas, números e _ (3 a 40).',
@@ -127,6 +129,11 @@ class ProvisionarCliente
             'dominios.*.unique' => 'O domínio :input já está em uso.',
             'dominios.*.not_in' => 'O domínio :input é do painel central.',
         ])->validate();
+        if (! empty($validados['agencia_rede_id'])) {
+            $validados['regioes_parceria'] = RegioesParceria::normalizar($validados['regioes_parceria'] ?? [['uf' => $validados['regiao_parceria'], 'cidade' => $validados['cidade_parceria'] ?? null]], 'regioes_parceria');
+        }
+
+        return $validados;
     }
 
     private function criarPastas(Tenant $tenant): void

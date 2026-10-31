@@ -16,7 +16,7 @@
                 @else
                     <form method="POST" action="{{ route('parcerias.solicitar') }}">
                         @csrf<input type="hidden" name="agencia_rede_id" value="{{ $agencia->id }}">
-                        @include('components.estado-municipio', ['prefixo' => 'pedido-'.$agencia->id, 'ufAtual' => old('agencia_rede_id') == $agencia->id ? old('uf') : request('uf'), 'cidadeAtual' => old('agencia_rede_id') == $agencia->id ? old('cidade') : request('cidade')])
+                        @include('components.regioes-parceria', ['prefixo' => 'pedido-'.$agencia->id, 'regioesAtuais' => old('agencia_rede_id') == $agencia->id ? old('regioes', [['uf' => old('uf', ''), 'cidade' => old('cidade', '')]]) : [['uf' => request('uf', ''), 'cidade' => request('cidade', '')]]])
                         <div class="campo"><label for="mensagem-{{ $agencia->id }}">Mensagem para a agência</label><textarea id="mensagem-{{ $agencia->id }}" name="mensagem" rows="2" maxlength="2000">{{ old('agencia_rede_id') == $agencia->id ? old('mensagem') : '' }}</textarea></div>
                         <button class="botao">Solicitar parceria</button>
                     </form>
@@ -28,17 +28,17 @@
     </div>
     {{ $agencias->links('components.paginacao') }}
     <section class="cartao secao-painel"><h2>Minhas solicitações e parcerias</h2>
-        <p class="rotulo">Você pode atualizar o estado e o município de interesse nas solicitações pendentes e nas parcerias aceitas. Isso não altera contratos, PDVs ou roteiros.</p>
+        <p class="rotulo">Você pode atualizar os estados e municípios de interesse nas solicitações pendentes e nas parcerias aceitas. Isso não altera contratos, PDVs ou roteiros.</p>
         <div class="tabela-rolagem"><table><thead><tr><th>Agência</th><th>Região desejada</th><th>Situação</th><th>Resposta</th><th>Ações</th></tr></thead><tbody>
             @forelse ($parcerias as $parceria)
-                <tr><td>{{ $parceria->agencia->tenant->nome }}</td><td>{{ $parceria->regiao }}</td><td>{{ match ($parceria->status) { 'aceita' => 'Aceita', 'recusada' => 'Recusada', 'cancelada' => 'Cancelada', default => 'Aguardando resposta' } }}</td><td style="white-space:normal">{{ $parceria->resposta ?? '—' }}</td><td>
+                <tr><td>{{ $parceria->agencia->tenant->nome }}</td><td>{{ $parceria->regioesRotulo() }}</td><td>{{ match ($parceria->status) { 'aceita' => 'Aceita', 'recusada' => 'Recusada', 'cancelada' => 'Cancelada', default => 'Aguardando resposta' } }}</td><td style="white-space:normal">{{ $parceria->resposta ?? '—' }}</td><td>
                     @if (in_array($parceria->status, ['pendente', 'aceita']))
-                        <details @if(old('parceria_regiao_id') == $parceria->id) open @endif><summary>Editar região</summary>
+                        <details @if(old('parceria_regiao_id') == $parceria->id) open @endif><summary>Editar regiões</summary>
                             <form class="cartao" style="margin-top:12px;min-width:280px;white-space:normal" method="POST" action="{{ route('parcerias.regiao', $parceria) }}">
                                 @csrf @method('PATCH')<input type="hidden" name="parceria_regiao_id" value="{{ $parceria->id }}">
-                                @unless ($parceria->uf)<p class="dica">Região cadastrada anteriormente: {{ $parceria->regiao }}. Selecione o estado para atualizar.</p>@endunless
-                                @include('components.estado-municipio', ['prefixo' => 'editar-'.$parceria->id, 'ufAtual' => old('parceria_regiao_id') == $parceria->id ? old('uf') : $parceria->uf, 'cidadeAtual' => old('parceria_regiao_id') == $parceria->id ? old('cidade') : $parceria->cidade])
-                                <button class="botao">Salvar região</button>
+                                @unless ($parceria->uf)<p class="dica">Região cadastrada anteriormente: {{ $parceria->regioesRotulo() }}. Selecione o estado para atualizar.</p>@endunless
+                                @include('components.regioes-parceria', ['prefixo' => 'editar-'.$parceria->id, 'regioesAtuais' => old('parceria_regiao_id') == $parceria->id ? old('regioes', [['uf' => old('uf', ''), 'cidade' => old('cidade', '')]]) : $parceria->regioesInteresse()])
+                                <button class="botao">Salvar regiões</button>
                             </form>
                         </details>
                     @endif

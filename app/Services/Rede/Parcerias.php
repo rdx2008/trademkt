@@ -33,16 +33,18 @@ class Parcerias
         return (int) $id;
     }
 
-    public function solicitar(Tenant $industria, int $industriaId, int $usuarioId, int $agenciaId, string $regiao, ?string $mensagem, ?string $uf = null, ?string $cidade = null): Parceria
+    public function solicitar(Tenant $industria, int $industriaId, int $usuarioId, int $agenciaId, string $regiao, ?string $mensagem, ?string $uf = null, ?string $cidade = null, array $regioes = []): Parceria
     {
         abort_unless($industria->tipo === TipoInstalacao::Industria && $industria->ativo, 403);
 
-        if ($uf !== null) {
-            $cidade = trim((string) $cidade) ?: null;
-            $regiao = $cidade ? $cidade.', '.$uf : $uf;
+        if ($regioes || $uf !== null) {
+            $regioes = RegioesParceria::normalizar($regioes ?: [['uf' => $uf, 'cidade' => $cidade]]);
+            $uf = $regioes[0]['uf'];
+            $cidade = $regioes[0]['cidade'];
+            $regiao = RegioesParceria::resumo($regioes);
         }
 
-        return DB::connection(config('tenancy.database.central_connection'))->transaction(function () use ($industria, $industriaId, $usuarioId, $agenciaId, $regiao, $mensagem, $uf, $cidade) {
+        return DB::connection(config('tenancy.database.central_connection'))->transaction(function () use ($industria, $industriaId, $usuarioId, $agenciaId, $regiao, $mensagem, $uf, $cidade, $regioes) {
             $agencia = AgenciaRede::whereKey($agenciaId)->where('aprovada', true)->where('disponivel', true)
                 ->whereHas('tenant', fn ($q) => $q->where('ativo', true)->where('tipo', 'agencia'))->lockForUpdate()->first();
             if (! $agencia) {
@@ -53,7 +55,7 @@ class Parcerias
             if ($parceria->exists && in_array($parceria->status, ['pendente', 'aceita'], true)) {
                 throw ValidationException::withMessages(['agencia_rede_id' => 'Já existe uma parceria aceita ou uma solicitação pendente para esta agência.']);
             }
-            $parceria->fill(['status' => 'pendente', 'regiao' => $regiao, 'uf' => $uf, 'cidade' => $cidade, 'regiao_anterior' => null, 'regiao_atualizada_em' => null, 'regiao_alterada_por' => null, 'mensagem' => $mensagem, 'solicitante_id' => $usuarioId, 'respondente_id' => null, 'resposta' => null, 'respondida_em' => null])->save();
+            $parceria->fill(['status' => 'pendente', 'regiao' => $regiao, 'uf' => $uf, 'cidade' => $cidade, 'regioes_interesse' => $regioes ?: null, 'regioes_anteriores' => null, 'regiao_anterior' => null, 'regiao_atualizada_em' => null, 'regiao_alterada_por' => null, 'mensagem' => $mensagem, 'solicitante_id' => $usuarioId, 'respondente_id' => null, 'resposta' => null, 'respondida_em' => null])->save();
 
             return $parceria;
         });
