@@ -12,7 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
-        using: function () {
+        then: function () {
             // Rotas centrais (painel do fornecedor + API de descoberta do app)
             // só respondem nos domínios centrais. As rotas de cada cliente
             // ficam em routes/tenant.php e são carregadas pelo TenancyServiceProvider.
