@@ -20,6 +20,8 @@ class Visita extends Model
 {
     protected $table = 'visitas';
 
+    protected $hidden = ['finalizacao_hash'];
+
     protected $fillable = [
         'roteiro_id', 'data', 'data_prevista', 'agencia_id', 'pdv_id', 'industria_id', 'contrato_id', 'origem', 'status', 'ordem',
     ];
@@ -38,12 +40,30 @@ class Visita extends Model
             'status' => StatusVisita::class,
             'ordem' => 'integer',
             'check_in' => 'array',
+            'concluida_em' => 'datetime',
+            'recebida_em' => 'datetime',
+            'duracao_segundos' => 'integer',
         ];
     }
 
     public function roteiro(): BelongsTo
     {
         return $this->belongsTo(Roteiro::class);
+    }
+
+    public function fotos()
+    {
+        return $this->hasMany(VisitaFoto::class)->orderBy('id');
+    }
+
+    public function itens()
+    {
+        return $this->hasMany(VisitaSku::class);
+    }
+
+    public function demanda()
+    {
+        return $this->hasOne(Demanda::class);
     }
 
     public function agencia(): BelongsTo

@@ -4,6 +4,10 @@
     @if ($origemParceiro?->url())<a href="{{ $origemParceiro->url() }}/parcerias">← Voltar à minha agência</a>@endif
 @endif
 <a href="{{ route('dashboard') }}" @class(['ativo' => request()->routeIs('dashboard')])>{{ match ($eu->perfil) { \App\Enums\Perfil::Promotor => 'Minha agenda', \App\Enums\Perfil::GerentePdv => 'Minhas lojas', \App\Enums\Perfil::Representante => 'Minha carteira', default => 'Visão geral' } }}</a>
+<a href="{{ route('demandas.index') }}" @class(['ativo'=>request()->routeIs('demandas.*')])>Demandas e rupturas</a>
+<a href="{{ route('indicadores.index') }}" @class(['ativo'=>request()->routeIs('indicadores.*')])>{{ $eu->perfil===\App\Enums\Perfil::Promotor?'Minha produção':'Indicadores e fotos' }}</a>
+@php($alertasNaoLidos=\App\Models\Alerta::visiveisPara($eu)->whereNull('lida_em')->count())
+<a href="{{ route('alertas.index') }}" @class(['ativo'=>request()->routeIs('alertas.*')])>Meus alertas @if($alertasNaoLidos)<span class="selo">{{ $alertasNaoLidos }}</span>@endif</a>
 @if ((tenant()->tipo === \App\Enums\TipoInstalacao::Industria && $eu->temPerfil(\App\Enums\Perfil::AdminInstalacao, \App\Enums\Perfil::GerenteTrade)) || (tenant()->tipo === \App\Enums\TipoInstalacao::Agencia && $eu->temPerfil(\App\Enums\Perfil::AdminInstalacao, \App\Enums\Perfil::AdminAgencia)))
     <a href="{{ route('parcerias.index') }}" @class(['ativo' => request()->routeIs('parcerias.*')])>{{ tenant()->tipo === \App\Enums\TipoInstalacao::Industria ? 'Buscar agências' : 'Parcerias com indústrias' }}</a>
 @endif

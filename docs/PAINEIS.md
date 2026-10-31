@@ -38,10 +38,12 @@ de gráficos ou etapa de build de JavaScript. Os gráficos são gerados no servi
 
 ## Limites desta entrega
 
-O painel é funcional para os cadastros, roteiros e estados já existentes. O app Android,
-fotos antes/depois, conclusão da visita, ruptura, solicitação de visita, notificações,
-exportações e indicadores completos dependem das fases 3–5. Não há ações fictícias para esses
-módulos: a interface informa quando um recurso ainda está em desenvolvimento.
+O painel inclui demandas de visita/ruptura, aprovação pela agência, alertas internos,
+detalhe da visita, galeria e indicadores com Excel (fases 4–5). O supermercado pode
+consultar a última visita com evidências e solicitar atendimento por contrato vigente.
+A execução usa a API da fase 3; o app Android ainda precisa ser construído. Alertas
+são internos, sem envio por e-mail, SMS ou push. A cobertura considera as visitas
+contratuais efetivamente geradas; consulte `FASE-5.md` para a definição dos indicadores.
 
 ## Validação
 

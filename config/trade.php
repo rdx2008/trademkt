@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'fotos_disk' => env('FOTOS_DISK', 'local'),
     'dominio_clientes' => env('TRADE_DOMINIO_CLIENTES', 'trade.mastervps.online'),
     // Tipos de instalação vendidos
     'tipos_instalacao' => [

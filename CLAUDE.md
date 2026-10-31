@@ -89,9 +89,14 @@ php artisan tenants:migrate
   todos os perfis do cliente em `/painel`, com resumo por data, gráficos de agenda,
   filtros e atalhos autorizados. Promotor tem consulta web complementar; execução segue no app.
 
-- Fase 3 iniciada (`docs/FASE-3.md`): 3.1 implementado, API de check-in por GPS com
-  validação de raio no servidor, registro dos horários e reenvio idempotente.
-  Próximo item: 3.2, fotos antes/depois, SKUs trabalhados e conclusão da visita.
+- Fase 3: backend 3.1–3.3 implementado (`docs/FASE-3.md`): check-in, fotos privadas
+  com marca d'água no servidor, SKUs, conclusão, ruptura e impedimento, com reenvio idempotente.
+  App Flutter Android (3.4), câmera, detecção de GPS simulado e fila offline ainda pendentes.
+- Fase 4 web implementada (`docs/FASE-4.md`): demandas encaminhadas à agência,
+  aprovação/recusa, visita sob demanda e alertas internos persistentes. Sem e-mail/push.
+- Fase 5 implementada (`docs/FASE-5.md`): indicadores com filtros por escopo,
+  produção por dia, galeria privada e Excel. Cobertura considera visitas contratuais já geradas.
+  Docker requer GD; o entrypoint migra os bancos dos clientes no deploy.
 
 - Fase 1 concluída: `composer install` ok, `composer.lock` commitado, `php artisan test` verde (24 testes).
   Antes de rodar os testes num clone novo: `cp .env.example .env`.

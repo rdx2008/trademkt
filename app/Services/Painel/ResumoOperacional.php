@@ -74,6 +74,16 @@ class ResumoOperacional
         if ($usuario->perfil !== Perfil::AdminInstalacao) {
             $skus->whereIn('industria_id', (clone $contratos)->select('industria_id'));
         }
+        $lojas = $usuario->perfil === Perfil::GerentePdv
+            ? (clone $pdvs)->with(['contratos' => fn ($q) => $q->vigentesEm($data)->with(['industria', 'agencia'])])->orderBy('nome')->paginate(6, ['pdvs.*'], 'lojas')
+            : collect();
+        foreach ($lojas as $loja) {
+            foreach ($loja->contratos as $contrato) {
+                $base = $this->visitas($usuario)->where('pdv_id', $loja->id)->where('industria_id', $contrato->industria_id)->where('agencia_id', $contrato->agencia_id);
+                $contrato->setRelation('ultimaVisita', (clone $base)->where('status', 'realizada')->with('fotos')->orderByDesc('concluida_em')->orderByDesc('id')->first());
+                $contrato->setRelation('proximaVisita', (clone $base)->whereIn('status', ['previsto', 'em_andamento'])->whereDate('data', '>=', today())->with('roteiro.promotor')->orderBy('data')->orderBy('ordem')->first());
+            }
+        }
 
         return [
             'total' => $total,
@@ -94,9 +104,7 @@ class ResumoOperacional
             'visitas' => (clone $dia)->when($status, fn ($q) => $q->where('status', $status))
                 ->with(['pdv', 'industria', 'agencia', 'roteiro.promotor'])
                 ->orderBy('ordem')->orderBy('id')->paginate(12)->withQueryString(),
-            'lojas' => $usuario->perfil === Perfil::GerentePdv
-                ? (clone $pdvs)->with(['contratos' => fn ($q) => $q->vigentesEm($data)->with(['industria', 'agencia'])])->orderBy('nome')->paginate(6, ['pdvs.*'], 'lojas')
-                : collect(),
+            'lojas' => $lojas,
         ];
     }
 }

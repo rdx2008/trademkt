@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\AuthController as ApiAuthController;
 use App\Http\Controllers\Api\CheckInController;
+use App\Http\Controllers\Api\ExecucaoVisitaController;
 use App\Http\Controllers\Api\RoteiroController as ApiRoteiroController;
 use App\Http\Controllers\Tenant\AcessoParceriaController;
 use App\Http\Controllers\Tenant\AgenciaController;
+use App\Http\Controllers\Tenant\AlertaController;
 use App\Http\Controllers\Tenant\AuthController;
 use App\Http\Controllers\Tenant\ContratoVisitaController;
 use App\Http\Controllers\Tenant\DashboardController;
+use App\Http\Controllers\Tenant\DemandaController;
 use App\Http\Controllers\Tenant\ImportacaoPdvController;
+use App\Http\Controllers\Tenant\IndicadorController;
 use App\Http\Controllers\Tenant\IndustriaController;
 use App\Http\Controllers\Tenant\ParceriaController;
 use App\Http\Controllers\Tenant\PdvController;
@@ -19,6 +23,7 @@ use App\Http\Controllers\Tenant\RegiaoController;
 use App\Http\Controllers\Tenant\RoteiroController;
 use App\Http\Controllers\Tenant\SkuController;
 use App\Http\Controllers\Tenant\UsuarioController;
+use App\Http\Controllers\Tenant\VisitaController;
 use App\Http\Middleware\EnsureAcessoParceiro;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
@@ -45,6 +50,19 @@ Route::middleware([
     Route::get('/parcerias/entrar', [AcessoParceriaController::class, 'entrar'])->middleware('throttle:20,1')->name('parcerias.entrar');
 
     Route::middleware(['auth', EnsureAcessoParceiro::class])->group(function () {
+        Route::get('/demandas', [DemandaController::class, 'index'])->name('demandas.index');
+        Route::get('/demandas/nova', [DemandaController::class, 'create'])->name('demandas.create');
+        Route::post('/demandas', [DemandaController::class, 'store'])->name('demandas.store');
+        Route::get('/demandas/{demanda}', [DemandaController::class, 'show'])->whereNumber('demanda')->name('demandas.show');
+        Route::patch('/demandas/{demanda}', [DemandaController::class, 'decidir'])->whereNumber('demanda')->name('demandas.decidir');
+        Route::get('/demandas/{demanda}/foto', [DemandaController::class, 'foto'])->whereNumber('demanda')->name('demandas.foto');
+        Route::get('/alertas', [AlertaController::class, 'index'])->name('alertas.index');
+        Route::patch('/alertas/{alerta}/lida', [AlertaController::class, 'ler'])->whereNumber('alerta')->name('alertas.ler');
+        Route::get('/indicadores', [IndicadorController::class, 'index'])->name('indicadores.index');
+        Route::get('/indicadores/galeria', [IndicadorController::class, 'galeria'])->name('indicadores.galeria');
+        Route::get('/indicadores/excel', [IndicadorController::class, 'exportar'])->name('indicadores.exportar');
+        Route::get('/visitas/{visita}', [VisitaController::class, 'show'])->whereNumber('visita')->name('visitas.show');
+        Route::get('/visitas/{visita}/fotos/{foto}', [VisitaController::class, 'foto'])->whereNumber(['visita', 'foto'])->name('visitas.fotos');
         Route::get('/parcerias', [ParceriaController::class, 'index'])->name('parcerias.index');
         Route::patch('/parcerias/{parceria}/regiao', [ParceriaController::class, 'regiao'])->whereNumber('parceria')->name('parcerias.regiao');
         Route::post('/parcerias', [ParceriaController::class, 'solicitar'])->name('parcerias.solicitar');
@@ -143,6 +161,10 @@ Route::middleware([
     Route::post('/login', [ApiAuthController::class, 'login'])->middleware('throttle:login')->name('login');
 
     Route::middleware(['auth:sanctum', EnsureAcessoParceiro::class])->group(function () {
+        Route::get('/visitas/{visita}', [VisitaController::class, 'apiShow'])->whereNumber('visita')->name('visitas.show');
+        Route::post('/visitas/{visita}/fotos', [ExecucaoVisitaController::class, 'foto'])->whereNumber('visita')->name('visitas.enviar-foto');
+        Route::get('/visitas/{visita}/fotos/{foto}', [VisitaController::class, 'foto'])->whereNumber(['visita', 'foto'])->name('visitas.fotos');
+        Route::post('/visitas/{visita}/concluir', [ExecucaoVisitaController::class, 'concluir'])->whereNumber('visita')->name('visitas.concluir');
         Route::get('/me', [ApiAuthController::class, 'me'])->name('me');
         Route::post('/logout', [ApiAuthController::class, 'logout'])->name('logout');
         Route::get('/roteiro', [ApiRoteiroController::class, 'show'])->name('roteiro');

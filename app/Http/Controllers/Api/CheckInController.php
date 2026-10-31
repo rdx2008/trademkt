@@ -6,6 +6,7 @@ use App\Enums\Perfil;
 use App\Enums\StatusVisita;
 use App\Http\Controllers\Controller;
 use App\Models\Visita;
+use App\Services\Operacao\AlertasOperacao;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -38,7 +39,8 @@ class CheckInController extends Controller
                 return response()->json(['id' => $registro->id, 'status' => $registro->status->value, 'check_in' => $registro->check_in]);
             }
 
-            abort_unless($registro->status === StatusVisita::Previsto, 409, 'A visita não está prevista.');
+            abort_unless(in_array($registro->status, [StatusVisita::Previsto, StatusVisita::NaoExecutada], true), 409, 'A visita não está prevista.');
+            $sincronizacaoTardia = $registro->status === StatusVisita::NaoExecutada;
 
             $gps = Carbon::parse($dados['gps_em'])->setTimezone(config('app.timezone'));
             if ($gps->toDateString() !== $registro->data->toDateString() || $gps->isAfter(now()->addMinutes(5))) {
@@ -68,9 +70,13 @@ class CheckInController extends Controller
                 'gps_em' => $gps->toIso8601String(),
                 'aparelho_em' => Carbon::parse($dados['aparelho_em'])->toIso8601String(),
                 'recebido_em' => now()->toIso8601String(),
+                'relogio_divergente' => abs($gps->diffInSeconds(Carbon::parse($dados['aparelho_em']))) > 300,
             ];
             $registro->status = StatusVisita::EmAndamento;
             $registro->save();
+            if ($sincronizacaoTardia) {
+                app(AlertasOperacao::class)->emitir('sincronizacao_tardia', $registro, 'Check-in recebido após encerramento', $registro->pdv->nome.' · A visita voltou a ficar em andamento após sincronização.');
+            }
 
             return response()->json(['id' => $registro->id, 'status' => $registro->status->value, 'check_in' => $registro->check_in], 201);
         });

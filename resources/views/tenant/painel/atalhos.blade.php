@@ -35,5 +35,5 @@
     <a class="atalho" href="{{ $url }}"><strong>{{ $nome }} <span aria-hidden="true">↗</span></strong><span>{{ $ajuda }}</span></a>
 @endforeach
 @if ($usuario->perfil === \App\Enums\Perfil::Promotor)
-    <div class="atalho informativo"><strong>Execução pelo aplicativo</strong><span>O app Android, as fotos e a conclusão da visita estão em desenvolvimento.</span></div>
+    <div class="atalho informativo"><strong>Execução pelo aplicativo</strong><span>O app Android está em desenvolvimento. Os registros recebidos pela API aparecem no painel.</span></div>
 @endif

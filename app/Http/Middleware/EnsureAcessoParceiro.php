@@ -19,7 +19,7 @@ class EnsureAcessoParceiro
             }
             abort_unless(app(AcessoOperacao::class)->sessaoPermitida($usuario), 403, 'O acesso da agência a esta instalação não está mais autorizado.');
             if ($usuario->agenciaDaRede()) {
-                abort_unless($request->routeIs('dashboard', 'logout', 'usuarios.*', 'agencias.index', 'roteiros.*', 'visitas.mover', 'contratos.index', 'contratos.edit', 'contratos.update', 'pdvs.index', 'skus.index', 'skus.foto', 'api.*'), 403, 'Este cadastro é administrado pela indústria.');
+                abort_unless($request->routeIs('dashboard', 'logout', 'usuarios.*', 'agencias.index', 'roteiros.*', 'visitas.mover', 'visitas.show', 'visitas.fotos', 'demandas.*', 'alertas.*', 'indicadores.*', 'contratos.index', 'contratos.edit', 'contratos.update', 'pdvs.index', 'skus.index', 'skus.foto', 'api.*'), 403, 'Este cadastro é administrado pela indústria.');
             }
         }
 
