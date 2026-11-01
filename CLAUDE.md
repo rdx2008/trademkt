@@ -60,7 +60,7 @@ Só o promotor usa o app; os demais usam o painel web (responsivo).
 
 1. Base e infraestrutura — concluída.
 2. Cadastros e roteiros — implementados; importador de catálogo com OpenAI (2.3) pendente.
-3. Execução — backend 3.1–3.3 implementado; aplicativo Flutter Android (3.4) pendente.
+3. Execução — backend 3.1–3.3 e app Flutter Android (3.4) implementados; teste em aparelho real pendente.
 4. Demandas e alertas — web e alertas internos implementados; e-mail e push pendentes.
 5. Indicadores — painel, produção, galeria privada e Excel implementados.
 6. Piloto Gaboardi — pendente.
@@ -148,6 +148,21 @@ Referência e contratos completos: `docs/FASE-3.md`.
 - A API rejeita GPS declarado simulado, mas não comprova a autenticidade física do GPS.
   Garantia de captura pela câmera, detecção no dispositivo e fila offline dependem do Android.
 
+### App do promotor — Android (`app_promotor/`)
+
+Referência: `docs/FASE-3.md`, seção 3.4.
+
+- Flutter (Android). Descoberta da empresa pelo código na API central, login com token no
+  armazenamento seguro, roteiro do dia em cache SQLite para uso offline.
+- Fluxo da visita com as mesmas regras do servidor validadas no aparelho: check-in por GPS
+  dentro do raio, foto antes, SKUs com situação de estoque, foto depois, conclusão; ruptura
+  (foto + produtos) e impedimento (observação).
+- GPS lido só no check-in e nas fotos; posição simulada (mock location) é bloqueada.
+  Fotos só pela câmera do app, com marca d'água (PDV, tipo, data/hora, coordenadas).
+- Fila persistente com UUID e payload fixo: check-in → fotos antes → ruptura → depois →
+  conclusão; reenvio idempotente; 409 reconciliado via `GET /api/v1/visitas/{visita}`.
+- `flutter analyze` e `flutter test` (74 testes) passam. Sem iOS (fase 8).
+
 ### Demandas e alertas internos
 
 Referência: `docs/FASE-4.md`.
@@ -203,8 +218,8 @@ Referência: `docs/FASE-5.md`.
 
 ### Pendências e próximos passos
 
-1. App Flutter Android: descoberta/login, roteiro, câmera, detecção de GPS simulado,
-   execução offline, persistência e fila de sincronização usando a API entregue.
+1. App Android: testar em aparelho real (câmera, GPS, mock location), configurar assinatura
+   de release e publicar o APK para o piloto.
 2. Notificações por e-mail e push; hoje os alertas são internos ao painel.
 3. Importador de catálogo com OpenAI (2.3), adiado por falta de créditos informada pelo
    dono. Ao retomar, revisar limite de upload de 50 MB versus requisito de 60 MB e
@@ -229,3 +244,6 @@ php artisan tenants:migrate
 php artisan roteiros:gerar
 php artisan operacao:encerrar-dia
 ```
+
+App do promotor (`app_promotor/`): `flutter pub get`, `flutter analyze`, `flutter test`,
+`flutter build apk --release --dart-define=URL_CENTRAL=https://trade.mastervps.online`.

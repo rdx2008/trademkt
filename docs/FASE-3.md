@@ -79,6 +79,82 @@ preservando o alerta histórico e registrando a sincronização tardia.
 Descoberta da empresa, login, download do roteiro, câmera com marca d'água,
 detecção de localização simulada, execução offline e fila persistente de sincronização.
 
+Implementado em `app_promotor/` (Flutter 3.47, Dart 3.13, somente Android; iOS fica para a
+fase 8). Textos em português. Validado com `flutter analyze` e `flutter test` (74 testes).
+
+### Estrutura
+
+| Pasta | Conteúdo |
+| --- | --- |
+| `lib/api/` | `ClienteApi` (HTTP, Bearer, erros tipados), `ApiCentral` (descoberta) e `ApiPromotor` (login, roteiro, check-in, fotos, concluir, visita) |
+| `lib/modelos/` | Roteiro/visita/PDV/SKU, usuário e sessão, estado local da execução e **payloads** dos contratos |
+| `lib/dominio/regras_visita.dart` | Regras de sequência espelhando as validações do servidor (raio, horários, fotos, conclusão) |
+| `lib/dados/repositorio_local.dart` | SQLite (`sqflite`): tabelas `roteiros`, `execucoes` e `fila` |
+| `lib/sincronizacao/` | Itens da fila com prioridade e o `Sincronizador` |
+| `lib/servicos/` | Sessão no armazenamento seguro, GPS (`geolocator`) com bloqueio de mock location, gravação de fotos com marca d'água |
+| `lib/telas/` | Empresa, login, roteiro, visita, câmera e seleção de SKUs |
+| `lib/estado_app.dart` | Estado central observado pelas telas; toda gravação passa por ele |
+| `test/` | Datas/geo, payloads, regras, fila e repositório, sincronizador (servidor HTTP falso), marca d'água, modelos e fluxo das telas |
+
+### Fluxo no aparelho
+
+1. **Empresa**: o promotor digita o código da instalação; o app chama
+   `GET {URL_CENTRAL}/api/v1/empresas/{codigo}` e guarda `api` (`https://.../api/v1`).
+   Há um modo avançado para informar a URL da instalação diretamente (homologação/local).
+2. **Login**: `POST /login` com e-mail, senha e `dispositivo` (fabricante + modelo). Token e
+   usuário ficam no armazenamento seguro do Android. Token inválido (401) leva à tela de login
+   sem apagar nada do aparelho; outro usuário só entra sem pendências na fila.
+3. **Roteiro**: `GET /roteiro?data=AAAA-MM-DD` salvo em cache por dia; sem rede, o roteiro
+   salvo continua disponível. Setas trocam o dia; puxar para baixo atualiza.
+4. **Visita**: check-in → foto antes → SKUs com estoque → foto depois → concluir; ou ruptura
+   (foto de ruptura + produtos) ou impedimento (observação). Cada passo valida localmente as
+   mesmas regras do servidor antes de gravar (`RegrasVisita`).
+5. **GPS**: lido apenas no check-in e em cada foto. Posição com `isMocked` (mock location)
+   é bloqueada e nada é gravado; por isso `gps_simulado` enviado é sempre `false`.
+   Fora do raio do PDV (Haversine, mesmo cálculo do servidor) o passo é recusado.
+6. **Fotos**: só pela câmera do app (`camera`), nunca da galeria. A imagem é reduzida a no
+   máximo 1600 px, recebe faixa com PDV, tipo, data/hora do GPS e coordenadas e é gravada
+   como JPEG na pasta privada do app até o servidor confirmar.
+7. **Fila**: cada gravação vira um item com UUID (check-in usa `check-in:<visita>`), payload
+   já serializado e prioridade. Ordem de envio por visita: check-in → fotos antes → fotos de
+   ruptura → fotos depois → conclusão; visitas na ordem em que começaram. O envio roda após
+   cada gravação, ao abrir o app, ao voltar do segundo plano e pelo botão de sincronizar.
+8. **Reenvio e reconciliação**: o payload nunca muda, então o reenvio é idempotente
+   (201/200). Sem rede, tudo fica pendente. 5xx mantém pendente; 422/404/403 marca erro
+   com a mensagem do servidor e bloqueia o resto daquela visita (botão "Tentar novamente").
+   409 dispara `GET /visitas/{visita}`: se o servidor já tem o check-in, a foto (por UUID) ou
+   a conclusão do mesmo tipo, o item é dado como enviado; senão fica em conflito.
+   "Conferir com o servidor" faz a reconciliação manual.
+
+### Compilar e configurar
+
+Requisitos: Flutter stable, Android SDK com `cmdline-tools` e licenças aceitas
+(`flutter doctor`), JDK 17 (o do Android Studio serve: `flutter config --jdk-dir`).
+
+```bash
+cd app_promotor
+flutter pub get
+flutter analyze
+flutter test
+flutter build apk --release --dart-define=URL_CENTRAL=https://trade.mastervps.online
+```
+
+- `URL_CENTRAL` é o domínio central (padrão `https://trade.mastervps.online`), usado só na
+  descoberta da empresa; a URL de cada instalação vem da resposta da API central.
+- Para testar contra uma instalação local, use o modo avançado da primeira tela com a URL da
+  instalação (no emulador Android, `http://10.0.2.2:8000` em vez de `localhost`). O build de
+  debug libera HTTP sem TLS; o de release exige HTTPS.
+- Permissões declaradas: internet, localização precisa e câmera.
+
+### Limites conhecidos
+
+- Não há iOS (fase 8). O build de release ainda usa a chave de debug; configurar a assinatura
+  antes de publicar.
+- A detecção de GPS simulado usa o `isMocked` do Android; aparelhos com root podem burlá-la.
+  O servidor continua tratando os dados declarados como não comprovados.
+- Não há reenvio automático em segundo plano com o app fechado: a fila é processada quando o
+  app está aberto.
+
 ## Aceite final
 
 Executar uma visita completa offline no Android, sincronizar sem duplicação e consultar
