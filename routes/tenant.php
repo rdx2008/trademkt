@@ -14,6 +14,7 @@ use App\Http\Controllers\Tenant\ContratoVisitaController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\DemandaController;
 use App\Http\Controllers\Tenant\ImportacaoPdvController;
+use App\Http\Controllers\Tenant\ImportacaoSkuController;
 use App\Http\Controllers\Tenant\IndicadorController;
 use App\Http\Controllers\Tenant\IndustriaController;
 use App\Http\Controllers\Tenant\ParceriaController;
@@ -86,6 +87,17 @@ Route::middleware([
 
         // Catálogo de SKUs: consulta para admin, agência e indústria; cadastro para o admin da
         // instalação e o gerente de trade (só a própria marca), conferido no controller.
+        // Importação em lote (planilha ou PDF): admin da instalação e gerente de trade da marca.
+        // Declarada antes do resource para que "importar" não seja lido como um SKU.
+        Route::middleware('perfil:admin_instalacao,gerente_trade')->group(function () {
+            Route::get('/skus/importar', [ImportacaoSkuController::class, 'create'])->name('skus.importar');
+            Route::get('/skus/importar/modelo', [ImportacaoSkuController::class, 'modelo'])->name('skus.importar.modelo');
+            Route::post('/skus/importar', [ImportacaoSkuController::class, 'store'])->name('skus.importar.enviar');
+            Route::get('/skus/importar/{importacao}', [ImportacaoSkuController::class, 'show'])->name('skus.importar.revisar');
+            Route::post('/skus/importar/{importacao}', [ImportacaoSkuController::class, 'update'])->name('skus.importar.gravar');
+            Route::delete('/skus/importar/{importacao}', [ImportacaoSkuController::class, 'destroy'])->name('skus.importar.descartar');
+        });
+
         Route::middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante')->group(function () {
             Route::resource('skus', SkuController::class)
                 ->except(['show', 'destroy'])

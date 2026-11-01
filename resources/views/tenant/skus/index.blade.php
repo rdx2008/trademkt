@@ -4,7 +4,10 @@
     <div class="cabecalho">
         <h1>Catálogo de SKUs</h1>
         @if ($podeCadastrar)
-            <a class="botao" href="{{ route('skus.create') }}">Novo SKU</a>
+            <div class="acoes">
+                <a class="botao secundario" href="{{ route('skus.importar') }}">Importar produtos</a>
+                <a class="botao" href="{{ route('skus.create') }}">Novo SKU</a>
+            </div>
         @endif
     </div>
 

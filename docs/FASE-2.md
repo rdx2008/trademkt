@@ -42,6 +42,40 @@ instalação de agência só vê PDVs com contrato da sua indústria.
 **Aceite:** importar o catálogo da Gaboardi e revisar sem editar o banco na mão; nada é gravado em
 `skus` antes da confirmação.
 
+### 2.3a Importação sem IA (implementada)
+
+Decisão do dono em 01/11/2026: enquanto não há créditos da OpenAI, o catálogo entra por planilha
+(CSV/XLSX) ou por PDF com texto selecionável, lido por regras. A importação com IA continua
+prevista acima para layouts que as regras não entendem. Telas em **Catálogo → Importar produtos**
+(admin da instalação escolhe a indústria; gerente de trade importa só na própria marca).
+
+- Fluxo igual ao de PDVs: envio → revisão → «Gravar selecionados». A análise fica em arquivo
+  JSON na pasta do cliente (`importacoes/skus`); nada vai para `skus` antes da confirmação.
+- Código: `app/Services/Catalogo/` (`LeitorPlanilhaSkus`, `LeitorPdfCatalogo`, `ImportacaoSkus`) e
+  `ImportacaoSkuController`. O PDF é lido com `smalot/pdfparser` (PHP puro, sem binários extras).
+  Limite de 60 MB (`trade.importacao_skus.max_kb`); a leitura roda na própria requisição,
+  sem fila (um catálogo de 12 páginas leva cerca de 2 s).
+- **Planilha:** modelo para baixar. Aceita uma linha por produto (GTIN unidade, reembalagem e
+  caixa master com suas quantidades) ou uma linha por embalagem (Tipo, Quantidade, GTIN) com o
+  código repetido; as linhas do mesmo código são unidas. GTIN numérico do Excel é tratado.
+- **PDF:** cada linha do texto é classificada (GTIN de 12 a 14 dígitos com ou sem marcador,
+  código de produto, título em maiúsculas, descrição de embalagem). Um produto é o bloco de GTINs
+  e códigos sob um título; GTIN depois de um código inicia outro produto. O primeiro GTIN de 13
+  dígitos é a unidade; GTIN-14 sozinho é a caixa master; com vários, os de menor indicador são
+  reembalagem. Variações marcadas por símbolos viram produtos separados. Calibrado com o
+  catálogo da Gaboardi (69 produtos reconhecidos nas 12 páginas; teste com o texto extraído em
+  `tests/Fixtures`). Catálogo com outro desenho pode exigir novas regras ou a IA.
+- **Erros** (bloqueiam o item): código ou descrição vazios, tipo de embalagem desconhecido,
+  GTIN fora de 8/12/13/14 dígitos, quantidade inválida. **Avisos** (não bloqueiam): dígito
+  verificador errado (fica marcado no catálogo), GTIN repetido no arquivo ou em outro SKU,
+  descrição diferente da cadastrada, quantidade suposta, mais de um código no bloco,
+  produtos diferentes sob o mesmo título.
+- Reimportação atualiza pelo código na indústria. Não apaga embalagens ausentes; campos vazios
+  mantêm o valor atual; quantidade que o PDF só supôs não sobrescreve a cadastrada.
+- Limitações conhecidas: a tela de revisão não edita campos (ajustes são feitos na edição do SKU
+  depois de gravar); PDF escaneado não é lido (sem OCR); quando o PDF inverte a ordem entre
+  títulos e dados (Embalaprático, página 8) o produto sai com aviso para conferir.
+
 ## 2.4 Contratos de visita
 
 - Tabela `contratos_visita`: pdv_id, industria_id, agencia_id, frequencia_semana (1, 2 ou 3),

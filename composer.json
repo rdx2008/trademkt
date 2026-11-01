@@ -10,6 +10,7 @@
         "laravel/tinker": "^2.10",
         "openspout/openspout": "^4.28",
         "predis/predis": "^2.3",
+        "smalot/pdfparser": "^2.13",
         "stancl/tenancy": "^3.9"
     },
     "require-dev": {

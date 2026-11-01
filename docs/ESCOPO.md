@@ -116,6 +116,10 @@ devolve os produtos em campos padronizados.
 4. Tela de revisão em tabela, com itens suspeitos em amarelo, para corrigir antes de gravar.
 5. Reimportar atualiza pelo código do produto, sem duplicar.
 
+**Atualização de 01/11/2026:** a importação por planilha (CSV/XLSX) e por PDF com texto
+selecionável, lida por regras e sem IA, já está implementada (ver `docs/FASE-2.md`, item 2.3a).
+O uso da IA fica como complemento para layouts que as regras não reconhecem.
+
 Observado no catálogo da Gaboardi: layout em colunas embaralha a extração simples de texto; há
 produtos com dois códigos (Alumgrill em caixas de 25 e de 12) e variantes marcadas por símbolos na
 mesma tabela (espetinhos de 18 cm e 25 cm); alguns GTINs parecem ter erro de digitação.

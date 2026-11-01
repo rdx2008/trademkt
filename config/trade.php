@@ -27,6 +27,12 @@ return [
         'max_linhas' => 5000,
     ],
 
+    // Importação do catálogo de SKUs (planilha ou PDF)
+    'importacao_skus' => [
+        'max_kb' => 61440,
+        'max_linhas' => 5000,
+    ],
+
     // Super admin criado pelo "php artisan db:seed" (banco central)
     'super_admin' => [
         'nome' => env('SUPER_ADMIN_NOME', 'Super admin'),

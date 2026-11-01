@@ -49,8 +49,8 @@ Só o promotor usa o app; os demais usam o painel web (responsivo).
 - Visita agendada não executada: vermelho no admin + notificação.
 - Gerente do supermercado: vê marcas, agências e promotores da loja; botões "Avisar ruptura" e "Pedir visita".
 - Freelancer: só relatório de SKUs trabalhados por dia. Pagamento não passa pelo sistema.
-- Importador de catálogo (PDF, XML, planilha) com OpenAI, qualquer layout, tela de revisão,
-  validação de GTIN. Produto tem várias embalagens (unidade, reembalagem, caixa master), cada uma com GTIN.
+- Importador de catálogo: planilha e PDF com texto, por regras e sem IA (implementado); OpenAI para
+  qualquer layout fica como complemento. Tela de revisão, validação de GTIN. Produto tem várias embalagens (unidade, reembalagem, caixa master), cada uma com GTIN.
 - Política de privacidade e termo de uso: texto padrão editável por instalação.
 - Etapa futura (fora das fases): rede de freelancers estilo "Uber" (demanda para todos,
   primeiro que aceita executa, valor fixo). Identidade do promotor fica no painel central
@@ -59,7 +59,7 @@ Só o promotor usa o app; os demais usam o painel web (responsivo).
 ## Fases
 
 1. Base e infraestrutura — concluída.
-2. Cadastros e roteiros — implementados; importador de catálogo com OpenAI (2.3) pendente.
+2. Cadastros e roteiros — implementados; importação de catálogo por planilha e PDF sem IA feita; versão com OpenAI (2.3) pendente.
 3. Execução — backend 3.1–3.3 e app Flutter Android (3.4) implementados; teste em aparelho real pendente.
 4. Demandas e alertas — web e alertas internos implementados; e-mail e push pendentes.
 5. Indicadores — painel, produção, galeria privada e Excel implementados.
@@ -163,6 +163,17 @@ Referência: `docs/FASE-3.md`, seção 3.4.
   conclusão; reenvio idempotente; 409 reconciliado via `GET /api/v1/visitas/{visita}`.
 - `flutter analyze` e `flutter test` (74 testes) passam. Sem iOS (fase 8).
 
+### Importação de catálogo (planilha e PDF, sem IA)
+
+Referência: `docs/FASE-2.md`, item 2.3a. Em **Catálogo → Importar produtos**.
+
+- Planilha CSV/XLSX (modelo para baixar, formato largo ou longo) e PDF com texto selecionável,
+  lido por regras (`smalot/pdfparser`); calibrado com o catálogo da Gaboardi (69 produtos).
+- Revisão antes de gravar: erros bloqueiam o item; avisos (GTIN com dígito errado, repetido,
+  quantidade suposta, vários códigos) não bloqueiam. Reimportar atualiza pelo código, sem duplicar.
+- Admin da instalação escolhe a indústria; gerente de trade importa só na própria marca.
+- Sem OCR (PDF escaneado não é lido) e a revisão não edita campos.
+
 ### Demandas e alertas internos
 
 Referência: `docs/FASE-4.md`.
@@ -222,8 +233,8 @@ Referência: `docs/FASE-5.md`.
    de release e publicar o APK para o piloto.
 2. Notificações por e-mail e push; hoje os alertas são internos ao painel.
 3. Importador de catálogo com OpenAI (2.3), adiado por falta de créditos informada pelo
-   dono. Ao retomar, revisar limite de upload de 50 MB versus requisito de 60 MB e
-   `retry_after` do Redis (90 s): processar por página ou ajustar a reentrega dos jobs.
+   dono; hoje há importação por planilha e PDF sem IA. Ao retomar, rodar na fila e revisar
+   `retry_after` do Redis (90 s). Upload de 60 MB exige rebuild do container (php.ini e nginx).
 4. Piloto Gaboardi: carga de catálogo/dados, testes em campo e ajustes da operação.
 5. Materiais de PDV e app iOS. Rede aberta de freelancers e sincronização global de
    identidades/equipes continuam futuras, sem implementação nesta entrega.
