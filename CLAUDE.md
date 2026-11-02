@@ -174,6 +174,18 @@ Referência: `docs/FASE-2.md`, item 2.3a. Em **Catálogo → Importar produtos**
 - Admin da instalação escolhe a indústria; gerente de trade importa só na própria marca.
 - Sem OCR (PDF escaneado não é lido) e a revisão não edita campos.
 
+### Tema visual, menu e BI
+
+Referências: `docs/PAINEIS.md` (tema e menu) e `docs/FASE-5.md` (BI).
+
+- Telas dos clientes usam o tema Tixia em `public/tema/`; o super admin (domínios centrais) mantém
+  o visual antigo. Compatibilidade das telas antigas em `public/css/tema-cliente.css`.
+- Menu lateral em tópicos com submenu (`App\Support\MenuLateral`), com as mesmas permissões
+  de antes. Modo claro/escuro lembrado no navegador.
+- Componentes `x-indicador` e `x-grafico` (ApexCharts via `public/js/graficos.js`).
+- BI em `/bi` (visão da indústria ou da agência), com variação contra o período anterior,
+  rankings, estoque, rupturas e demandas. Admin da instalação/agência, supervisor e gerente de trade.
+
 ### Demandas e alertas internos
 
 Referência: `docs/FASE-4.md`.

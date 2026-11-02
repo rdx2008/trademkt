@@ -10,6 +10,7 @@ use App\Http\Controllers\Tenant\AcessoParceriaController;
 use App\Http\Controllers\Tenant\AgenciaController;
 use App\Http\Controllers\Tenant\AlertaController;
 use App\Http\Controllers\Tenant\AuthController;
+use App\Http\Controllers\Tenant\BiController;
 use App\Http\Controllers\Tenant\ContratoVisitaController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\DemandaController;
@@ -62,6 +63,7 @@ Route::middleware([
         Route::get('/indicadores', [IndicadorController::class, 'index'])->name('indicadores.index');
         Route::get('/indicadores/galeria', [IndicadorController::class, 'galeria'])->name('indicadores.galeria');
         Route::get('/indicadores/excel', [IndicadorController::class, 'exportar'])->name('indicadores.exportar');
+        Route::get('/bi', [BiController::class, 'index'])->middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade')->name('bi.index');
         Route::get('/visitas/{visita}', [VisitaController::class, 'show'])->whereNumber('visita')->name('visitas.show');
         Route::get('/visitas/{visita}/fotos/{foto}', [VisitaController::class, 'foto'])->whereNumber(['visita', 'foto'])->name('visitas.fotos');
         Route::get('/parcerias', [ParceriaController::class, 'index'])->name('parcerias.index');
