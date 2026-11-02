@@ -4,6 +4,13 @@
     $topicos = $eu ? \App\Support\MenuLateral::montar($eu) : [];
     $naoLidos = $eu ? \App\Models\Alerta::visiveisPara($eu)->whereNull('lida_em')->count() : 0;
     $origemParceiro = $eu?->parceiro_origem_tenant ? \App\Models\Tenant::find($eu->parceiro_origem_tenant) : null;
+    // Marca própria da instalação: nome, cor e logos (padrão: o nome do cliente e o azul do tema).
+    $aparencia = \App\Services\Marca\Aparencia::atual();
+    $nomeMarca = $aparencia->nome();
+    $creditos = tenant()->mostrarCreditos();
+    $logoClaro = $aparencia->urlLogoParaClaro();
+    $logoEscuro = $aparencia->urlLogoParaEscuro();
+    $icone = $aparencia->url('icone');
 @endphp
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -11,11 +18,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $titulo ?? 'Trade' }} · {{ $marca ?? config('app.name') }}</title>
-    <link rel="shortcut icon" type="image/png" href="{{ asset('tema/images/favicon.png') }}">
+    <title>{{ $titulo ?? $nomeMarca }} · {{ $nomeMarca }}</title>
+    <link rel="shortcut icon" type="image/png" href="{{ $aparencia->urlFavicon() }}">
     <link href="{{ asset('tema/vendor/bootstrap-select/dist/css/bootstrap-select.min.css') }}" rel="stylesheet">
     <link href="{{ asset('tema/css/style.css') }}" rel="stylesheet" class="main-css">
     <link href="{{ asset('css/tema-cliente.css') }}" rel="stylesheet">
+    @if ($aparencia->temCorPropria())
+        <link href="{{ route('marca.css', ['v' => $aparencia->versao()]) }}" rel="stylesheet">
+    @endif
     @stack('head')
     <script>
         // Modo claro/escuro lembrado neste navegador; aplicado antes de pintar para não piscar.
@@ -40,7 +50,12 @@
                     <div class="card mb-0 h-auto">
                         <div class="card-body">
                             <div class="text-center mb-3">
-                                <span class="marca-entrada">TRADE <b>PROMO</b></span>
+                                @if ($logoClaro)
+                                    <img class="logo-entrada logo-para-claro" src="{{ $logoClaro }}" alt="{{ $nomeMarca }}">
+                                    <img class="logo-entrada logo-para-escuro" src="{{ $logoEscuro }}" alt="{{ $nomeMarca }}">
+                                @else
+                                    <span class="marca-entrada">{{ $nomeMarca }}</span>
+                                @endif
                             </div>
                             @if (session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif
                             @if ($errors->any())
@@ -57,8 +72,12 @@
 <div id="main-wrapper">
     <div class="nav-header">
         <a href="{{ route('dashboard') }}" class="brand-logo">
-            <span class="logo-abbr"><i class="flaticon-381-networking"></i></span>
-            <span class="brand-title">TRADE <b>PROMO</b></span>
+            <span class="logo-abbr">
+                @if ($icone)<img src="{{ $icone }}" alt="">@else<span class="inicial-marca">{{ mb_strtoupper(mb_substr($nomeMarca, 0, 1)) }}</span>@endif
+            </span>
+            <span class="brand-title">
+                @if ($logoEscuro)<img src="{{ $logoEscuro }}" alt="{{ $nomeMarca }}">@else{{ $nomeMarca }}@endif
+            </span>
         </a>
         <div class="nav-control">
             <div class="hamburger">
@@ -72,8 +91,8 @@
             <nav class="navbar navbar-expand">
                 <div class="collapse navbar-collapse justify-content-between">
                     <div class="header-left">
-                        <div class="dashboard_bar">{{ $titulo ?? 'Trade Promo' }}</div>
-                        <span class="marca-cliente d-none d-md-inline">{{ $marca ?? config('app.name') }}</span>
+                        <div class="dashboard_bar">{{ $titulo ?? $nomeMarca }}</div>
+                        <span class="marca-cliente d-none d-md-inline">{{ $nomeMarca }}</span>
                     </div>
                     <ul class="navbar-nav header-right">
                         @if ($origemParceiro?->url())
@@ -145,9 +164,11 @@
                     @endif
                 @endforeach
             </ul>
-            <div class="copyright">
-                <p><strong>Trade Promo</strong> · execução no ponto de venda</p>
-            </div>
+            @if ($creditos)
+                <div class="copyright">
+                    <p>Desenvolvido por <strong>Trade Promo</strong></p>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -175,7 +196,7 @@
 
     <div class="footer">
         <div class="copyright">
-            <p>Trade Promo · {{ $marca ?? config('app.name') }} · {{ now()->year }}</p>
+            <p>{{ $nomeMarca }} · {{ now()->year }}@if ($creditos) · Desenvolvido por Trade Promo @endif</p>
         </div>
     </div>
 </div>

@@ -65,6 +65,34 @@ de build de JavaScript); os dados são calculados no servidor e entregues em `da
   admin da instalação, admin da agência, supervisor e gerente de trade; o escopo de dados é o
   mesmo dos indicadores. Detalhes em `docs/FASE-5.md`.
 
+## Marca própria / white label (02/11/2026)
+
+Cada instalação pode ter nome, cor e logos próprios. **Vem ligado por padrão** e sem nenhuma
+menção ao Trade Promo: o padrão mostra o nome da empresa e o azul do tema.
+
+- **Quem edita:** o admin da instalação, em **Configurações → Aparência** (`/configuracoes/aparencia`),
+  com prévia ao vivo, cores prontas, campo de código de cor e botão "Restaurar padrão".
+- **O que muda:** nome exibido (menu, título da aba, tela de entrada e rodapé), **cor principal**
+  (botões, links, menu, selos, barras e gráficos), **logo para fundo claro**, **logo para fundo
+  escuro** (menu lateral colorido e modo escuro) e **ícone quadrado** (menu recolhido e favicon).
+  Com um só logo, ele serve para os dois fundos.
+- **Imagens:** PNG, JPG ou WebP de até 2 MB. São lidas, reduzidas (logo até 480×160, ícone até
+  256×256) e regravadas como PNG, sem metadados. SVG não é aceito, por segurança. Ficam na pasta
+  privada do cliente e são servidas por `/marca/claro`, `/marca/escuro` e `/marca/icone`, públicas
+  porque a tela de entrada precisa delas.
+- **Cor:** o tema usa a cor em variáveis (`--primary`, `--rgba-primary-N`) e escrita direto em
+  componentes do Bootstrap e no menu. `App\Services\Marca\Aparencia::css()` gera uma folha de
+  estilo por cliente (`/marca/tema.css?v=<versão>`, cache longo, versão muda a cada alteração) que
+  redefine os dois jeitos e deriva hover e tons suaves de uma única cor. Cores claras demais
+  (contraste com branco abaixo de 3) são recusadas. Os gráficos leem `--primary`.
+- **Dados:** tabela `configuracoes` (chave/valor) no banco do cliente; modelo `Configuracao`.
+- **Controle do fornecedor** (painel central, **Clientes → Marca**): liberar ou não a marca própria
+  por cliente (desligada, o cliente volta ao padrão e perde a tela, mas as escolhas ficam
+  guardadas) e mostrar ou não "Desenvolvido por Trade Promo" no rodapé e no menu (desligado por
+  padrão). Ficam no JSON de dados do cliente (`white_label`, `mostrar_creditos`).
+- **Fora desta entrega:** o app Android ainda não aplica a marca (descoberta da empresa devolvendo
+  nome, logo e cor); e-mails e relatórios ainda não existem com marca.
+
 ## Limites desta entrega
 
 O painel inclui demandas de visita/ruptura, aprovação pela agência, alertas internos,

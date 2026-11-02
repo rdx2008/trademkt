@@ -51,6 +51,18 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         ];
     }
 
+    /** Marca própria (cor, logo e nome) liberada? Ligada por padrão; o fornecedor pode desligar. */
+    public function whiteLabelAtivo(): bool
+    {
+        return $this->white_label === null ? true : (bool) $this->white_label;
+    }
+
+    /** Mostra "Desenvolvido por Trade Promo" no rodapé? Desligado por padrão. */
+    public function mostrarCreditos(): bool
+    {
+        return (bool) $this->mostrar_creditos;
+    }
+
     /** Domínio principal (o primeiro cadastrado). */
     public function dominioPrincipal(): ?string
     {

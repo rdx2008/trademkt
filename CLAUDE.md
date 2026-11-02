@@ -186,6 +186,15 @@ Referências: `docs/PAINEIS.md` (tema e menu) e `docs/FASE-5.md` (BI).
 - BI em `/bi` (visão da indústria ou da agência), com variação contra o período anterior,
   rankings, estoque, rupturas e demandas. Admin da instalação/agência, supervisor e gerente de trade.
 
+### Marca própria (white label)
+
+Referência: `docs/PAINEIS.md`. Ligada por padrão, sem menção ao Trade Promo.
+
+- Admin da instalação personaliza nome, cor principal e logos em **Configurações → Aparência**;
+  a cor vira uma folha de estilo por cliente (`/marca/tema.css`), logos em `/marca/{claro,escuro,icone}`.
+- Fornecedor liberar/desligar a marca própria e mostrar "Desenvolvido por" em **Clientes → Marca**.
+- Pendente: aplicar nome, logo e cor no app Android pela descoberta da empresa.
+
 ### Demandas e alertas internos
 
 Referência: `docs/FASE-4.md`.

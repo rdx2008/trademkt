@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\RoteiroController as ApiRoteiroController;
 use App\Http\Controllers\Tenant\AcessoParceriaController;
 use App\Http\Controllers\Tenant\AgenciaController;
 use App\Http\Controllers\Tenant\AlertaController;
+use App\Http\Controllers\Tenant\AparenciaController;
 use App\Http\Controllers\Tenant\AuthController;
 use App\Http\Controllers\Tenant\BiController;
 use App\Http\Controllers\Tenant\ContratoVisitaController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Tenant\ImportacaoPdvController;
 use App\Http\Controllers\Tenant\ImportacaoSkuController;
 use App\Http\Controllers\Tenant\IndicadorController;
 use App\Http\Controllers\Tenant\IndustriaController;
+use App\Http\Controllers\Tenant\MarcaController;
 use App\Http\Controllers\Tenant\ParceriaController;
 use App\Http\Controllers\Tenant\PdvController;
 use App\Http\Controllers\Tenant\RedeController;
@@ -44,6 +46,10 @@ Route::middleware([
 ])->group(function () {
     Route::redirect('/', '/painel');
 
+    // Marca da instalação (folha de estilo e logos): públicos, a tela de entrada precisa deles.
+    Route::get('/marca/tema.css', [MarcaController::class, 'css'])->name('marca.css');
+    Route::get('/marca/{tipo}', [MarcaController::class, 'arquivo'])->whereIn('tipo', ['claro', 'escuro', 'icone'])->name('marca.arquivo');
+
     Route::middleware('guest')->group(function () {
         Route::get('/entrar', [AuthController::class, 'create'])->name('login');
         Route::post('/entrar', [AuthController::class, 'store'])->middleware('throttle:login');
@@ -52,6 +58,12 @@ Route::middleware([
     Route::get('/parcerias/entrar', [AcessoParceriaController::class, 'entrar'])->middleware('throttle:20,1')->name('parcerias.entrar');
 
     Route::middleware(['auth', EnsureAcessoParceiro::class])->group(function () {
+        Route::middleware('perfil:admin_instalacao')->group(function () {
+            Route::get('/configuracoes/aparencia', [AparenciaController::class, 'edit'])->name('configuracoes.aparencia');
+            Route::put('/configuracoes/aparencia', [AparenciaController::class, 'update'])->name('configuracoes.aparencia.salvar');
+            Route::delete('/configuracoes/aparencia', [AparenciaController::class, 'destroy'])->name('configuracoes.aparencia.restaurar');
+        });
+
         Route::get('/demandas', [DemandaController::class, 'index'])->name('demandas.index');
         Route::get('/demandas/nova', [DemandaController::class, 'create'])->name('demandas.create');
         Route::post('/demandas', [DemandaController::class, 'store'])->name('demandas.store');

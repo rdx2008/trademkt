@@ -111,7 +111,7 @@
                 <div class="card grafico-card">
                     <div class="card-header border-0 pb-0"><div><h4 class="card-title mb-1">Visitas realizadas por dia da semana</h4><p class="rotulo mb-0">Ajuda a equilibrar os roteiros</p></div></div>
                     <div class="card-body">
-                        <x-grafico :config="['tipo' => 'coluna', 'altura' => 280, 'semLegenda' => true, 'cores' => ['#222fb9'], 'categorias' => $bi['porDiaSemana']['categorias'], 'series' => [['nome' => 'Realizadas', 'dados' => $bi['porDiaSemana']['dados']]]]" />
+                        <x-grafico :config="['tipo' => 'coluna', 'altura' => 280, 'semLegenda' => true, 'cores' => ['primary'], 'categorias' => $bi['porDiaSemana']['categorias'], 'series' => [['nome' => 'Realizadas', 'dados' => $bi['porDiaSemana']['dados']]]]" />
                     </div>
                 </div>
             </div>
@@ -129,7 +129,7 @@
                 <div class="card-header border-0 pb-0"><div><h4 class="card-title mb-1">SKUs mais trabalhados</h4><p class="rotulo mb-0">Em visitas realizadas</p></div></div>
                 <div class="card-body">
                     @if ($bi['topSkus']->isEmpty())<p class="text-muted mb-0">Sem produtos trabalhados no período.</p>
-                    @else<x-grafico :config="['tipo' => 'barra', 'altura' => max(200, $bi['topSkus']->count() * 40 + 40), 'semLegenda' => true, 'cores' => ['#222fb9'], 'categorias' => $bi['topSkus']->pluck('descricao'), 'series' => [['nome' => 'Vezes trabalhado', 'dados' => $bi['topSkus']->pluck('total')]]]" />@endif
+                    @else<x-grafico :config="['tipo' => 'barra', 'altura' => max(200, $bi['topSkus']->count() * 40 + 40), 'semLegenda' => true, 'cores' => ['primary'], 'categorias' => $bi['topSkus']->pluck('descricao'), 'series' => [['nome' => 'Vezes trabalhado', 'dados' => $bi['topSkus']->pluck('total')]]]" />@endif
                 </div>
             </div>
         </div>

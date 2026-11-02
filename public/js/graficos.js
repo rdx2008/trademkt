@@ -11,7 +11,17 @@
 (function () {
   'use strict';
 
-  var CORES = ['#222fb9', '#27ae60', '#f5a623', '#dc3545', '#17a2b8', '#6f42c1', '#fd7e14', '#20c997'];
+  var CORES = ['primary', '#27ae60', '#f5a623', '#dc3545', '#17a2b8', '#6f42c1', '#fd7e14', '#20c997'];
+
+  // "primary" vira a cor principal da instalação (variável CSS do tema, redefinida pela marca própria).
+  function corPrincipal() {
+    var v = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+    return v || '#222fb9';
+  }
+  function resolver(cores) {
+    var principal = corPrincipal();
+    return (cores || CORES).map(function (c) { return c === 'primary' ? principal : c; });
+  }
   var graficos = [];
 
   function escuro() {
@@ -38,7 +48,7 @@
         animations: { enabled: true, speed: 500 }
       },
       theme: { mode: escuro() ? 'dark' : 'light' },
-      colors: cfg.cores || CORES,
+      colors: resolver(cfg.cores),
       dataLabels: { enabled: false },
       grid: { borderColor: escuro() ? '#3b3f45' : '#ececec', strokeDashArray: 4 },
       legend: { show: !cfg.semLegenda, position: 'bottom', fontSize: '12px', markers: { radius: 12 } },

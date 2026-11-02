@@ -30,7 +30,7 @@
             <tbody>
                 @forelse ($clientes as $cliente)
                     <tr>
-                        <td>{{ $cliente->nome }}<div class="rotulo">{{ $cliente->id }}</div><a href="{{ route('central.dominios.index', $cliente) }}">Gerenciar endereços</a></td>
+                        <td>{{ $cliente->nome }}<div class="rotulo">{{ $cliente->id }}</div><a href="{{ route('central.dominios.index', $cliente) }}">Gerenciar endereços</a> · <a href="{{ route('central.clientes.marca', $cliente) }}">Marca</a></td>
                         <td>{{ $cliente->tipo->label() }}</td>
                         <td><code>{{ $cliente->codigo }}</code></td>
                         <td>

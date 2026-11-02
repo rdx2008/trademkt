@@ -28,11 +28,16 @@
 
 /* Marca e cabeçalho */
 .nav-header .brand-logo { gap: .75rem; text-decoration: none; }
-.nav-header .logo-abbr { font-size: 1.9rem; color: var(--primary); line-height: 1; }
-.nav-header .brand-title { font-weight: 700; letter-spacing: .08rem; color: var(--primary); font-size: 1.05rem; white-space: nowrap; }
-.nav-header .brand-title b { color: #ff7c76; }
-.marca-entrada { font-weight: 700; letter-spacing: .1rem; font-size: 1.4rem; color: var(--primary); }
-.marca-entrada b { color: #ff7c76; }
+.nav-header .logo-abbr, .nav-header .brand-title { color: #fff; line-height: 1; display: inline-flex; align-items: center; }
+.nav-header .brand-title { font-weight: 700; letter-spacing: .04rem; font-size: 1.05rem; white-space: nowrap; max-width: 10.5rem; overflow: hidden; text-overflow: ellipsis; }
+.nav-header .logo-abbr img { max-height: 2.4rem; max-width: 2.6rem; }
+.nav-header .brand-title img { max-height: 2.6rem; max-width: 10rem; display: block; }
+.inicial-marca { display: inline-flex; width: 2.2rem; height: 2.2rem; border-radius: .5rem; background: #fff; color: var(--primary); font-weight: 700; align-items: center; justify-content: center; }
+.marca-entrada { font-weight: 700; letter-spacing: .05rem; font-size: 1.4rem; color: var(--primary); }
+.logo-entrada { max-height: 4.5rem; max-width: 100%; }
+.logo-para-escuro { display: none; }
+[data-theme-version=dark] .logo-para-claro { display: none; }
+[data-theme-version=dark] .logo-para-escuro { display: inline-block; }
 .header-left { display: flex; align-items: center; gap: 1rem; }
 .header-left .marca-cliente { color: var(--t-muted); font-size: .8rem; border-left: 1px solid var(--t-borda); padding-left: 1rem; }
 .avatar-iniciais { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--primary); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; }

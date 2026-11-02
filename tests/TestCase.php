@@ -5,6 +5,7 @@ namespace Tests;
 use App\Enums\Perfil;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Marca\Aparencia;
 use App\Services\ProvisionarCliente;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Artisan;
@@ -27,6 +28,7 @@ abstract class TestCase extends BaseTestCase
 
     protected function tearDown(): void
     {
+        Aparencia::esquecer();
         if (tenancy()->initialized) {
             tenancy()->end();
         }

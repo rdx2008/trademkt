@@ -4,6 +4,7 @@ use App\Http\Controllers\Central\AuthController;
 use App\Http\Controllers\Central\ClienteController;
 use App\Http\Controllers\Central\DashboardController;
 use App\Http\Controllers\Central\DominioController;
+use App\Http\Controllers\Central\MarcaClienteController;
 use App\Http\Controllers\Central\RedeAgenciaController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +28,8 @@ Route::middleware('auth:admin')->group(function () {
     Route::post('/sair', [AuthController::class, 'destroy'])->name('central.logout');
 
     Route::get('/clientes', [ClienteController::class, 'index'])->name('central.clientes.index');
+    Route::get('/clientes/{cliente}/marca', [MarcaClienteController::class, 'edit'])->name('central.clientes.marca');
+    Route::put('/clientes/{cliente}/marca', [MarcaClienteController::class, 'update'])->name('central.clientes.marca.salvar');
     Route::get('/clientes/{cliente}/dominios', [DominioController::class, 'index'])->name('central.dominios.index');
     Route::post('/clientes/{cliente}/dominios', [DominioController::class, 'store'])->name('central.dominios.store');
     Route::patch('/clientes/{cliente}/dominios/{dominio}/principal', [DominioController::class, 'principal'])->whereNumber('dominio')->name('central.dominios.principal');

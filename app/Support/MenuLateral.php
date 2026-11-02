@@ -73,6 +73,10 @@ class MenuLateral
                 self::item('Usuários', 'usuarios.index', ['usuarios.*'], $eu->temPerfil(Perfil::AdminInstalacao, Perfil::AdminAgencia, Perfil::GerenteTrade)),
             ]),
 
+            self::topico('Configurações', 'flaticon-381-settings-2', [
+                self::item('Aparência', 'configuracoes.aparencia', ['configuracoes.*'], $eu->temPerfil(Perfil::AdminInstalacao) && tenant()->whiteLabelAtivo()),
+            ]),
+
             self::link(
                 'Meus alertas',
                 'flaticon-381-notification',
