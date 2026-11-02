@@ -1,29 +1,56 @@
 <x-layout :titulo="$titulo" :marca="$cliente->nome">
     <x-slot:nav>@include('tenant.nav')</x-slot:nav>
-    @if ($precisaAgencia)<div class="painel-pendencias"><strong>Configure sua agência para iniciar a operação</strong><span>Escolha uma prestadora no diretório e aguarde o aceite da parceria.</span><a href="{{ route('parcerias.index') }}">Buscar agências →</a></div>@endif
+    @if ($precisaAgencia)<div class="alert alert-warning d-flex flex-wrap align-items-center gap-2"><strong>Configure sua agência para iniciar a operação.</strong><span>Escolha uma prestadora no diretório e aguarde o aceite da parceria.</span><a class="ms-auto fw-semibold" href="{{ route('parcerias.index') }}">Buscar agências →</a></div>@endif
     <div class="painel-cabecalho">
         <div><div class="sobretitulo">{{ $usuario->perfil->label() }} / {{ $cliente->nome }}</div><h1>{{ $titulo }}</h1><p class="texto-apoio">{{ $descricao }}</p></div>
         <form method="GET" action="{{ route('dashboard') }}" class="seletor-dia"><label for="painel-data">Dia da operação</label><div class="acoes"><input id="painel-data" type="date" name="data" value="{{ $data->toDateString() }}" required><button class="botao" type="submit">Consultar</button></div></form>
     </div>
-    <div class="painel-boas-vindas"><div><span class="sobretitulo">SEU DIA, EM FOCO</span><h2>Olá, {{ $usuario->nome }}.</h2><p>{{ $data->translatedFormat('l, d \d\e F \d\e Y') }}</p></div><div class="progresso-resumo"><strong>{{ $resumo['percentual'] }}<small>%</small></strong><span>das visitas do dia realizadas</span><span>{{ $resumo['realizadas'] }} de {{ $resumo['total'] }} visitas</span></div></div>
-    <section class="grade indicadores" aria-label="Resumo das visitas do dia">
-        @foreach ([['Visitas no dia', $resumo['total'], 'Total da agenda selecionada', 'neutro'], ['Realizadas', $resumo['realizadas'], 'Visitas com status realizado', 'verde'], ['Em andamento', $resumo['emAndamento'], 'Atendimentos iniciados', 'azul'], ['Em atenção', $resumo['emAtencao'], 'Visitas que precisam de acompanhamento', 'amarelo']] as [$rotulo, $numero, $ajuda, $cor])
-            <article class="cartao indicador {{ $cor }}"><span class="rotulo">{{ $rotulo }}</span><strong class="numero">{{ $numero }}</strong><span class="indicador-ajuda">{{ $ajuda }}</span></article>
+    <div class="welcome-card rounded ps-4 ps-md-5 pt-4 pt-md-5 pb-4 mb-4 position-relative">
+        <h4 class="text-warning">Olá, {{ \Illuminate\Support\Str::words($usuario->nome, 1, '') }}.</h4>
+        <p class="mb-2">{{ $data->translatedFormat('l, d \d\e F \d\e Y') }}</p>
+        <p class="mb-3">{{ $resumo['realizadas'] }} de {{ $resumo['total'] }} visitas do dia realizadas.</p>
+        <div class="progress mb-3" style="height:6px; max-width: 360px;" role="progressbar" aria-label="Visitas realizadas no dia" aria-valuenow="{{ $resumo['percentual'] }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar bg-warning" style="width: {{ $resumo['percentual'] }}%"></div></div>
+        <a class="btn btn-warning btn-rounded" href="#visitas-do-dia">{{ $resumo['percentual'] }}% concluído · ver visitas <i class="las la-long-arrow-alt-right ms-2"></i></a>
+        <img src="{{ asset('tema/images/svg/welcom-card.svg') }}" alt="" class="position-absolute d-none d-md-block">
+    </div>
+
+    <section class="row" aria-label="Resumo das visitas do dia">
+        @foreach ([['Visitas no dia', $resumo['total'], 'Total da agenda selecionada', 'primary', 'flaticon-381-calendar-1'], ['Realizadas', $resumo['realizadas'], 'Visitas com status realizado', 'success', 'flaticon-381-success-1'], ['Em andamento', $resumo['emAndamento'], 'Atendimentos iniciados', 'info', 'flaticon-381-stopwatch'], ['Em atenção', $resumo['emAtencao'], 'Visitas que precisam de acompanhamento', 'warning', 'flaticon-381-warning-1']] as [$rotulo, $numero, $ajuda, $cor, $icone])
+            <div class="col-xl-3 col-sm-6"><x-indicador :rotulo="$rotulo" :valor="$numero" :ajuda="$ajuda" :cor="$cor" :icone="$icone" /></div>
         @endforeach
     </section>
+
+    <div class="row">
+        <div class="col-xl-8">
+            <div class="card grafico-card">
+                <div class="card-header border-0 pb-0">
+                    <div><h4 class="card-title mb-1">Agenda dos últimos 7 dias</h4><p class="rotulo mb-0">Volume de visitas até {{ $data->format('d/m') }}</p></div>
+                    <span class="badge badge-primary light">{{ $resumo['semana']->sum('total') }} visitas</span>
+                </div>
+                <div class="card-body">
+                    <x-grafico :config="['tipo' => 'coluna', 'altura' => 290, 'semLegenda' => true, 'categorias' => $resumo['semana']->pluck('dia'), 'series' => [['nome' => 'Visitas', 'dados' => $resumo['semana']->pluck('total')]]]" />
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="card grafico-card">
+                <div class="card-header border-0 pb-0">
+                    <div><h4 class="card-title mb-1">Situação do dia</h4><p class="rotulo mb-0">{{ $data->format('d/m/Y') }} · {{ $resumo['total'] }} visitas</p></div>
+                </div>
+                <div class="card-body">
+                    <x-grafico :config="['tipo' => 'rosca', 'altura' => 250, 'rotuloTotal' => 'Visitas', 'cores' => ['#9aa0a8', '#17a2b8', '#27ae60', '#f5a623', '#dc3545'], 'categorias' => $resumo['estados']->pluck('rotulo'), 'series' => [['nome' => 'Visitas', 'dados' => $resumo['estados']->pluck('total')]]]" />
+                    <div class="situacoes mt-3">
+                        @foreach ($resumo['estados'] as $estado)<a class="situacao-item" href="{{ route('dashboard', ['data' => $data->toDateString(), 'status' => $estado['valor']]) }}#visitas-do-dia"><span class="ponto status-{{ $estado['valor'] }}"></span><span>{{ $estado['rotulo'] }}</span><strong>{{ $estado['total'] }}</strong></a>@endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <section class="painel-atalhos" aria-label="Ações do seu perfil">
         @include('tenant.painel.atalhos')
     </section>
-    <div class="painel-colunas">
-        <section class="cartao"><div class="secao-titulo"><div><h2>Agenda dos últimos 7 dias</h2><p class="rotulo">Volume de visitas até {{ $data->format('d/m') }}</p></div><span class="selo">{{ $resumo['semana']->sum('total') }} visitas</span></div>
-            <div class="grafico-colunas" role="img" aria-label="Visitas por dia nos últimos sete dias">
-                @foreach ($resumo['semana'] as $dia)<div class="grafico-coluna"><strong>{{ $dia['total'] }}</strong><div class="grafico-trilho"><div class="grafico-barra" style="height: {{ $dia['total'] ? max(4, round($dia['total'] / max(1, $resumo['semana']->max('total')) * 100)) : 0 }}%"></div></div><span>{{ $dia['dia'] }}</span></div>@endforeach
-            </div>
-        </section>
-        <section class="cartao"><div class="secao-titulo"><div><h2>Situação do dia</h2><p class="rotulo">{{ $data->format('d/m/Y') }} · {{ $resumo['total'] }} visitas</p></div></div><div class="situacoes">
-            @foreach ($resumo['estados'] as $estado)<a class="situacao-item" href="{{ route('dashboard', ['data' => $data->toDateString(), 'status' => $estado['valor']]) }}#visitas-do-dia"><span class="ponto status-{{ $estado['valor'] }}"></span><span>{{ $estado['rotulo'] }}</span><strong>{{ $estado['total'] }}</strong></a>@endforeach
-        </div></section>
-    </div>
+
     @if ($resumo['semPromotor'] || $resumo['pendentesAnteriores'])<section class="painel-pendencias" aria-label="Pontos de atenção"><strong>Pontos de atenção</strong>@if ($resumo['semPromotor'])<span>{{ $resumo['semPromotor'] }} visita(s) do dia sem promotor atribuído.</span>@endif @if ($resumo['pendentesAnteriores'])<span>{{ $resumo['pendentesAnteriores'] }} visita(s) dos 6 dias anteriores continuam previstas.</span>@endif @if ($usuario->temPerfil(\App\Enums\Perfil::AdminAgencia, \App\Enums\Perfil::Supervisor))<a href="{{ route('roteiros.semana', ['semana' => $data->copy()->startOfWeek()->toDateString()]) }}">Abrir roteiros →</a>@endif</section>@endif
     @if ($usuario->perfil === \App\Enums\Perfil::GerentePdv)
         <section id="minhas-lojas" class="secao-painel"><div class="secao-titulo"><div><h2>Lojas e marcas atendidas</h2><p class="rotulo">Contratos vigentes na data selecionada</p></div></div><div class="grade lojas-grade">

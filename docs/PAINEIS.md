@@ -32,9 +32,38 @@ de PDVs da indústria. A indústria acompanha a operação; a agência atribui t
 
 ## Interface
 
-Menu lateral em computador e menu recolhível em celular. Atalhos variam por perfil.
-Componentes, formulários e tabelas existentes usam o mesmo layout. Sem bibliotecas externas
-de gráficos ou etapa de build de JavaScript. Os gráficos são gerados no servidor com CSS.
+Menu lateral em tópicos com submenu no computador e recolhível em celular; atalhos variam por
+perfil. Os gráficos usam o ApexCharts que acompanha o tema (arquivos locais, sem CDN e sem etapa
+de build de JavaScript); os dados são calculados no servidor e entregues em `data-grafico`.
+
+## Tema visual, menu lateral e BI (atualização de 02/11/2026)
+
+- Todas as telas dos clientes (login, painéis, cadastros, roteiros, indicadores) usam o tema
+  **Tixia** (PHP/Bootstrap, DexignZone), copiado para `public/tema/` com CSS, JS, bibliotecas de
+  gráficos (ApexCharts, Chart.js, Chartist, Flot, Morris, Peity, Sparkline), componentes de
+  interface e os conjuntos de ícones (Flaticon, Font Awesome 6, Line Awesome, Themify,
+  Material Design, Feather e Bootstrap Icons). Foram deixados de fora as imagens de demonstração,
+  o editor de texto e as versões antigas. As fontes extras do Google foram removidas; só a
+  Poppins continua sendo carregada. O tema é um produto licenciado: manter a licença da compra.
+- **O painel do super admin (domínios centrais) não muda**: continua com o visual e o CSS
+  antigos (`public/css/app.css`). O layout `x-layout` escolhe o tema novo só quando há um cliente
+  ativo e o host não é um domínio central.
+- Camada de compatibilidade `public/css/tema-cliente.css`: leva as classes antigas (`cartao`,
+  `botao`, `campo`, `tabela-rolagem`, `selo`...) ao visual do tema, sem reescrever cada tela.
+  Telas novas devem usar direto os componentes do tema. Componentes de Blade criados:
+  `x-indicador` (cartão `widget-stat`) e `x-grafico` (ApexCharts por `data-grafico`, com
+  `public/js/graficos.js`; aceita coluna, barra, linha, área, rosca e radial, e acompanha o
+  modo escuro).
+- **Modo claro/escuro** pelo ícone do cabeçalho; a escolha fica no navegador (`localStorage`).
+- **Menu lateral em tópicos com submenu**, montado em `App\Support\MenuLateral` com as mesmas
+  permissões do menu anterior: Visão geral, Operação (roteiros, contratos, demandas),
+  Resultados (indicadores, BI), Cadastros (PDVs, catálogo, importar produtos, agências,
+  indústrias, regiões, redes), Parcerias, Usuários e Alertas. Tópico com um só item vira link
+  direto e tópico sem itens permitidos some.
+- **BI** em `/bi` (`BiController`, `App\Services\Bi\PainelBi`): visão da indústria ou da
+  agência conforme a instalação (o gerente de trade sempre vê a visão da marca). Liberado para
+  admin da instalação, admin da agência, supervisor e gerente de trade; o escopo de dados é o
+  mesmo dos indicadores. Detalhes em `docs/FASE-5.md`.
 
 ## Limites desta entrega
 

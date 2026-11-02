@@ -78,6 +78,12 @@ class User extends Authenticatable
         return in_array($this->perfil, $perfis, true);
     }
 
+    /** BI (análise de resultados): gestão da instalação, agência e marca; promotor, representante e supermercado não. */
+    public function podeVerBi(): bool
+    {
+        return $this->temPerfil(Perfil::AdminInstalacao, Perfil::AdminAgencia, Perfil::Supervisor, Perfil::GerenteTrade);
+    }
+
     public function podeGerenciar(User $outro): bool
     {
         if ($this->is($outro)) {

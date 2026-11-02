@@ -10,3 +10,4 @@
 .idea
 .vscode
 /.phpunit.result.cache
+/database/dev_cli_*
