@@ -4,6 +4,7 @@ import '../estado_app.dart';
 import '../modelos/execucao.dart';
 import '../modelos/roteiro.dart';
 import '../util/datas.dart';
+import 'menu_lateral.dart';
 import 'tela_visita.dart';
 
 class TelaRoteiro extends StatefulWidget {
@@ -49,33 +50,6 @@ class _TelaRoteiroState extends State<TelaRoteiro> with WidgetsBindingObserver {
       ..showSnackBar(SnackBar(content: Text(aviso)));
   }
 
-  Future<void> _sair() async {
-    final estado = widget.estado;
-    if (estado.pendentes > 0) {
-      final forcar = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Envios pendentes'),
-          content: Text(
-            'Há ${estado.pendentes} item(ns) ainda não enviados ao servidor. '
-            'Se sair agora, eles serão perdidos. Sincronize antes de sair.',
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-            TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sair e perder')),
-          ],
-        ),
-      );
-      if (forcar != true) {
-        return;
-      }
-      await estado.sair(forcar: true);
-
-      return;
-    }
-    await estado.sair();
-  }
-
   @override
   Widget build(BuildContext context) {
     final estado = widget.estado;
@@ -87,8 +61,16 @@ class _TelaRoteiroState extends State<TelaRoteiro> with WidgetsBindingObserver {
         final data = DateTime.parse(estado.dataRoteiro);
 
         return Scaffold(
+          drawer: MenuLateral(estado: estado),
           appBar: AppBar(
-            title: Text(estado.sessao?.usuario.nome ?? 'Roteiro'),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(estado.sessao?.empresa.nomeExibido ?? 'Roteiro', style: const TextStyle(fontSize: 18)),
+                if (estado.sessao != null)
+                  Text(estado.sessao!.usuario.nome, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal)),
+              ],
+            ),
             actions: [
               IconButton(
                 tooltip: 'Sincronizar',
@@ -101,19 +83,6 @@ class _TelaRoteiroState extends State<TelaRoteiro> with WidgetsBindingObserver {
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.cloud_upload_outlined),
                 ),
-              ),
-              PopupMenuButton<String>(
-                onSelected: (opcao) {
-                  if (opcao == 'atualizar') {
-                    estado.atualizarRoteiro();
-                  } else if (opcao == 'sair') {
-                    _sair();
-                  }
-                },
-                itemBuilder: (context) => const [
-                  PopupMenuItem(value: 'atualizar', child: Text('Atualizar roteiro')),
-                  PopupMenuItem(value: 'sair', child: Text('Sair')),
-                ],
               ),
             ],
             bottom: PreferredSize(

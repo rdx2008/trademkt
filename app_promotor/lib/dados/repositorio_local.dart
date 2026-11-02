@@ -2,6 +2,7 @@
 library;
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
@@ -27,6 +28,29 @@ class RepositorioLocal {
     );
 
     return RepositorioLocal._(db);
+  }
+
+  /// Banco da conta [chave] (`empresa#usuário`): cada conta tem o seu arquivo. A primeira conta
+  /// a abrir herda o banco único da versão anterior (`app_promotor.db`), se existir.
+  static Future<RepositorioLocal> abrirDaConta(String chave) async {
+    final pasta = await databaseFactory.getDatabasesPath();
+    final destino = p.join(pasta, chave == 'padrao' ? 'app_promotor_padrao.db' : 'app_promotor_${_hash(chave)}.db');
+    final legado = File(p.join(pasta, 'app_promotor.db'));
+    if (chave != 'padrao' && !await File(destino).exists() && await legado.exists()) {
+      await legado.rename(destino);
+    }
+
+    return abrir(caminho: destino);
+  }
+
+  /// FNV-1a de 32 bits em hexadecimal: nome estável de arquivo para a chave da conta.
+  static String _hash(String texto) {
+    var h = 0x811c9dc5;
+    for (final c in texto.codeUnits) {
+      h = ((h ^ c) * 0x01000193) & 0xffffffff;
+    }
+
+    return h.toRadixString(16).padLeft(8, '0');
   }
 
   static Future<void> _criar(Database db, int versao) async {

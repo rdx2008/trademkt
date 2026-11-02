@@ -55,7 +55,19 @@ class _TelaEmpresaState extends State<TelaEmpresa> {
 
   @override
   Widget build(BuildContext context) {
+    final acrescentando = widget.estado.adicionandoConta;
+
     return Scaffold(
+      appBar: acrescentando
+          ? AppBar(
+              title: const Text('Adicionar empresa'),
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                tooltip: 'Cancelar',
+                onPressed: widget.estado.cancelarNovaConta,
+              ),
+            )
+          : null,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/cliente_api.dart';
 import '../estado_app.dart';
+import 'logo_marca.dart';
 
 class TelaLogin extends StatefulWidget {
   const TelaLogin({super.key, required this.estado});
@@ -22,7 +23,7 @@ class _TelaLoginState extends State<TelaLogin> {
   @override
   void initState() {
     super.initState();
-    _email.text = widget.estado.sessao?.usuario.email ?? '';
+    _email.text = widget.estado.sessaoExpirada ? (widget.estado.sessao?.usuario.email ?? '') : '';
   }
 
   @override
@@ -62,7 +63,7 @@ class _TelaLoginState extends State<TelaLogin> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(empresa?.nome ?? 'Entrar'),
+        title: Text(empresa?.nomeExibido ?? 'Entrar'),
         leading: estado.sessaoExpirada
             ? null
             : IconButton(icon: const Icon(Icons.arrow_back), tooltip: 'Trocar empresa', onPressed: estado.trocarEmpresa),
@@ -77,6 +78,8 @@ class _TelaLoginState extends State<TelaLogin> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    Center(child: LogoMarca(marca: empresa?.marca, altura: 64)),
+                    const SizedBox(height: 24),
                     if (estado.sessaoExpirada) ...[
                       const Card(
                         child: Padding(

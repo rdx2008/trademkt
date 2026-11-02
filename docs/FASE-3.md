@@ -80,7 +80,7 @@ Descoberta da empresa, login, download do roteiro, câmera com marca d'água,
 detecção de localização simulada, execução offline e fila persistente de sincronização.
 
 Implementado em `app_promotor/` (Flutter 3.47, Dart 3.13, somente Android; iOS fica para a
-fase 8). Textos em português. Validado com `flutter analyze` e `flutter test` (74 testes).
+fase 8). Textos em português. Validado com `flutter analyze` e `flutter test` (87 testes).
 
 ### Estrutura
 
@@ -103,7 +103,21 @@ fase 8). Textos em português. Validado com `flutter analyze` e `flutter test` (
    Há um modo avançado para informar a URL da instalação diretamente (homologação/local).
 2. **Login**: `POST /login` com e-mail, senha e `dispositivo` (fabricante + modelo). Token e
    usuário ficam no armazenamento seguro do Android. Token inválido (401) leva à tela de login
-   sem apagar nada do aparelho; outro usuário só entra sem pendências na fila.
+   sem apagar nada do aparelho.
+   **Marca própria (white label)**: a resposta da descoberta traz `marca` (`nome`, `cor` `#rrggbb`
+   ou `null`, `logo_url`, `icone_url`). O app usa a cor como cor principal (barra, botões), o
+   nome no cabeçalho e o logo na entrada e no menu, já antes do login. O logo é baixado e
+   guardado no aparelho (nome do arquivo com a versão `?v=`; o antigo é apagado), então a marca
+   aparece sem internet. A marca é relida da API central ao abrir o app e ao trocar de conta;
+   falha de rede é ignorada. Sem marca (ou desligada pelo fornecedor), vale o visual padrão.
+   **Várias contas**: o promotor que atende mais de uma agência usa **Adicionar outra empresa**
+   no menu (código da empresa → login). Cada conta (empresa + usuário) guarda sessão, roteiro,
+   fila e fotos próprios (um banco SQLite por conta; o banco único da versão anterior é herdado
+   pela primeira conta). **Menu lateral**: dados de quem está logado, atualizar roteiro,
+   sincronizar, contas do aparelho (tocar troca de conta), adicionar empresa e **Sair** (só da
+   conta atual; as outras permanecem e uma delas é aberta). Trocar de conta com envios pendentes
+   avisa que eles ficam guardados e seguem quando voltar; durante um envio a troca é recusada.
+   Itens pendentes de uma conta só são enviados enquanto ela está ativa.
 3. **Roteiro**: `GET /roteiro?data=AAAA-MM-DD` salvo em cache por dia; sem rede, o roteiro
    salvo continua disponível. Setas trocam o dia; puxar para baixo atualiza.
 4. **Visita**: check-in → foto antes → SKUs com estoque → foto depois → concluir; ou ruptura

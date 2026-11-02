@@ -18,6 +18,7 @@ import 'modelos/roteiro.dart';
 import 'modelos/usuario.dart';
 import 'servicos/fotos.dart';
 import 'servicos/localizacao.dart';
+import 'servicos/marca.dart';
 import 'servicos/sessao.dart';
 import 'sincronizacao/item_fila.dart';
 import 'sincronizacao/sincronizador.dart';
@@ -33,11 +34,20 @@ class EstadoApp extends ChangeNotifier {
     required this.fotos,
     required this.urlCentral,
     this.dispositivo = 'Android',
-  }) : _http = httpClient;
+    this.fabricaRepositorio,
+    ServicoMarca? servicoMarca,
+  })  : _http = httpClient,
+        _servicoMarca = servicoMarca ?? ServicoMarca();
 
   final http.Client _http;
   final ArmazenamentoSessao armazenamento;
-  final RepositorioLocal repositorio;
+
+  /// Banco da conta ativa. Com [fabricaRepositorio], cada conta tem o seu.
+  RepositorioLocal repositorio;
+
+  /// Abre o banco local de uma conta (pela chave). Sem ela, todas as contas dividem [repositorio].
+  final Future<RepositorioLocal> Function(String chave)? fabricaRepositorio;
+  final ServicoMarca _servicoMarca;
   final ServicoLocalizacao localizacao;
   final ServicoFotos fotos;
 
@@ -46,6 +56,12 @@ class EstadoApp extends ChangeNotifier {
   final String dispositivo;
 
   Sessao? sessao;
+
+  /// Todas as contas do aparelho (a ativa é [sessao]).
+  List<Sessao> contas = [];
+
+  /// O promotor está acrescentando outra empresa, com uma conta já aberta.
+  bool adicionandoConta = false;
 
   /// Empresa escolhida na primeira tela, antes do login.
   Empresa? empresaPendente;
@@ -71,21 +87,41 @@ class EstadoApp extends ChangeNotifier {
 
   bool get autenticado => sessao != null && !sessaoExpirada;
 
+  /// Marca a vestir agora: da empresa em escolha (antes do login ou ao acrescentar conta)
+  /// ou da conta ativa.
+  Marca? get marcaAtual {
+    if (empresaPendente != null) {
+      return empresaPendente!.marca;
+    }
+
+    return adicionandoConta ? null : sessao?.empresa.marca;
+  }
+
   // ----------------------------------------------------------------- início
 
   Future<void> carregar() async {
     sessao = await armazenamento.carregar();
+    contas = await armazenamento.listar();
     if (sessao != null) {
+      await _abrirRepositorio(sessao!);
       _configurarApi();
     }
     await _carregarLocal();
     carregado = true;
     notifyListeners();
     if (sessao != null) {
+      unawaited(atualizarMarca());
       unawaited(atualizarRoteiro(silencioso: true));
       if (pendentes > 0) {
         unawaited(sincronizar(silencioso: true));
       }
+    }
+  }
+
+  Future<void> _abrirRepositorio(Sessao conta) async {
+    final fabrica = fabricaRepositorio;
+    if (fabrica != null) {
+      repositorio = await fabrica(conta.chave);
     }
   }
 
@@ -110,8 +146,55 @@ class EstadoApp extends ChangeNotifier {
   // ------------------------------------------------------- empresa e login
 
   Future<void> descobrirEmpresa(String codigo) async {
-    empresaPendente = await ApiCentral(http: _http, urlCentral: urlCentral).descobrir(codigo);
+    final empresa = await ApiCentral(http: _http, urlCentral: urlCentral).descobrir(codigo);
+    empresaPendente = await _comLogoLocal(empresa);
     notifyListeners();
+  }
+
+  /// Baixa o logo da marca (se houver) para uso offline e devolve a empresa com o caminho local.
+  Future<Empresa> _comLogoLocal(Empresa empresa, {Empresa? anterior}) async {
+    final marca = empresa.marca;
+    final url = marca?.logoUrl;
+    if (marca == null || url == null) {
+      return empresa;
+    }
+    final antigo = anterior?.marca;
+    if (antigo != null && antigo.logoUrl == url && await _servicoMarca.existe(antigo.logoLocal)) {
+      return empresa.copiarCom(marca: marca.copiarCom(logoLocal: antigo.logoLocal));
+    }
+    final caminho = await _servicoMarca.baixarLogo(_http, codigo: empresa.codigo, url: url);
+
+    return caminho == null ? empresa : empresa.copiarCom(marca: marca.copiarCom(logoLocal: caminho));
+  }
+
+  /// Relê a marca da empresa ativa na API central (nome, cor e logo podem ter mudado).
+  /// Silencioso: sem internet, ou com a empresa informada por URL direta, nada acontece.
+  Future<void> atualizarMarca() async {
+    final atual = sessao;
+    if (atual == null) {
+      return;
+    }
+    try {
+      final descoberta = await ApiCentral(http: _http, urlCentral: urlCentral).descobrir(atual.empresa.codigo);
+      if (descoberta.api != atual.empresa.api) {
+        return;
+      }
+      final empresa = await _comLogoLocal(descoberta, anterior: atual.empresa);
+      final antiga = atual.empresa.marca;
+      final igual = empresa.marca == null
+          ? antiga == null
+          : empresa.marca!.mesmaAparencia(antiga) && empresa.marca!.logoLocal == antiga?.logoLocal;
+      if (igual || sessao?.chave != atual.chave) {
+        return;
+      }
+      final nova = atual.copiarCom(empresa: empresa.marca == null ? atual.empresa : empresa);
+      sessao = nova;
+      await armazenamento.salvar(nova);
+      contas = await armazenamento.listar();
+      notifyListeners();
+    } on Object {
+      // Marca é enfeite: erro de rede ou da API não atrapalha o trabalho.
+    }
   }
 
   /// Uso avançado (homologação/local): informar a URL da instalação diretamente.
@@ -126,6 +209,19 @@ class EstadoApp extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Abre o fluxo para acrescentar outra empresa sem sair da conta atual.
+  void iniciarNovaConta() {
+    adicionandoConta = true;
+    empresaPendente = null;
+    notifyListeners();
+  }
+
+  void cancelarNovaConta() {
+    adicionandoConta = false;
+    empresaPendente = null;
+    notifyListeners();
+  }
+
   Future<void> entrar({required String email, required String senha}) async {
     final empresa = empresaPendente ?? sessao?.empresa;
     if (empresa == null) {
@@ -133,22 +229,29 @@ class EstadoApp extends ChangeNotifier {
     }
     final api = ApiPromotor(ClienteApi(http: _http, baseUrl: empresa.api));
     final resultado = await api.login(email: email, senha: senha, dispositivo: dispositivo);
+    final nova = Sessao(empresa: empresa, token: resultado.token, usuario: resultado.usuario);
 
     final anterior = sessao;
-    if (anterior != null && anterior.usuario.id != resultado.usuario.id && pendentes > 0) {
-      throw ErroApi(
-        status: 409,
-        mensagem: 'Há envios pendentes de ${anterior.usuario.nome}. Sincronize antes de entrar com outro usuário.',
-      );
-    }
-    if (anterior != null && (anterior.usuario.id != resultado.usuario.id || anterior.empresa.api != empresa.api)) {
-      await repositorio.limparTudo();
+    if (fabricaRepositorio == null && anterior != null) {
+      // Banco único: trocar de usuário ou empresa exige que nada fique pendente.
+      if (anterior.usuario.id != resultado.usuario.id && pendentes > 0) {
+        throw ErroApi(
+          status: 409,
+          mensagem: 'Há envios pendentes de ${anterior.usuario.nome}. Sincronize antes de entrar com outro usuário.',
+        );
+      }
+      if (anterior.chave != nova.chave) {
+        await repositorio.limparTudo();
+      }
     }
 
-    sessao = Sessao(empresa: empresa, token: resultado.token, usuario: resultado.usuario);
+    await _abrirRepositorio(nova);
+    sessao = nova;
     sessaoExpirada = false;
     empresaPendente = null;
-    await armazenamento.salvar(sessao!);
+    adicionandoConta = false;
+    await armazenamento.salvar(nova);
+    contas = await armazenamento.listar();
     _configurarApi();
     await _carregarLocal();
     notifyListeners();
@@ -158,28 +261,74 @@ class EstadoApp extends ChangeNotifier {
     }
   }
 
-  /// Sai do app. Devolve `false` se há pendências e [forcar] é falso.
+  /// Muda para outra conta do aparelho. Cada uma mantém roteiro, fila e fotos próprios.
+  /// Devolve a mensagem de erro, ou `null` se trocou.
+  Future<String?> trocarConta(Sessao destino) async {
+    if (destino.chave == sessao?.chave) {
+      return null;
+    }
+    if (sincronizando) {
+      return 'Aguarde o envio terminar para trocar de conta.';
+    }
+    await _ativar(destino);
+
+    return null;
+  }
+
+  Future<void> _ativar(Sessao destino) async {
+    await _abrirRepositorio(destino);
+    await armazenamento.ativar(destino.chave);
+    sessao = destino;
+    sessaoExpirada = false;
+    adicionandoConta = false;
+    empresaPendente = null;
+    aviso = null;
+    roteiro = null;
+    execucoes = {};
+    pendentes = 0;
+    comProblema = 0;
+    _configurarApi();
+    await _carregarLocal();
+    notifyListeners();
+    unawaited(atualizarMarca());
+    unawaited(atualizarRoteiro(silencioso: true));
+    if (pendentes > 0) {
+      unawaited(sincronizar(silencioso: true));
+    }
+  }
+
+  /// Sai da conta ativa (as outras continuam no aparelho e uma delas passa a ser a ativa).
+  /// Devolve `false` se há pendências e [forcar] é falso.
   Future<bool> sair({bool forcar = false}) async {
     if (pendentes > 0 && !forcar) {
       return false;
     }
+    final atual = sessao;
     try {
       await _api?.logout();
     } on Object {
       // Token será descartado localmente mesmo sem confirmação do servidor.
     }
-    await armazenamento.limpar();
+    if (atual != null) {
+      await armazenamento.remover(atual.chave);
+    }
     await repositorio.limparTudo();
+    contas = await armazenamento.listar();
     sessao = null;
     _api = null;
     _sincronizador = null;
     sessaoExpirada = false;
+    adicionandoConta = false;
     roteiro = null;
     execucoes = {};
     pendentes = 0;
     comProblema = 0;
     aviso = null;
-    notifyListeners();
+    if (contas.isNotEmpty) {
+      await _ativar(contas.first);
+    } else {
+      notifyListeners();
+    }
 
     return true;
   }

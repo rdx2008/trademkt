@@ -161,7 +161,10 @@ Referência: `docs/FASE-3.md`, seção 3.4.
   Fotos só pela câmera do app, com marca d'água (PDV, tipo, data/hora, coordenadas).
 - Fila persistente com UUID e payload fixo: check-in → fotos antes → ruptura → depois →
   conclusão; reenvio idempotente; 409 reconciliado via `GET /api/v1/visitas/{visita}`.
-- `flutter analyze` e `flutter test` (74 testes) passam. Sem iOS (fase 8).
+- Menu lateral com contas do aparelho: o promotor pode atender mais de uma agência (uma conta por
+  empresa, cada uma com roteiro, fila e fotos próprios), trocar de conta, adicionar empresa e sair.
+- Marca própria por empresa: nome, cor e logo vindos da descoberta (`marca`), logo guardado offline.
+- `flutter analyze` e `flutter test` (87 testes) passam. Sem iOS (fase 8).
 
 ### Importação de catálogo (planilha e PDF, sem IA)
 
@@ -193,7 +196,7 @@ Referência: `docs/PAINEIS.md`. Ligada por padrão, sem menção ao Trade Promo.
 - Admin da instalação personaliza nome, cor principal e logos em **Configurações → Aparência**;
   a cor vira uma folha de estilo por cliente (`/marca/tema.css`), logos em `/marca/{claro,escuro,icone}`.
 - Fornecedor liberar/desligar a marca própria e mostrar "Desenvolvido por" em **Clientes → Marca**.
-- Pendente: aplicar nome, logo e cor no app Android pela descoberta da empresa.
+- App Android veste a marca da empresa pela descoberta (`marca` em `GET /api/v1/empresas/{codigo}`).
 
 ### Demandas e alertas internos
 

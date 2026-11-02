@@ -90,8 +90,11 @@ menção ao Trade Promo: o padrão mostra o nome da empresa e o azul do tema.
   por cliente (desligada, o cliente volta ao padrão e perde a tela, mas as escolhas ficam
   guardadas) e mostrar ou não "Desenvolvido por Trade Promo" no rodapé e no menu (desligado por
   padrão). Ficam no JSON de dados do cliente (`white_label`, `mostrar_creditos`).
-- **Fora desta entrega:** o app Android ainda não aplica a marca (descoberta da empresa devolvendo
-  nome, logo e cor); e-mails e relatórios ainda não existem com marca.
+- **App Android:** a descoberta da empresa (`GET /api/v1/empresas/{codigo}`) devolve `marca`
+  (`nome`, `cor`, `logo_url`, `icone_url`; sem marca própria ou com ela desligada pelo fornecedor,
+  só o nome do cliente). O app veste o tema, o menu e a tela de entrada com isso (ver `docs/FASE-3.md`, 3.4).
+- **Fora desta entrega:** e-mails e relatórios ainda não existem com marca; o ícone/nome do
+  aplicativo na tela inicial do Android é o mesmo para todos os clientes (um app só nas lojas).
 
 ## Limites desta entrega
 
