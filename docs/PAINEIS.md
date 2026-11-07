@@ -58,8 +58,10 @@ de build de JavaScript); os dados são calculados no servidor e entregues em `da
 - **Menu lateral em tópicos com submenu**, montado em `App\Support\MenuLateral` com as mesmas
   permissões do menu anterior: Visão geral, Operação (roteiros, contratos, demandas),
   Resultados (indicadores, BI), Cadastros (PDVs, catálogo, importar produtos, agências,
-  indústrias, regiões, redes), Parcerias, Usuários e Alertas. Tópico com um só item vira link
-  direto e tópico sem itens permitidos some.
+  indústrias, regiões, redes), Usuários e Alertas. Na agência, o tópico de cadastros vira
+  **Indústria atendida** (PDVs, catálogo, regiões e redes da indústria escolhida, só consulta),
+  sem importar produtos nem agências; o cabeçalho ganha o seletor de indústria. Tópico com um só
+  item vira link direto e tópico sem itens permitidos some.
 - **BI** em `/bi` (`BiController`, `App\Services\Bi\PainelBi`): visão da indústria ou da
   agência conforme a instalação (o gerente de trade sempre vê a visão da marca). Liberado para
   admin da instalação, admin da agência, supervisor e gerente de trade; o escopo de dados é o

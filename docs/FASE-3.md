@@ -40,6 +40,15 @@ Implementado. Todas as chamadas usam o domínio do cliente e token Bearer do pro
 ativo atribuído à visita. Ordem de sincronização: check-in → fotos antes → fotos depois
 → conclusão. Manter os UUIDs e os arquivos originais na fila até a confirmação.
 
+**Entrada pela agência.** O promotor é cadastrado na instalação da agência e faz login nela
+(`POST /api/v1/login` no domínio da agência). Como a operação mora no banco de cada indústria
+vinculada, `GET /api/v1/roteiro` soma as visitas de todas as indústrias atendidas no dia e cada
+visita e cada indústria trazem `industria` (código da empresa). As rotas de execução ganham o
+prefixo da indústria: `/api/v1/industrias/{industria}/visitas/{visita}/check-in`, `/fotos`,
+`/concluir` e `GET /api/v1/industrias/{industria}/visitas/{visita}`; `foto_url` dos SKUs já vem
+nessa forma. Sem o prefixo, no domínio da agência não há visitas (404). As rotas sem prefixo
+continuam valendo para promotores cadastrados na própria indústria (dados anteriores ao vínculo).
+
 - `GET /api/v1/visitas/{visita}`: estado atual, fotos e itens para reconciliação.
 - `POST /api/v1/visitas/{visita}/fotos`: multipart com `uuid`, `tipo` (`antes`, `depois`
   ou `ruptura`), `foto`, `lat`, `lng`, `gps_em`, `aparelho_em`, `gps_simulado=false`.

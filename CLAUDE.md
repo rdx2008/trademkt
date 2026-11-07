@@ -67,7 +67,7 @@ Só o promotor usa o app; os demais usam o painel web (responsivo).
 7. Materiais de PDV — pendente.
 8. App iOS — pendente.
 
-## Estado consolidado — atualizado em 01/11/2026
+## Estado consolidado — atualizado em 07/11/2026
 
 ### Base, cadastros e roteiros
 
@@ -81,25 +81,32 @@ Só o promotor usa o app; os demais usam o painel web (responsivo).
   `data_prevista` (contrato); mover a agenda não é desfeito pela geração.
 - Geocoding usa `GOOGLE_MAPS_API_KEY`; sem chave, a posição pode ser marcada manualmente.
 
-### Rede de agências, regiões e domínios
+### Vínculo indústria–agência e domínios
 
-Referência: `docs/REDE-E-DOMINIOS.md`.
+Referência: `docs/REDE-E-DOMINIOS.md`. Modelo "as pessoas moram na agência, a operação mora
+na indústria" (decidido em 07/11/2026; substitui o diretório com solicitação e aceite).
 
-- Diretório central de agências aprovado pelo super admin, com apresentação, contato e
-  cobertura por UF/município. Uma indústria pode contratar várias agências por região.
-- A escolha no cadastro inicial ou depois em **Buscar agências** envia solicitação;
-  a agência aceita ou recusa com motivo. Nunca há aceite automático.
-- Solicitações/parcerias aceitas permitem múltiplas regiões (até 30), selecionando estados
-  e município opcional. A indústria pode editar depois; isso não altera contratos ou
-  cobertura declarada da agência automaticamente. Cada parceria tem suas próprias regiões.
-- O aceite cria a representação local da agência, sem copiar equipes ou criar contratos
-  automaticamente. Administradores da agência abrem a operação da indústria por token
-  curto de uso único, com perfil `admin_agencia` e acesso restrito à sua operação.
-  Parceria, aprovação e permissões da origem são conferidas em cada requisição protegida.
-- Equipes são locais à operação. Promotores usam o código da instalação onde trabalham.
-  Cadastros internos legados são preservados e não publicados automaticamente no diretório.
-- Nomes adotados no painel da indústria: **Agências internas**, **Buscar agências** e
-  **Redes de supermercados**.
+- Só o super admin vincula uma agência a uma indústria, em **Clientes → Vínculos**, com regiões
+  informativas (UF e município, até 30). Uma indústria pode ter várias agências e vice-versa.
+- O vínculo cria a agência no banco da indústria (`agencias.agencia_tenant_id`), que é o que
+  contratos, visitas e demandas referenciam. Desativar o vínculo desativa esse acesso; os dados
+  ficam. A indústria consulta as agências vinculadas em **Agências** e não cadastra agência.
+- Promotor, supervisor e admin de agência existem só na instalação da agência
+  (`Perfil::daInstalacao`). A indústria cadastra admin, gerente de trade, representante e
+  gerente de loja. Roteiros, demandas e alertas guardam o id da pessoa com a agência ao lado
+  (`roteiros.agencia_id`, `alertas.agencia_id`, `demandas.solicitante_agencia_id`), sem FK.
+- `App\Services\Operacao\Equipe` lê a equipe da agência pelo banco dela (conexão própria,
+  `instalacao_<id>`, sem trocar o tenant nem mexer em transação). A indústria vê só o primeiro
+  nome do promotor (`Visita::nomePromotor`). Agência sem `agencia_tenant_id` (dados antigos)
+  continua lendo usuários locais.
+- A agência entra na própria instalação; `AbrirOperacaoDaAgencia` troca para o banco da
+  indústria escolhida (seletor no cabeçalho, sessão `operacao`) e apresenta o usuário como
+  gente da agência local (`App\Services\Rede\Operacao`, `App\Support\Contexto`). Ficam na
+  agência: usuários, aparência, entrada/saída. Na indústria: roteiros, contratos (consulta e
+  frequência), demandas, indicadores, BI, e PDVs/catálogo/regiões/redes só para consulta.
+- O app entra pela agência: `GET /api/v1/roteiro` soma as indústrias atendidas e cada visita
+  leva `industria` (código da empresa); a execução usa
+  `/api/v1/industrias/{industria}/visitas/{visita}/...`.
 - Base inicial: `TRADE_DOMINIO_CLIENTES=trade.mastervps.online`. Super admin escolhe
   subdomínio do sistema ou domínio próprio no cadastro do cliente. Não há cadastro público.
 - Gerenciamento de endereços permite adicionar alternativas, trocar o principal e remover
@@ -164,7 +171,10 @@ Referência: `docs/FASE-3.md`, seção 3.4.
 - Menu lateral com contas do aparelho: o promotor pode atender mais de uma agência (uma conta por
   empresa, cada uma com roteiro, fila e fotos próprios), trocar de conta, adicionar empresa e sair.
 - Marca própria por empresa: nome, cor e logo vindos da descoberta (`marca`), logo guardado offline.
-- `flutter analyze` e `flutter test` (87 testes) passam. Sem iOS (fase 8).
+- O promotor entra pelo código da **agência**; o roteiro junta as indústrias atendidas. Visita e
+  indústria têm chave `empresa:id` (`Visita.chave`), e a execução vai para
+  `industrias/{empresa}/visitas/{id}/...`. Banco local versão 2 (recriado na atualização).
+- `flutter analyze` e `flutter test` (90 testes) passam. Sem iOS (fase 8).
 
 ### Importação de catálogo (planilha e PDF, sem IA)
 
@@ -253,8 +263,10 @@ Referência: `docs/FASE-5.md`.
 
 ### Pendências e próximos passos
 
-1. App Android: testar em aparelho real (câmera, GPS, mock location), configurar assinatura
-   de release e publicar o APK para o piloto.
+1. App Android: gerar APK novo (o promotor agora entra pela agência e a API de execução mudou),
+   testar em aparelho real (câmera, GPS, mock location), configurar assinatura de release e
+   publicar o APK para o piloto. No Coolify: rebuild e conferir as migrações `vinculos` (central)
+   e `operacao_com_agencia_vinculada` (clientes); criar a instalação da agência e o vínculo.
 2. Notificações por e-mail e push; hoje os alertas são internos ao painel.
 3. Importador de catálogo com OpenAI (2.3), adiado por falta de créditos informada pelo
    dono; hoje há importação por planilha e PDF sem IA. Ao retomar, rodar na fila e revisar

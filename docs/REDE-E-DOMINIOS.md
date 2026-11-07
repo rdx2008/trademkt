@@ -1,75 +1,62 @@
-# Rede de agências e endereços dos clientes
+# Vínculo indústria–agência e endereços dos clientes
 
-## Modelo aprovado
+## Modelo aprovado (07/11/2026)
 
-Uma agência pode atender várias indústrias com sua conta administrativa. Uma indústria pode
-ter várias agências. O diretório fica no banco central; a operação continua no banco isolado
-da indústria. A regra comercial anterior que impedia vender aos dois lados foi substituída
-por este modelo, conforme aprovado pelo dono.
+**As pessoas moram na agência; a operação mora na indústria.**
 
-## Fluxo de uso
+- A **indústria** é dona de PDVs, catálogo, regiões, redes, contratos, roteiros, visitas, fotos,
+  demandas e alertas. Ela não tem promotores, supervisores nem agência interna; cadastra só
+  admin da instalação, gerente de trade, representante e gerente de supermercado.
+- A **agência** tem instalação própria, onde ficam o admin, os supervisores e os promotores.
+  Ela trabalha dentro da operação de cada indústria que atende, com a própria equipe.
+- O **vínculo** é feito só pelo super admin, em **Clientes → Vínculos**: indústria + agência +
+  regiões informativas (UF e município opcional, até 30). Não há diretório, solicitação, aceite
+  nem token de acesso. Uma indústria pode ter várias agências (por região, por exemplo) e uma
+  agência atende várias indústrias.
+- A indústria nunca guarda dados do promotor: só o id dele, acompanhado da agência. Nas telas da
+  indústria aparece apenas o primeiro nome, lido na hora do banco da agência.
 
-1. O super admin cria uma instalação do tipo agência em **Clientes → Novo cliente**.
-2. Em **Rede de agências**, cadastra o perfil, contato comercial, cobertura e aprovação.
-3. A indústria pode escolher uma agência no cadastro inicial (opcional) ou depois em
-   **Buscar agências**. A escolha envia uma solicitação, nunca um aceite automático.
-4. A indústria adiciona uma ou várias regiões por agência, escolhendo estados numa lista de
-   UFs e nomes completos; cada linha pode informar um município opcional. O mesmo editor aparece
-   no cadastro inicial do super admin. Ex.: agência A atende RS/SC, agência B atende SP/PR.
-   O filtro de município exige UF;
-   a busca ignora diferenças de maiúsculas e acentuação. Cobertura estadual inclui os municípios.
-5. A agência entra na própria instalação e abre **Parcerias com indústrias** para aceitar
-   ou recusar. Recusa exige motivo. A indústria pode cancelar apenas uma solicitação pendente.
-6. Ao aceitar, o sistema cria a representação da agência na instalação da indústria.
-   Não cria contratos, PDVs, visitas, usuários comuns ou cópias de equipes automaticamente.
-7. A indústria define os contratos de PDVs com a agência aceita. A agência usa **Abrir operação
-   da indústria** para gerenciar sua equipe local, ajustar frequências e montar roteiros.
-   Cadastros de PDVs e produtos e novos contratos continuam sob administração da indústria.
+## Como funciona por dentro
 
-A indústria pode usar **Editar regiões** em suas solicitações pendentes ou parcerias aceitas,
-adicionando e removendo linhas. Cada parceria tem sua própria lista (até 30 regiões), sem afetar
-as listas de outras agências. UF é obrigatória e validada; município é opcional. Regiões repetidas,
-incluindo diferenças apenas de acentuação ou maiúsculas no município, são recusadas.
-A agência vê a última alteração, com a
-preferência anterior e a data. Alterar essa preferência não modifica o aceite, a cobertura
-declarada da agência, os PDVs, os contratos ou os roteiros. Novo atendimento precisa ser
-combinado com a agência e refletido nos contratos. Solicitações recusadas ou canceladas devem
-ser reenviadas para informar uma nova região. Dados antigos em texto livre são preservados;
-ao editar, o usuário escolhe explicitamente o estado.
+- O vínculo cria, no banco da indústria, uma linha de `agencias` com `agencia_tenant_id`. Ela é o
+  que contratos, visitas e demandas referenciam (`agencia_id`). Desativar o vínculo desativa essa
+  linha (a agência perde o acesso); reativar a traz de volta. Nome acompanha o cadastro central.
+- Referências a pessoas da agência no banco da indústria: `roteiros.promotor_id` e
+  `roteiros.supervisor_id` (com `roteiros.agencia_id`; roteiro único por agência + promotor +
+  dia), `demandas.liberada_por` (agência da demanda), `demandas.solicitante_id` (com
+  `solicitante_agencia_id`), `alertas.usuario_id` (com `alertas.agencia_id`). Sem chave
+  estrangeira: o id é do banco da agência. `agencia_id` nulo = usuário desta instalação.
+- `App\Services\Operacao\Equipe` abre uma conexão própria com o banco da agência
+  (`instalacao_<id>`, montada a partir do tenant) e devolve `App\Support\Pessoa` (id, nome,
+  perfil, situação, vínculo). Uma leitura por agência por requisição; não troca o tenant em uso e
+  pode ser chamada antes de uma transação, nunca dentro. Agência sem `agencia_tenant_id`
+  (cadastro antigo) lê os usuários locais, para os dados anteriores continuarem valendo.
+- `App\Support\Contexto` distingue a **instalação** em que o usuário entrou (pelo domínio) da
+  **operação** aberta (a indústria). `Perfil::daInstalacao(tipo)` define os perfis de cada tipo.
 
-A lista completa fica armazenada de forma estruturada. O resumo antigo é mantido para
-compatibilidade; regiões únicas já cadastradas são migradas sem alterar a preferência existente.
+### Painel da agência
 
-Administradores da agência autorizados na instalação de origem podem abrir as operações das
-parcerias aceitas sem compartilhar senhas. Cada operação mantém sua própria equipe local.
-Promotores e supervisores dessa operação são cadastrados nela; o código da empresa usado no app
-é o da instalação da indústria. A sincronização global de identidades de colaboradores não
-faz parte desta entrega.
+- O usuário entra na instalação da agência. `AbrirOperacaoDaAgencia` (antes de `SubstituteBindings`)
+  escolhe a indústria (sessão `operacao`, ou a primeira vinculada), troca o banco para o dela e
+  apresenta o usuário como gente da agência local (`agencia_id` vira a linha local; o admin da
+  instalação age como admin da agência). Nada disso é gravado. Ao fim da requisição volta para a
+  agência, onde a sessão é salva. Seletor de indústria no cabeçalho (`POST /operacao/{industria}`).
+- Ficam na agência: `usuarios.*`, `configuracoes.*`, entrada e saída, arquivos da marca. Dentro
+  da indústria a agência pode abrir: painel, roteiros (atribui e reordena), visitas, demandas
+  (aprova e atribui), alertas, indicadores, BI, contratos (consulta e ajuste de frequência),
+  PDVs, catálogo, regiões e redes (consulta). O resto responde 403: "cadastro da indústria".
+- A marca (aparência) mostrada é sempre a da agência, lida do banco dela.
+- Alertas: `Alerta::doUsuario` casa `usuario_id` com `agencia_id` da operação aberta, então ids
+  iguais em bancos diferentes não se misturam.
 
-## Aprovação e acesso
+### App do promotor
 
-- Só o super admin aprova a participação no diretório. A agência pode editar apresentação,
-  contato e cobertura e pausar novas solicitações; não pode aprovar a si mesma.
-- Só perfis de gestão autorizados da indústria solicitam parceria. Apenas administradores
-  autorizados da agência de destino podem responder.
-- Solicitações duplicadas pendentes/aceitas são recusadas. Após recusa ou cancelamento,
-  a indústria pode reenviar, reabrindo o mesmo registro com a solicitação mais recente.
-- O acesso entre instalações usa um token aleatório, armazenado como hash, válido por um minuto,
-  utilizável uma única vez e preso à instalação de destino. O usuário local recebe perfil
-  `admin_agencia`, nunca `admin_instalacao`. A sessão é regenerada e vinculada à instalação.
-- Toda requisição protegida de um usuário da agência vinculada confere se a parceria está aceita,
-  a agência aprovada e a instalação de origem ativa. Para administradores que entram pelo atalho,
-  confere também o usuário e a permissão na origem. Suspensões bloqueiam sessões já abertas.
-- A agência acessa seus contratos, PDVs contratados, catálogo dessas indústrias, equipe e roteiros.
-  Não administra o cadastro geral da indústria ou vê operações de outras agências.
-- A indústria pode desativar a representação local da agência para suspender seu acesso àquela
-  instalação. A aprovação global é controlada pelo super admin. Retirar a disponibilidade
-  apenas pausa novas solicitações, preservando parcerias existentes.
-
-Agências cadastradas manualmente nas instalações existentes são preservadas. Não são publicadas
-no diretório nem convertidas em contas compartilhadas automaticamente. Para usar o novo fluxo,
-é preciso uma instalação de agência e o perfil aprovado; cadastros legados não são mesclados
-apenas por coincidência de nome ou CNPJ.
+- O promotor entra pelo código da **agência**. `GET /api/v1/roteiro` percorre as indústrias
+  vinculadas, abre cada uma e soma as visitas; cada visita e indústria traz `industria` (código).
+- Execução: `/api/v1/industrias/{industria}/visitas/{visita}/...` (check-in, fotos, concluir,
+  consulta). O middleware abre a indústria pelo código da rota e tira o parâmetro antes dos
+  controllers, que são os mesmos da execução na própria indústria.
+- No app, visita e indústria têm chave `empresa:id`; banco local versão 2.
 
 ## Domínios e subdomínios
 
@@ -81,9 +68,9 @@ Não há cadastro público de clientes nesta versão: o super admin registra a p
 
 Em **Clientes → Gerenciar endereços**, é possível adicionar endereços alternativos, escolher o
 principal e remover os antigos. Sempre deve restar pelo menos um. O identificador, banco,
-usuários e histórico são mantidos. O endereço principal é usado na descoberta do app e nos
-atalhos de parceria; os endereços alternativos continuam aceitando acesso. A mudança de host
-pode exigir novo login. URLs antigas só continuam funcionando enquanto o domínio antigo for mantido.
+usuários e histórico são mantidos. O endereço principal é usado na descoberta do app; os
+endereços alternativos continuam aceitando acesso. A mudança de host pode exigir novo login.
+URLs antigas só continuam funcionando enquanto o domínio antigo for mantido.
 
 ### Configuração de produção no Coolify
 
@@ -118,11 +105,13 @@ não afirma que um domínio foi verificado ou que o certificado já foi emitido.
 
 ## Deploy e testes
 
-As migrações centrais criam o diretório, as regiões, as solicitações e os tokens de acesso.
-As migrações de cada cliente adicionam a identidade da agência da rede e a origem dos usuários
-administrativos vinculados. Os campos são opcionais para preservar as instalações existentes.
-O entrypoint atual executa `migrate` e `tenants:migrate` ao iniciar o serviço web.
+A migração central `vinculos_entre_industria_e_agencia` cria `vinculos` e apaga as tabelas do
+diretório antigo (dados de teste). A migração de cada cliente `operacao_com_agencia_vinculada`
+acrescenta `agencias.agencia_tenant_id`, `roteiros.agencia_id`, `alertas.agencia_id` e
+`demandas.solicitante_agencia_id`, e remove as chaves estrangeiras para `users` dessas
+referências. O entrypoint executa `migrate` e `tenants:migrate` ao iniciar o serviço web.
 
-Testes: `DominiosClienteTest`, `ParceriaRedeTest` e toda a suíte existente. Os testes usam SQLite;
-o deploy em MySQL/Coolify deve ser verificado após publicar. Nenhuma credencial de produção é
-necessária nos testes.
+Testes: `VinculoTest`, `EquipeVinculadaTest`, `PainelAgenciaTest`, `DominiosClienteTest` e a
+suíte existente (SQLite). Cada instalação de agência vira um banco a mais por teste. O deploy em
+MySQL/Coolify deve ser verificado após publicar: a conexão própria com o banco da agência usa a
+mesma configuração da conexão de tenant, trocando o nome do banco.
