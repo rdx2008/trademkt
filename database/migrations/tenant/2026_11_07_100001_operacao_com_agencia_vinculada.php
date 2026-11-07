@@ -78,6 +78,7 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->string('parceiro_origem_tenant')->nullable();
             $table->unsignedBigInteger('parceiro_origem_usuario_id')->nullable();
+            $table->unique(['parceiro_origem_tenant', 'parceiro_origem_usuario_id'], 'usuario_parceiro_unico');
         });
         Schema::table('agencias', function (Blueprint $table) {
             $table->dropUnique(['agencia_tenant_id']);
