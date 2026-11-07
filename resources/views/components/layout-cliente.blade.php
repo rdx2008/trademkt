@@ -28,6 +28,9 @@
     @if ($aparencia->temCorPropria())
         <link href="{{ route('marca.css', ['v' => $aparencia->versao()]) }}" rel="stylesheet">
     @endif
+    @if ($eu)
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css" rel="stylesheet">
+    @endif
     @stack('head')
     <script>
         // Modo claro/escuro lembrado neste navegador; aplicado antes de pintar para não piscar.
@@ -239,6 +242,20 @@
         }
     })();
 </script>
+@if ($eu)
+    {{-- Calendário próprio nos campos de data: o seletor nativo do navegador ficava preso aberto em alguns computadores. --}}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/pt.min.js"></script>
+    <script>
+        (function () {
+            if (!window.flatpickr) { return; }
+            flatpickr.localize(flatpickr.l10ns.pt);
+            document.querySelectorAll('input[type=date]').forEach(function (campo) {
+                flatpickr(campo, { altInput: true, altFormat: 'd/m/Y', dateFormat: 'Y-m-d', allowInput: true, disableMobile: true, locale: 'pt' });
+            });
+        })();
+    </script>
+@endif
 @stack('scripts')
 </body>
 </html>

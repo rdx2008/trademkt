@@ -121,6 +121,15 @@ class CepELocalizacaoTest extends TestCase
             ->assertSee('preenchidas automaticamente pelo endereço');
     }
 
+    public function test_campos_de_data_usam_o_calendario_da_pagina_e_continuam_enviando_a_data_iso(): void
+    {
+        $this->actingAs($this->admin)->get(self::URL.'/contratos/create')->assertOk()
+            ->assertSee('flatpickr', false)->assertSee('type="date"', false)->assertSee("altFormat: 'd/m/Y'", false)->assertSee("dateFormat: 'Y-m-d'", false);
+        // Sem login (tela de entrada) o calendário não é carregado.
+        auth()->logout();
+        $this->get(self::URL.'/entrar')->assertOk()->assertDontSee('flatpickr', false);
+    }
+
     public function test_variacoes_nunca_caem_para_a_cidade_inteira(): void
     {
         $pdv = new Pdv(['logradouro' => 'Rua Sinimbu', 'numero' => '100', 'bairro' => 'Centro', 'cidade' => 'Caxias do Sul', 'uf' => 'RS', 'cep' => '95010000']);
