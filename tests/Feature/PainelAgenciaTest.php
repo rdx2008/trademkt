@@ -99,6 +99,17 @@ class PainelAgenciaTest extends TestCase
         $this->gaboardi->run(fn () => $this->assertSame(0, User::where('perfil', 'promotor')->count()));
     }
 
+    public function test_login_real_da_agencia_abre_o_painel_e_a_sessao_nao_vale_em_outra_instalacao(): void
+    {
+        $this->get(self::SUL.'/entrar')->assertOk();
+        $this->post(self::SUL.'/entrar', ['email' => 'admin@sul.test', 'password' => 'senha1234'])->assertRedirect(self::SUL.'/painel');
+        foreach (['/painel', '/roteiros', '/pdvs', '/alertas', '/bi', '/contratos', '/usuarios'] as $caminho) {
+            $this->get(self::SUL.$caminho)->assertOk();
+        }
+        // O mesmo cookie não vale na instalação da indústria.
+        $this->get('http://gaboardi.test/painel')->assertStatus(403);
+    }
+
     public function test_supervisora_atribui_promotor_aprova_demanda_e_recebe_alertas_na_agencia(): void
     {
         $visita = $this->gaboardi->run(fn () => Visita::sole());
