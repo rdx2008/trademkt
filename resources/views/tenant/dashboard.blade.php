@@ -1,6 +1,6 @@
 <x-layout :titulo="$titulo" :marca="$cliente->nome">
     <x-slot:nav>@include('tenant.nav')</x-slot:nav>
-    @if ($precisaAgencia)<div class="alert alert-warning d-flex flex-wrap align-items-center gap-2"><strong>Configure sua agência para iniciar a operação.</strong><span>Escolha uma prestadora no diretório e aguarde o aceite da parceria.</span><a class="ms-auto fw-semibold" href="{{ route('parcerias.index') }}">Buscar agências →</a></div>@endif
+    @if ($precisaAgencia)<div class="alert alert-warning d-flex flex-wrap align-items-center gap-2"><strong>Nenhuma agência vinculada ainda.</strong><span>O vínculo com a agência de promotores é feito pelo fornecedor do sistema. Depois dele, cadastre os contratos de visita.</span></div>@endif
     <div class="painel-cabecalho">
         <div><div class="sobretitulo">{{ $usuario->perfil->label() }} / {{ $cliente->nome }}</div><h1>{{ $titulo }}</h1><p class="texto-apoio">{{ $descricao }}</p></div>
         <form method="GET" action="{{ route('dashboard') }}" class="seletor-dia"><label for="painel-data">Dia da operação</label><div class="acoes"><input id="painel-data" type="date" name="data" value="{{ $data->toDateString() }}" required><button class="botao" type="submit">Consultar</button></div></form>

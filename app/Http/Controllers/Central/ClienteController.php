@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Central;
 
 use App\Enums\TipoInstalacao;
 use App\Http\Controllers\Controller;
-use App\Models\Rede\AgenciaRede;
 use App\Models\Tenant;
 use App\Services\DominiosCliente;
 use App\Services\ProvisionarCliente;
@@ -25,7 +24,6 @@ class ClienteController extends Controller
     {
         return view('central.clientes.create', [
             'tipos' => TipoInstalacao::cases(),
-            'agenciasRede' => AgenciaRede::where('aprovada', true)->where('disponivel', true)->whereHas('tenant', fn ($q) => $q->where('ativo', true))->with('tenant')->get(),
         ]);
     }
 
@@ -42,11 +40,6 @@ class ClienteController extends Controller
             'admin_nome' => (string) $request->input('admin_nome'),
             'admin_email' => (string) $request->input('admin_email'),
             'admin_senha' => $request->input('admin_senha'),
-            'agencia_rede_id' => $request->input('agencia_rede_id'),
-            'regiao_parceria' => $request->input('regiao_parceria'),
-            'cidade_parceria' => $request->input('cidade_parceria'),
-            'regioes_parceria' => $request->input('regioes_parceria'),
-            'mensagem_parceria' => $request->input('mensagem_parceria'),
         ]);
 
         return redirect()->route('central.clientes.index')->with('criado', [

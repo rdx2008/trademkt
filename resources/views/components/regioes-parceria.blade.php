@@ -3,7 +3,7 @@
     $listaRegioes = array_values($regioesAtuais ?: [['uf' => '', 'cidade' => '']]);
 @endphp
 <div data-editor-regioes data-proximo="{{ count($listaRegioes) }}" data-obrigatorio="{{ ($obrigatorio ?? true) ? '1' : '0' }}" data-habilitado="1">
-    <p class="dica">Adicione os estados ou municípios que deseja combinar com esta agência. Você pode indicar várias regiões.</p>
+    <p class="dica">Regiões que a agência atende nesta indústria (informativo). Sem nenhuma linha, vale para todas as regiões.</p>
     <div data-lista-regioes>
         @foreach ($listaRegioes as $indice => $regiao)
             <div class="cartao" data-linha-regiao style="margin:12px 0;padding:16px">

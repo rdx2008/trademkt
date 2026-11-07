@@ -9,14 +9,14 @@
         \App\Enums\Perfil::AdminAgencia => [
             ['Minha equipe', 'Promotores e supervisores da agência', route('usuarios.index')],
             ['Planejar a semana', 'Distribua visitas entre os promotores', route('roteiros.semana', $semana)],
-            [$usuario->agenciaDaRede() ? 'Meus contratos' : 'Novo contrato', 'Consulte os dias de atendimento do PDV', $usuario->agenciaDaRede() ? route('contratos.index') : route('contratos.create')],
+            [$usuario->agenciaVinculada() ? 'Meus contratos' : 'Novo contrato', 'Consulte os dias de atendimento do PDV', $usuario->agenciaVinculada() ? route('contratos.index') : route('contratos.create')],
         ],
         \App\Enums\Perfil::Supervisor => [
             ['Distribuir visitas', 'Ajuste o roteiro e os responsáveis', route('roteiros.semana', $semana)],
             ['Consultar PDVs', 'Confira endereços e localização', route('pdvs.index')],
         ],
         \App\Enums\Perfil::GerenteTrade => [
-            [tenant()->tipo === \App\Enums\TipoInstalacao::Industria ? 'Agências internas' : 'Agências prestadoras', 'Consulte as responsáveis pela sua marca', route('agencias.index')],
+            ['Agências', 'Consulte as agências que atendem a sua marca', route('agencias.index')],
             ['Catálogo da indústria', 'Organize produtos e embalagens', route('skus.index')],
             ['Representantes e equipe', 'Consulte os acessos da sua operação', route('usuarios.index')],
         ],

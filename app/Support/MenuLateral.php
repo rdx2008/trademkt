@@ -53,20 +53,10 @@ class MenuLateral
                 self::item('PDVs', 'pdvs.index', ['pdvs.*'], $acompanha || $eu->perfil === Perfil::GerentePdv),
                 self::item('Catálogo de SKUs', 'skus.index', ['skus.*'], $acompanha, exceto: ['skus.importar*']),
                 self::item('Importar produtos', 'skus.importar', ['skus.importar*'], $catalogoEditavel),
-                self::item($industria ? 'Agências internas' : 'Agências', 'agencias.index', ['agencias.*'], $acompanha),
+                self::item('Agências', 'agencias.index', ['agencias.*'], $acompanha),
                 self::item('Indústrias', 'industrias.index', ['industrias.*'], $eu->temPerfil(Perfil::AdminInstalacao)),
-                self::item('Regiões', 'regioes.index', ['regioes.*'], $gestao && ! $eu->agenciaDaRede()),
-                self::item('Redes de supermercados', 'redes.index', ['redes.*'], $gestao && ! $eu->agenciaDaRede()),
-            ]),
-
-            self::topico('Parcerias', 'flaticon-381-networking', [
-                self::item(
-                    $industria ? 'Buscar agências' : 'Parcerias com indústrias',
-                    'parcerias.index',
-                    ['parcerias.*'],
-                    ($industria && $eu->temPerfil(Perfil::AdminInstalacao, Perfil::GerenteTrade))
-                        || (! $industria && $gestao),
-                ),
+                self::item('Regiões', 'regioes.index', ['regioes.*'], $gestao && ! $eu->agenciaVinculada()),
+                self::item('Redes de supermercados', 'redes.index', ['redes.*'], $gestao && ! $eu->agenciaVinculada()),
             ]),
 
             self::topico('Equipe', 'flaticon-381-user-9', [

@@ -47,8 +47,8 @@ class ContratoVisitaController extends Controller
         return view('tenant.contratos.index', [
             'contratos' => $contratos,
             'eu' => $eu,
-            'podeCadastrar' => $eu->temPerfil(Perfil::AdminInstalacao, Perfil::AdminAgencia) && ! $eu->agenciaDaRede(),
-            'industrias' => $eu->perfil->exigeIndustria() ? collect() : Industria::when($eu->agenciaDaRede(), fn ($q) => $q->whereIn('id', ContratoVisita::where('agencia_id', $eu->agencia_id)->select('industria_id')))->orderBy('nome')->pluck('nome', 'id'),
+            'podeCadastrar' => $eu->temPerfil(Perfil::AdminInstalacao, Perfil::AdminAgencia) && ! $eu->agenciaVinculada(),
+            'industrias' => $eu->perfil->exigeIndustria() ? collect() : Industria::when($eu->agenciaVinculada(), fn ($q) => $q->whereIn('id', ContratoVisita::where('agencia_id', $eu->agencia_id)->select('industria_id')))->orderBy('nome')->pluck('nome', 'id'),
             'agencias' => $eu->perfil === Perfil::AdminInstalacao || $eu->perfil->exigeIndustria()
                 ? Agencia::visiveisPara($eu)->orderBy('nome')->pluck('nome', 'id')
                 : collect(),
@@ -96,7 +96,7 @@ class ContratoVisitaController extends Controller
     {
         $eu = $request->user();
         $frequencia = $request->integer('frequencia_semana');
-        if ($eu->agenciaDaRede()) {
+        if ($eu->agenciaVinculada()) {
             abort_unless($contrato->exists && $request->integer('industria_id') === $contrato->industria_id && $request->integer('pdv_id') === $contrato->pdv_id, 422, 'A agência pode ajustar a frequência, mas não trocar a indústria ou o PDV do contrato.');
         }
 
@@ -171,12 +171,12 @@ class ContratoVisitaController extends Controller
         return [
             'contrato' => $contrato,
             'eu' => $eu,
-            'pdvs' => Pdv::query()->when($eu->agenciaDaRede(), fn ($q) => $q->whereKey($contrato->pdv_id))
+            'pdvs' => Pdv::query()->when($eu->agenciaVinculada(), fn ($q) => $q->whereKey($contrato->pdv_id))
                 ->where(fn ($q) => $q->where('ativo', true)->orWhere('id', $contrato->pdv_id))
                 ->orderBy('nome')
                 ->get(['id', 'nome', 'cidade', 'uf']),
-            'industrias' => Industria::where(fn ($q) => $q->where('ativo', true)->orWhere('id', $contrato->industria_id))->when($eu->agenciaDaRede(), fn ($q) => $q->whereKey($contrato->industria_id))->orderBy('nome')->pluck('nome', 'id'),
-            'agencias' => Agencia::where(fn ($q) => $q->where('ativo', true)->orWhere('id', $contrato->agencia_id))->when($eu->agenciaDaRede(), fn ($q) => $q->whereKey($eu->agencia_id))->orderBy('nome')->pluck('nome', 'id'),
+            'industrias' => Industria::where(fn ($q) => $q->where('ativo', true)->orWhere('id', $contrato->industria_id))->when($eu->agenciaVinculada(), fn ($q) => $q->whereKey($contrato->industria_id))->orderBy('nome')->pluck('nome', 'id'),
+            'agencias' => Agencia::where(fn ($q) => $q->where('ativo', true)->orWhere('id', $contrato->agencia_id))->when($eu->agenciaVinculada(), fn ($q) => $q->whereKey($eu->agencia_id))->orderBy('nome')->pluck('nome', 'id'),
             'diasSemana' => ContratoVisita::DIAS,
         ];
     }

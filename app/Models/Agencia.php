@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\Perfil;
-use App\Models\Rede\Parceria;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,7 +11,7 @@ class Agencia extends Model
 {
     protected $table = 'agencias';
 
-    protected $fillable = ['nome', 'cnpj', 'ativo', 'agencia_rede_id'];
+    protected $fillable = ['nome', 'cnpj', 'ativo', 'agencia_tenant_id'];
 
     protected function casts(): array
     {
@@ -40,7 +39,7 @@ class Agencia extends Model
             Perfil::GerenteTrade, Perfil::Representante => $usuario->industria_id === null
                 ? $query->whereRaw('1 = 0')
                 : $query->where(fn (Builder $q) => $q->whereHas('contratos', fn (Builder $c) => $c->where('industria_id', $usuario->industria_id))
-                    ->orWhereIn('agencia_rede_id', Parceria::where('industria_tenant_id', tenant('id'))->where('industria_local_id', $usuario->industria_id)->where('status', 'aceita')->pluck('agencia_rede_id'))),
+                    ->orWhere(fn (Builder $v) => $v->whereNotNull('agencia_tenant_id')->where('ativo', true))),
             default => $query->whereRaw('1 = 0'),
         };
     }

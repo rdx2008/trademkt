@@ -3,7 +3,6 @@
     $eu = auth()->user();
     $topicos = $eu ? \App\Support\MenuLateral::montar($eu) : [];
     $naoLidos = $eu ? \App\Models\Alerta::visiveisPara($eu)->whereNull('lida_em')->count() : 0;
-    $origemParceiro = $eu?->parceiro_origem_tenant ? \App\Models\Tenant::find($eu->parceiro_origem_tenant) : null;
     // Marca própria da instalação: nome, cor e logos (padrão: o nome do cliente e o azul do tema).
     $aparencia = \App\Services\Marca\Aparencia::atual();
     $nomeMarca = $aparencia->nome();
@@ -95,11 +94,6 @@
                         <span class="marca-cliente d-none d-md-inline">{{ $nomeMarca }}</span>
                     </div>
                     <ul class="navbar-nav header-right">
-                        @if ($origemParceiro?->url())
-                            <li class="nav-item d-none d-md-block">
-                                <a class="btn btn-outline-primary btn-sm" href="{{ $origemParceiro->url() }}/parcerias">← Voltar à minha agência</a>
-                            </li>
-                        @endif
                         <li class="nav-item dropdown notification_dropdown">
                             <a class="nav-link bell primary dz-theme-mode" href="javascript:void(0);" role="button" aria-label="Alternar modo claro e escuro" id="alternar-tema">
                                 <i id="icon-light" class="fas fa-sun"></i>

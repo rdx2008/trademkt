@@ -35,7 +35,6 @@
         </div>
 
         @include('central.clientes.endereco-campos')
-        <fieldset id="parceria-inicial" class="cartao" style="margin-bottom:20px"><legend>Parceria inicial da indústria (opcional)</legend><p class="dica">Para instalação de indústria: escolha uma agência agora ou deixe para buscar depois no painel. A agência ainda precisará aceitar.</p><div class="campo"><label for="agencia_rede_id">Agência aprovada</label><select name="agencia_rede_id" id="agencia_rede_id"><option value="">Escolher depois</option>@foreach ($agenciasRede as $agencia)<option value="{{ $agencia->id }}" @selected(old('agencia_rede_id') == $agencia->id)>{{ $agencia->tenant->nome }}</option>@endforeach</select></div>@include('components.regioes-parceria', ['prefixo' => 'cadastro', 'campoRegioes' => 'regioes_parceria', 'regioesAtuais' => old('regioes_parceria', [['uf' => old('regiao_parceria', ''), 'cidade' => old('cidade_parceria', '')]]), 'obrigatorio' => false])<div class="campo"><label for="mensagem_parceria">Mensagem para a agência</label><textarea name="mensagem_parceria" id="mensagem_parceria" rows="2" maxlength="2000">{{ old('mensagem_parceria') }}</textarea></div></fieldset>
 
         <div class="linha">
             <div class="campo">
@@ -56,25 +55,4 @@
         <button type="submit" class="botao">Criar cliente</button>
         <a href="{{ route('central.clientes.index') }}" class="botao secundario">Cancelar</a>
     </form>
-    @push('scripts')
-    <script>
-    (() => {
-        const tipo = document.getElementById('tipo');
-        const secao = document.getElementById('parceria-inicial');
-        const agencia = document.getElementById('agencia_rede_id');
-        const editor = secao.querySelector('[data-editor-regioes]');
-        function atualizarParceria() {
-            const ativa = tipo.value === 'industria';
-            secao.hidden = !ativa;
-            secao.querySelectorAll('input,select,textarea').forEach(campo => campo.disabled = !ativa);
-            editor.dataset.habilitado = ativa && !!agencia.value ? '1' : '0';
-            editor.dataset.obrigatorio = editor.dataset.habilitado;
-            editor.dispatchEvent(new Event('regioes:atualizar'));
-        }
-        tipo.addEventListener('change', atualizarParceria);
-        agencia.addEventListener('change', atualizarParceria);
-        atualizarParceria();
-    })();
-    </script>
-    @endpush
 </x-layout>

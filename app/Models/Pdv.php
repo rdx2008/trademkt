@@ -123,7 +123,7 @@ class Pdv extends Model
     {
         return match ($usuario->perfil) {
             Perfil::AdminInstalacao => $query,
-            Perfil::AdminAgencia, Perfil::Supervisor => $usuario->agenciaDaRede()
+            Perfil::AdminAgencia, Perfil::Supervisor => $usuario->agenciaVinculada()
                 ? $query->whereHas('contratos', fn (Builder $c) => $c->where('agencia_id', $usuario->agencia_id))
                 : $query,
             Perfil::GerenteTrade, Perfil::Representante => tenant()?->tipo === TipoInstalacao::Agencia

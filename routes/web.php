@@ -5,7 +5,7 @@ use App\Http\Controllers\Central\ClienteController;
 use App\Http\Controllers\Central\DashboardController;
 use App\Http\Controllers\Central\DominioController;
 use App\Http\Controllers\Central\MarcaClienteController;
-use App\Http\Controllers\Central\RedeAgenciaController;
+use App\Http\Controllers\Central\VinculoController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -20,10 +20,10 @@ Route::middleware('guest:admin')->group(function () {
 });
 
 Route::middleware('auth:admin')->group(function () {
-    Route::get('/rede-agencias', [RedeAgenciaController::class, 'index'])->name('central.rede.index');
-    Route::post('/rede-agencias', [RedeAgenciaController::class, 'store'])->name('central.rede.store');
-    Route::get('/rede-agencias/{agencia}/editar', [RedeAgenciaController::class, 'edit'])->whereNumber('agencia')->name('central.rede.edit');
-    Route::put('/rede-agencias/{agencia}', [RedeAgenciaController::class, 'update'])->whereNumber('agencia')->name('central.rede.update');
+    Route::get('/vinculos', [VinculoController::class, 'index'])->name('central.vinculos.index');
+    Route::post('/vinculos', [VinculoController::class, 'store'])->name('central.vinculos.store');
+    Route::get('/vinculos/{vinculo}/editar', [VinculoController::class, 'edit'])->whereNumber('vinculo')->name('central.vinculos.edit');
+    Route::put('/vinculos/{vinculo}', [VinculoController::class, 'update'])->whereNumber('vinculo')->name('central.vinculos.update');
     Route::get('/visao-geral', DashboardController::class)->name('central.dashboard');
     Route::post('/sair', [AuthController::class, 'destroy'])->name('central.logout');
 

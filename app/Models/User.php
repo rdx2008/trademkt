@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\Perfil;
 use App\Enums\TipoVinculo;
+use App\Support\Contexto;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -56,9 +57,10 @@ class User extends Authenticatable
         return $this->belongsTo(Agencia::class);
     }
 
-    public function agenciaDaRede(): bool
+    /** O usuário é de uma agência vinculada e está operando dentro da instalação de uma indústria. */
+    public function agenciaVinculada(): bool
     {
-        return $this->agencia_id !== null && $this->agencia?->agencia_rede_id !== null;
+        return Contexto::viaAgencia();
     }
 
     /** Lojas do gerente do supermercado. */

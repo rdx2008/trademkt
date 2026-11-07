@@ -203,8 +203,8 @@ class UsuarioController extends Controller
             'usuario' => $usuario,
             'eu' => $eu,
             'perfis' => $perfis,
-            'industrias' => Industria::where('ativo', true)->when($eu->agenciaDaRede(), fn ($q) => $q->whereIn('id', ContratoVisita::where('agencia_id', $eu->agencia_id)->select('industria_id')))->orderBy('nome')->pluck('nome', 'id'),
-            'agencias' => Agencia::where('ativo', true)->when($eu->agenciaDaRede(), fn ($q) => $q->whereKey($eu->agencia_id))->orderBy('nome')->pluck('nome', 'id'),
+            'industrias' => Industria::where('ativo', true)->when($eu->agenciaVinculada(), fn ($q) => $q->whereIn('id', ContratoVisita::where('agencia_id', $eu->agencia_id)->select('industria_id')))->orderBy('nome')->pluck('nome', 'id'),
+            'agencias' => Agencia::where('ativo', true)->when($eu->agenciaVinculada(), fn ($q) => $q->whereKey($eu->agencia_id))->orderBy('nome')->pluck('nome', 'id'),
             'vinculos' => TipoVinculo::cases(),
             'pdvs' => $vinculaPdvs
                 ? Pdv::visiveisPara($eu)->where('ativo', true)->orderBy('nome')->get(['id', 'nome', 'cidade', 'uf'])

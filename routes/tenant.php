@@ -6,7 +6,6 @@ use App\Http\Controllers\Api\AuthController as ApiAuthController;
 use App\Http\Controllers\Api\CheckInController;
 use App\Http\Controllers\Api\ExecucaoVisitaController;
 use App\Http\Controllers\Api\RoteiroController as ApiRoteiroController;
-use App\Http\Controllers\Tenant\AcessoParceriaController;
 use App\Http\Controllers\Tenant\AgenciaController;
 use App\Http\Controllers\Tenant\AlertaController;
 use App\Http\Controllers\Tenant\AparenciaController;
@@ -20,7 +19,6 @@ use App\Http\Controllers\Tenant\ImportacaoSkuController;
 use App\Http\Controllers\Tenant\IndicadorController;
 use App\Http\Controllers\Tenant\IndustriaController;
 use App\Http\Controllers\Tenant\MarcaController;
-use App\Http\Controllers\Tenant\ParceriaController;
 use App\Http\Controllers\Tenant\PdvController;
 use App\Http\Controllers\Tenant\RedeController;
 use App\Http\Controllers\Tenant\RegiaoController;
@@ -28,7 +26,7 @@ use App\Http\Controllers\Tenant\RoteiroController;
 use App\Http\Controllers\Tenant\SkuController;
 use App\Http\Controllers\Tenant\UsuarioController;
 use App\Http\Controllers\Tenant\VisitaController;
-use App\Http\Middleware\EnsureAcessoParceiro;
+use App\Http\Middleware\EnsureInstalacaoDaSessao;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
@@ -55,9 +53,7 @@ Route::middleware([
         Route::post('/entrar', [AuthController::class, 'store'])->middleware('throttle:login');
     });
 
-    Route::get('/parcerias/entrar', [AcessoParceriaController::class, 'entrar'])->middleware('throttle:20,1')->name('parcerias.entrar');
-
-    Route::middleware(['auth', EnsureAcessoParceiro::class])->group(function () {
+    Route::middleware(['auth', EnsureInstalacaoDaSessao::class])->group(function () {
         Route::middleware('perfil:admin_instalacao')->group(function () {
             Route::get('/configuracoes/aparencia', [AparenciaController::class, 'edit'])->name('configuracoes.aparencia');
             Route::put('/configuracoes/aparencia', [AparenciaController::class, 'update'])->name('configuracoes.aparencia.salvar');
@@ -78,13 +74,6 @@ Route::middleware([
         Route::get('/bi', [BiController::class, 'index'])->middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade')->name('bi.index');
         Route::get('/visitas/{visita}', [VisitaController::class, 'show'])->whereNumber('visita')->name('visitas.show');
         Route::get('/visitas/{visita}/fotos/{foto}', [VisitaController::class, 'foto'])->whereNumber(['visita', 'foto'])->name('visitas.fotos');
-        Route::get('/parcerias', [ParceriaController::class, 'index'])->name('parcerias.index');
-        Route::patch('/parcerias/{parceria}/regiao', [ParceriaController::class, 'regiao'])->whereNumber('parceria')->name('parcerias.regiao');
-        Route::post('/parcerias', [ParceriaController::class, 'solicitar'])->name('parcerias.solicitar');
-        Route::patch('/parcerias/{parceria}/responder', [ParceriaController::class, 'responder'])->whereNumber('parceria')->name('parcerias.responder');
-        Route::delete('/parcerias/{parceria}', [ParceriaController::class, 'cancelar'])->whereNumber('parceria')->name('parcerias.cancelar');
-        Route::put('/parcerias/perfil/agencia', [ParceriaController::class, 'perfil'])->name('parcerias.perfil');
-        Route::post('/parcerias/{parceria}/abrir', [AcessoParceriaController::class, 'abrir'])->whereNumber('parceria')->name('parcerias.abrir');
         Route::post('/sair', [AuthController::class, 'destroy'])->name('logout');
         Route::get('/painel', DashboardController::class)->name('dashboard');
 
@@ -161,7 +150,7 @@ Route::middleware([
             }
         });
 
-        // Agência e indústria consultam suas prestadoras; só o admin da instalação altera cadastros.
+        // Agências que atendem a indústria: só consulta (o vínculo é feito pelo painel central).
         Route::get('/agencias', [AgenciaController::class, 'index'])
             ->middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante')
             ->name('agencias.index');
@@ -170,9 +159,6 @@ Route::middleware([
             Route::resource('industrias', IndustriaController::class)
                 ->except(['show', 'destroy'])
                 ->parameters(['industrias' => 'industria']);
-            Route::resource('agencias', AgenciaController::class)
-                ->only(['create', 'store', 'edit', 'update'])
-                ->parameters(['agencias' => 'agencia']);
         });
     });
 });
@@ -186,7 +172,7 @@ Route::middleware([
 ])->prefix('api/v1')->name('api.')->group(function () {
     Route::post('/login', [ApiAuthController::class, 'login'])->middleware('throttle:login')->name('login');
 
-    Route::middleware(['auth:sanctum', EnsureAcessoParceiro::class])->group(function () {
+    Route::middleware('auth:sanctum')->group(function () {
         Route::get('/visitas/{visita}', [VisitaController::class, 'apiShow'])->whereNumber('visita')->name('visitas.show');
         Route::post('/visitas/{visita}/fotos', [ExecucaoVisitaController::class, 'foto'])->whereNumber('visita')->name('visitas.enviar-foto');
         Route::get('/visitas/{visita}/fotos/{foto}', [VisitaController::class, 'foto'])->whereNumber(['visita', 'foto'])->name('visitas.fotos');

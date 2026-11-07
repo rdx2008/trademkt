@@ -51,10 +51,8 @@ class AgenciaConsultaTest extends TestCase
             $this->actingAs($usuario)->get('http://xyz.test/agencias')->assertOk()
                 ->assertSee($c['prestadora']->nome)->assertDontSee('Agência reservada')
                 ->assertDontSee('Nova agência')->assertDontSee('>Editar</a>', false)
-                ->assertViewHas('podeCadastrar', false)
                 ->assertViewHas('agencias', fn ($agencias) => $agencias->count() === 1
-                    && $agencias->first()->id === $c['prestadora']->id
-                    && $agencias->first()->usuarios_count === ($tipo === 'agencia' ? 4 : 3));
+                    && $agencias->first()->id === $c['prestadora']->id);
             $this->get('http://xyz.test/painel')->assertOk()->assertSee('http://xyz.test/agencias');
         }
     }
@@ -75,10 +73,10 @@ class AgenciaConsultaTest extends TestCase
             $usuario = $this->criarUsuario($c['tenant'], $perfil, ['agencia_id' => $c['prestadora']->id]);
             $this->actingAs($usuario)->get('http://xyz.test/agencias')->assertOk()
                 ->assertSee($c['prestadora']->nome)->assertDontSee('Agência reservada');
-            $this->get('http://xyz.test/agencias/create')->assertForbidden();
-            $this->get('http://xyz.test/agencias/'.$c['prestadora']->id.'/edit')->assertForbidden();
-            $this->post('http://xyz.test/agencias', ['nome' => 'Indevida'])->assertForbidden();
-            $this->put('http://xyz.test/agencias/'.$c['prestadora']->id, ['nome' => 'Alterada'])->assertForbidden();
+            $this->get('http://xyz.test/agencias/create')->assertNotFound();
+            $this->get('http://xyz.test/agencias/'.$c['prestadora']->id.'/edit')->assertNotFound();
+            $this->post('http://xyz.test/agencias', ['nome' => 'Indevida'])->assertMethodNotAllowed();
+            $this->put('http://xyz.test/agencias/'.$c['prestadora']->id, ['nome' => 'Alterada'])->assertNotFound();
         }
     }
 
@@ -87,11 +85,11 @@ class AgenciaConsultaTest extends TestCase
         $c = $this->cenario();
         $representante = $this->criarUsuario($c['tenant'], Perfil::Representante, ['industria_id' => $c['marca']->id]);
         foreach ([$c['gerente'], $representante] as $usuario) {
-            $this->actingAs($usuario)->get('http://xyz.test/agencias/create')->assertForbidden();
-            $this->post('http://xyz.test/agencias', ['nome' => 'Indevida'])->assertForbidden();
+            $this->actingAs($usuario)->get('http://xyz.test/agencias/create')->assertNotFound();
+            $this->post('http://xyz.test/agencias', ['nome' => 'Indevida'])->assertMethodNotAllowed();
             foreach ([$c['prestadora'], $c['outra']] as $agencia) {
-                $this->get("http://xyz.test/agencias/{$agencia->id}/edit")->assertForbidden();
-                $this->put("http://xyz.test/agencias/{$agencia->id}", ['nome' => 'Alterada'])->assertForbidden();
+                $this->get("http://xyz.test/agencias/{$agencia->id}/edit")->assertNotFound();
+                $this->put("http://xyz.test/agencias/{$agencia->id}", ['nome' => 'Alterada'])->assertNotFound();
             }
         }
         $c['tenant']->run(fn () => $this->assertSame(2, Agencia::count()));
@@ -112,20 +110,15 @@ class AgenciaConsultaTest extends TestCase
         }
     }
 
-    public function test_admin_da_instalacao_continua_cadastrando_e_editando_agencias(): void
+    public function test_admin_da_instalacao_consulta_todas_mas_nao_cadastra_agencias(): void
     {
         $c = $this->cenario();
         $admin = $c['tenant']->run(fn () => User::where('perfil', Perfil::AdminInstalacao->value)->sole());
         $this->actingAs($admin)->get('http://xyz.test/agencias')->assertOk()
-            ->assertSee([$c['prestadora']->nome, 'Agência reservada', 'Nova agência'])
-            ->assertViewHas('podeCadastrar', true);
-        $this->get('http://xyz.test/agencias/create')->assertOk();
-        $this->post('http://xyz.test/agencias', ['nome' => 'Nova prestadora', 'ativo' => '1'])
-            ->assertRedirect('http://xyz.test/agencias')->assertSessionHasNoErrors();
-        $nova = $c['tenant']->run(fn () => Agencia::where('nome', 'Nova prestadora')->sole());
-        $this->get("http://xyz.test/agencias/{$nova->id}/edit")->assertOk();
-        $this->put("http://xyz.test/agencias/{$nova->id}", ['nome' => 'Prestadora atualizada', 'ativo' => '1'])
-            ->assertRedirect('http://xyz.test/agencias')->assertSessionHasNoErrors();
-        $c['tenant']->run(fn () => $this->assertSame('Prestadora atualizada', $nova->fresh()->nome));
+            ->assertSee([$c['prestadora']->nome, 'Agência reservada'])
+            ->assertDontSee('Nova agência');
+        $this->get('http://xyz.test/agencias/create')->assertNotFound();
+        $this->post('http://xyz.test/agencias', ['nome' => 'Nova prestadora', 'ativo' => '1'])->assertMethodNotAllowed();
+        $c['tenant']->run(fn () => $this->assertSame(2, Agencia::count()));
     }
 }
