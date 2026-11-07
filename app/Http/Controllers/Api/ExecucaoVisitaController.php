@@ -31,7 +31,7 @@ class ExecucaoVisitaController extends Controller
     public function foto(Request $request, int $visita, MarcaDagua $marca)
     {
         $dados = $request->validate([
-            'uuid' => ['required', 'uuid'], 'tipo' => ['required', Rule::in(['antes', 'depois', 'ruptura'])],
+            'uuid' => ['required', 'uuid'], 'tipo' => ['required', Rule::in(['antes', 'depois', 'ruptura', 'impedimento'])],
             'foto' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:5120', 'dimensions:max_width=4096,max_height=4096'],
             'lat' => ['required', 'numeric', 'between:-90,90'], 'lng' => ['required', 'numeric', 'between:-180,180'],
             'gps_em' => ['required', 'date_format:Y-m-d\TH:i:sP'], 'aparelho_em' => ['required', 'date_format:Y-m-d\TH:i:sP'],
@@ -50,10 +50,24 @@ class ExecucaoVisitaController extends Controller
 
                     return response()->json(['foto' => $existente]);
                 }
-                abort_unless($v->check_in && $v->status === StatusVisita::EmAndamento, 409, 'É necessário check-in e visita em andamento.');
+                // A foto de antes da gôndola é o check-in: ela abre a visita (a foto da entrada faz o
+                // mesmo no impedimento de acesso). As demais exigem a visita já aberta.
+                $abreVisita = ! $v->check_in && in_array($dados['tipo'], ['antes', 'impedimento'], true);
                 $gps = Carbon::parse($dados['gps_em']);
-                if ($gps->lt(Carbon::parse($v->check_in['gps_em'])) || $gps->gt(now()->addMinutes(5))) {
-                    throw ValidationException::withMessages(['gps_em' => 'A foto deve ser posterior ao check-in e não pode estar no futuro.']);
+                if ($abreVisita) {
+                    abort_unless(in_array($v->status, [StatusVisita::Previsto, StatusVisita::NaoExecutada], true), 409, 'A visita não está prevista.');
+                    $diaGps = $gps->copy()->setTimezone(config('app.timezone'))->toDateString();
+                    if ($diaGps !== $v->data->toDateString() || $gps->gt(now()->addMinutes(5))) {
+                        throw ValidationException::withMessages(['gps_em' => 'O GPS deve registrar o dia da visita e não pode estar no futuro.']);
+                    }
+                    if (! $v->pdv->ativo) {
+                        throw ValidationException::withMessages(['pdv' => 'O PDV precisa estar ativo e ter coordenadas cadastradas.']);
+                    }
+                } else {
+                    abort_unless($v->check_in && $v->status === StatusVisita::EmAndamento, 409, 'Tire primeiro a foto de antes da gôndola: ela abre a visita.');
+                    if ($gps->lt(Carbon::parse($v->check_in['gps_em'])) || $gps->gt(now()->addMinutes(5))) {
+                        throw ValidationException::withMessages(['gps_em' => 'A foto deve ser posterior ao check-in e não pode estar no futuro.']);
+                    }
                 }
                 $antes = $v->fotos()->where('tipo', 'antes')->get();
                 if ($dados['tipo'] === 'depois' && ($antes->isEmpty() || $antes->contains(fn ($f) => $gps->lt(Carbon::parse($f->metadados['gps_em']))))) {
@@ -70,8 +84,22 @@ class ExecucaoVisitaController extends Controller
                     'LAT '.$meta['lat'].' | LNG '.$meta['lng'], 'Recebido '.$meta['recebido_em'],
                 ]);
                 $foto = $v->fotos()->create(['uuid' => $dados['uuid'], 'tipo' => $dados['tipo'], ...$gravado, 'hash_origem' => $hash, 'metadados' => $meta]);
+                if ($abreVisita) {
+                    $tardia = $v->status === StatusVisita::NaoExecutada;
+                    $v->check_in = [
+                        'lat' => $meta['lat'], 'lng' => $meta['lng'], 'distancia_m' => $meta['distancia_m'], 'raio_m' => $v->pdv->raio_m,
+                        'gps_em' => $gps->copy()->setTimezone(config('app.timezone'))->toIso8601String(), 'aparelho_em' => $meta['aparelho_em'],
+                        'recebido_em' => $meta['recebido_em'], 'relogio_divergente' => $meta['relogio_divergente'],
+                        'origem' => 'foto', 'foto_uuid' => $dados['uuid'],
+                    ];
+                    $v->status = StatusVisita::EmAndamento;
+                    $v->save();
+                    if ($tardia) {
+                        app(AlertasOperacao::class)->emitir('sincronizacao_tardia', $v, 'Check-in recebido após encerramento', $v->pdv->nome.' · A visita voltou a ficar em andamento após sincronização.');
+                    }
+                }
 
-                return response()->json(['foto' => $foto], 201);
+                return response()->json(['foto' => $foto, 'status' => $v->status->value, 'check_in' => $v->check_in], 201);
             });
         } catch (\Throwable $e) {
             if ($gravado) {
