@@ -91,6 +91,22 @@ class User extends Authenticatable
         return $this->hasMany(Convite::class, 'usuario_id');
     }
 
+    public function afastamentos(): HasMany
+    {
+        return $this->hasMany(Afastamento::class, 'usuario_id')->orderByDesc('inicio');
+    }
+
+    public function ocorrencias(): HasMany
+    {
+        return $this->hasMany(Ocorrencia::class, 'usuario_id')->orderByDesc('data')->orderByDesc('id');
+    }
+
+    /** Afastamento que cobre a data (padrão: hoje), se houver. */
+    public function afastamentoEm(?string $data = null): ?Afastamento
+    {
+        return $this->afastamentos()->em($data ?? now()->toDateString())->first();
+    }
+
     public function auditoria(): HasMany
     {
         return $this->hasMany(AuditoriaUsuario::class, 'usuario_id')->latest('id');

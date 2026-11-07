@@ -115,6 +115,20 @@ na indústria" (decidido em 07/11/2026; substitui o diretório com solicitação
   antigos mantendo pelo menos um. Banco, usuários e histórico são mantidos. DNS, proxy e
   certificados HTTPS continuam sendo configurados externamente no provedor/Coolify.
 
+### Promotores da agência
+
+Tela própria em **Equipe → Promotores** (só instalação de agência); o promotor não aparece em Usuários.
+
+- Admin da agência cadastra, edita, desativa e importa por planilha; supervisor só consulta.
+- Cadastro com CPF (criptografado, mascarado nas listas, consulta registrada no histórico), foto privada,
+  cidade base e vínculo. Indústria e supermercado nunca veem CPF; a indústria vê só o primeiro nome.
+- Primeiro acesso por convite (link de 7 dias, uso único, guardado como hash) com aviso de privacidade.
+- Ficha (`/promotores/{id}`): agenda dos 7 dias e histórico de 30 dias somando as indústrias atendidas
+  (lidas do banco de cada indústria, `FichaOperacional`), métricas, afastamentos, ocorrências internas,
+  aparelhos conectados (com desconectar) e histórico de alterações.
+- Ainda não implementado: afastamento influenciando a sugestão de atribuição, habilitação por
+  indústria, crachá digital com QR.
+
 ### Painéis e permissões
 
 Referência: `docs/PAINEIS.md`.

@@ -32,6 +32,10 @@ class AuditoriaUsuario extends Model
         'cpf_alterado' => 'CPF alterado',
         'cpf_visualizado' => 'CPF consultado',
         'importado' => 'Cadastrado por planilha',
+        'afastamento_registrado' => 'Afastamento registrado',
+        'afastamento_removido' => 'Afastamento removido',
+        'ocorrencia_registrada' => 'Ocorrência registrada',
+        'aparelho_desconectado' => 'Aparelho desconectado',
     ];
 
     public function rotulo(): string

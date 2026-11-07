@@ -64,6 +64,8 @@
                         <td>
                             @if (! $p->ativo)
                                 <span class="selo off">Inativo</span>
+                            @elseif ($afastados->has($p->id))
+                                <span class="selo alerta">Afastado ({{ \App\Models\Afastamento::TIPOS[$afastados[$p->id]] ?? 'afastado' }})</span>
                             @elseif (! $p->conviteAceito())
                                 <span class="selo alerta">Convite pendente</span>
                             @else
@@ -71,7 +73,7 @@
                             @endif
                         </td>
                         <td>{{ $p->ultimo_acesso_em?->format('d/m/Y H:i') ?? '—' }}</td>
-                        <td>@if ($podeGerir)<a href="{{ route('promotores.edit', $p->id) }}">Abrir</a>@endif</td>
+                        <td style="white-space:nowrap"><a href="{{ route('promotores.ficha', $p->id) }}">Ficha</a>@if ($podeGerir) · <a href="{{ route('promotores.edit', $p->id) }}">Editar</a>@endif</td>
                     </tr>
                 @empty
                     <tr><td colspan="8">Nenhum promotor encontrado.@if ($podeGerir) <a href="{{ route('promotores.create') }}">Cadastrar o primeiro</a>.@endif</td></tr>

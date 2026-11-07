@@ -6,6 +6,7 @@ use App\Enums\Perfil;
 use App\Enums\TipoInstalacao;
 use App\Enums\TipoVinculo;
 use App\Http\Controllers\Controller;
+use App\Models\Afastamento;
 use App\Models\User;
 use App\Rules\Cpf;
 use App\Services\Promotores\Cadastro;
@@ -77,6 +78,7 @@ class PromotorController extends Controller
             'promotores' => $promotores,
             'filtros' => $filtros,
             'podeGerir' => $eu->podeGerirPromotores(),
+            'afastados' => Afastamento::em(now()->toDateString())->pluck('tipo', 'usuario_id'),
             'vinculos' => TipoVinculo::cases(),
         ]);
     }

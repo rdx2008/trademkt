@@ -15,6 +15,7 @@ use App\Http\Controllers\Tenant\ContratoVisitaController;
 use App\Http\Controllers\Tenant\ConviteController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\DemandaController;
+use App\Http\Controllers\Tenant\FichaPromotorController;
 use App\Http\Controllers\Tenant\ImportacaoPdvController;
 use App\Http\Controllers\Tenant\ImportacaoSkuController;
 use App\Http\Controllers\Tenant\IndicadorController;
@@ -103,6 +104,11 @@ Route::middleware([
             Route::put('/promotores/{promotor}', [PromotorController::class, 'update'])->whereNumber('promotor')->name('promotores.update');
             Route::patch('/promotores/{promotor}/ativo', [PromotorController::class, 'ativo'])->whereNumber('promotor')->name('promotores.ativo');
             Route::post('/promotores/{promotor}/convite', [PromotorController::class, 'convite'])->whereNumber('promotor')->name('promotores.convite');
+            Route::get('/promotores/{promotor}', [FichaPromotorController::class, 'show'])->whereNumber('promotor')->name('promotores.ficha');
+            Route::post('/promotores/{promotor}/afastamentos', [FichaPromotorController::class, 'afastar'])->whereNumber('promotor')->name('promotores.afastar');
+            Route::delete('/promotores/{promotor}/afastamentos/{afastamento}', [FichaPromotorController::class, 'encerrarAfastamento'])->whereNumber(['promotor', 'afastamento'])->name('promotores.afastamento.remover');
+            Route::post('/promotores/{promotor}/ocorrencias', [FichaPromotorController::class, 'ocorrencia'])->whereNumber('promotor')->name('promotores.ocorrencia');
+            Route::delete('/promotores/{promotor}/aparelhos/{token}', [FichaPromotorController::class, 'revogarAparelho'])->whereNumber(['promotor', 'token'])->name('promotores.aparelho.revogar');
             Route::get('/promotores/{promotor}/foto', [PromotorController::class, 'foto'])->whereNumber('promotor')->name('promotores.foto');
         });
 
