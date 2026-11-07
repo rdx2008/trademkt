@@ -53,7 +53,8 @@ class AgenciaConsultaTest extends TestCase
                 ->assertDontSee('Nova agência')->assertDontSee('>Editar</a>', false)
                 ->assertViewHas('agencias', fn ($agencias) => $agencias->count() === 1
                     && $agencias->first()->id === $c['prestadora']->id);
-            $this->get('http://xyz.test/painel')->assertOk()->assertSee('http://xyz.test/agencias');
+            // No menu da agência não há "Agências": a agência é ela mesma.
+            $this->get('http://xyz.test/painel')->assertOk()->{$tipo === 'industria' ? 'assertSee' : 'assertDontSee'}('>Agências</a>', false);
         }
     }
 

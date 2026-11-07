@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Tenant;
 use App\Enums\Perfil;
 use App\Http\Controllers\Controller;
 use App\Services\Painel\ResumoOperacional;
+use App\Support\Contexto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -30,7 +31,7 @@ class VisitaController extends Controller
             'concluida_em' => $v->concluida_em?->toIso8601String(), 'recebida_em' => $v->recebida_em?->toIso8601String(),
             'duracao_segundos' => $v->duracao_segundos, 'observacao' => $v->observacao, 'demanda_id' => $v->demanda?->id,
             'itens' => $v->itens->map(fn ($i) => ['sku_id' => $i->sku_id, 'codigo' => $i->sku->codigo, 'descricao' => $i->sku->descricao, 'situacao_estoque' => $i->situacao_estoque]),
-            'fotos' => $v->fotos->map(fn ($f) => ['id' => $f->id, 'uuid' => $f->uuid, 'tipo' => $f->tipo, 'metadados' => $f->metadados, 'url' => route('api.visitas.fotos', [$v, $f])]),
+            'fotos' => $v->fotos->map(fn ($f) => ['id' => $f->id, 'uuid' => $f->uuid, 'tipo' => $f->tipo, 'metadados' => $f->metadados, 'url' => Contexto::rotaApi('visitas.fotos', ['visita' => $v, 'foto' => $f])]),
         ]]);
     }
 

@@ -19,6 +19,7 @@ use App\Http\Controllers\Tenant\ImportacaoSkuController;
 use App\Http\Controllers\Tenant\IndicadorController;
 use App\Http\Controllers\Tenant\IndustriaController;
 use App\Http\Controllers\Tenant\MarcaController;
+use App\Http\Controllers\Tenant\OperacaoController;
 use App\Http\Controllers\Tenant\PdvController;
 use App\Http\Controllers\Tenant\RedeController;
 use App\Http\Controllers\Tenant\RegiaoController;
@@ -26,6 +27,7 @@ use App\Http\Controllers\Tenant\RoteiroController;
 use App\Http\Controllers\Tenant\SkuController;
 use App\Http\Controllers\Tenant\UsuarioController;
 use App\Http\Controllers\Tenant\VisitaController;
+use App\Http\Middleware\AbrirOperacaoDaAgencia;
 use App\Http\Middleware\EnsureInstalacaoDaSessao;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
@@ -53,7 +55,10 @@ Route::middleware([
         Route::post('/entrar', [AuthController::class, 'store'])->middleware('throttle:login');
     });
 
-    Route::middleware(['auth', EnsureInstalacaoDaSessao::class])->group(function () {
+    Route::middleware(['auth', EnsureInstalacaoDaSessao::class, AbrirOperacaoDaAgencia::class])->group(function () {
+        // Agência: escolhe em qual indústria vinculada está trabalhando.
+        Route::post('/operacao/{industria}', [OperacaoController::class, 'selecionar'])->name('operacao.selecionar');
+
         Route::middleware('perfil:admin_instalacao')->group(function () {
             Route::get('/configuracoes/aparencia', [AparenciaController::class, 'edit'])->name('configuracoes.aparencia');
             Route::put('/configuracoes/aparencia', [AparenciaController::class, 'update'])->name('configuracoes.aparencia.salvar');
@@ -172,16 +177,23 @@ Route::middleware([
 ])->prefix('api/v1')->name('api.')->group(function () {
     Route::post('/login', [ApiAuthController::class, 'login'])->middleware('throttle:login')->name('login');
 
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/visitas/{visita}', [VisitaController::class, 'apiShow'])->whereNumber('visita')->name('visitas.show');
-        Route::post('/visitas/{visita}/fotos', [ExecucaoVisitaController::class, 'foto'])->whereNumber('visita')->name('visitas.enviar-foto');
-        Route::get('/visitas/{visita}/fotos/{foto}', [VisitaController::class, 'foto'])->whereNumber(['visita', 'foto'])->name('visitas.fotos');
-        Route::post('/visitas/{visita}/concluir', [ExecucaoVisitaController::class, 'concluir'])->whereNumber('visita')->name('visitas.concluir');
+    Route::middleware(['auth:sanctum', AbrirOperacaoDaAgencia::class])->group(function () {
         Route::get('/me', [ApiAuthController::class, 'me'])->name('me');
         Route::post('/logout', [ApiAuthController::class, 'logout'])->name('logout');
+        // Na agência, soma as visitas de todas as indústrias atendidas.
         Route::get('/roteiro', [ApiRoteiroController::class, 'show'])->name('roteiro');
-        Route::post('/visitas/{visita}/check-in', CheckInController::class)
-            ->whereNumber('visita')->name('visitas.check-in');
-        Route::get('/skus/{sku}/foto', [ApiRoteiroController::class, 'fotoSku'])->name('skus.foto');
+
+        $execucao = function () {
+            Route::get('/visitas/{visita}', [VisitaController::class, 'apiShow'])->whereNumber('visita')->name('visitas.show');
+            Route::post('/visitas/{visita}/fotos', [ExecucaoVisitaController::class, 'foto'])->whereNumber('visita')->name('visitas.enviar-foto');
+            Route::get('/visitas/{visita}/fotos/{foto}', [VisitaController::class, 'foto'])->whereNumber(['visita', 'foto'])->name('visitas.fotos');
+            Route::post('/visitas/{visita}/concluir', [ExecucaoVisitaController::class, 'concluir'])->whereNumber('visita')->name('visitas.concluir');
+            Route::post('/visitas/{visita}/check-in', CheckInController::class)->whereNumber('visita')->name('visitas.check-in');
+            Route::get('/skus/{sku}/foto', [ApiRoteiroController::class, 'fotoSku'])->name('skus.foto');
+        };
+        // Execução na própria instalação da indústria...
+        $execucao();
+        // ...ou pela agência, com o código da indústria na rota (o app entra pela agência).
+        Route::prefix('industrias/{industria}')->name('op.')->group($execucao);
     });
 });

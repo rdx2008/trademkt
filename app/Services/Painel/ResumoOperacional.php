@@ -9,6 +9,8 @@ use App\Models\Pdv;
 use App\Models\Sku;
 use App\Models\User;
 use App\Models\Visita;
+use App\Services\Operacao\Equipe;
+use App\Support\Contexto;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 
@@ -99,7 +101,11 @@ class ResumoOperacional
                 'PDVs visíveis' => (clone $pdvs)->count(),
                 'Contratos vigentes' => (clone $contratos)->vigentesEm($data)->count(),
                 'SKUs ativos' => $skus->count(),
-                'Equipe visível' => $podeGerenciar ? User::visiveisPara($usuario)->where('ativo', true)->count() : null,
+                'Equipe visível' => match (true) {
+                    ! $podeGerenciar => null,
+                    Contexto::viaAgencia() => app(Equipe::class)->de(Contexto::agenciaLocal())->where('ativo', true)->count(),
+                    default => User::visiveisPara($usuario)->where('ativo', true)->count(),
+                },
             ],
             'visitas' => (clone $dia)->when($status, fn ($q) => $q->where('status', $status))
                 ->with(['pdv', 'industria', 'agencia', 'roteiro'])

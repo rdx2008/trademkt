@@ -130,7 +130,7 @@ class TemaEBiTest extends TestCase
     {
         $this->actingAs($this->admin())->get(self::URL.'/painel')
             ->assertOk()
-            ->assertSeeInOrder(['Visão geral', 'Operação', 'Roteiros', 'Contratos de visita', 'Demandas e rupturas', 'Resultados', 'Indicadores e fotos', 'BI da agência', 'Cadastros', 'PDVs', 'Catálogo de SKUs', 'Importar produtos', 'Agências', 'Regiões', 'Redes de supermercados', 'Usuários', 'Meus alertas'])
+            ->assertSeeInOrder(['Visão geral', 'Operação', 'Roteiros', 'Contratos de visita', 'Demandas e rupturas', 'Resultados', 'Indicadores e fotos', 'BI da agência', 'Indústria atendida', 'PDVs', 'Catálogo de SKUs', 'Regiões', 'Redes de supermercados', 'Usuários', 'Meus alertas'])
             ->assertSee('class="has-arrow ai-icon"', false);
     }
 

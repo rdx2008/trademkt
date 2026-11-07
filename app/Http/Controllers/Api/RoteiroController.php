@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\Perfil;
+use App\Enums\TipoInstalacao;
 use App\Http\Controllers\Controller;
-use App\Models\Roteiro;
 use App\Models\Sku;
 use App\Models\Visita;
+use App\Services\Rede\Operacao;
+use App\Services\Roteiros\RoteiroDoApp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -18,69 +20,21 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class RoteiroController extends Controller
 {
-    public function show(Request $request): JsonResponse
+    public function show(Request $request, RoteiroDoApp $montador): JsonResponse
     {
+        // O promotor que entrou pela agência recebe as visitas de todas as indústrias atendidas.
+        $operacao = app(Operacao::class);
+        if (tenant()->tipo === TipoInstalacao::Agencia && $operacao->industriasDe(tenant())->isNotEmpty()) {
+            return app(RoteiroAgenciaController::class)->show($request, $operacao, $montador);
+        }
+
         $promotor = $request->user();
         abort_unless($promotor->perfil === Perfil::Promotor, 403, 'Só o promotor usa o roteiro do app.');
 
         $dados = $request->validate(['data' => ['nullable', 'date_format:Y-m-d']]);
         $data = isset($dados['data']) ? Carbon::parse($dados['data']) : today();
 
-        $roteiro = Roteiro::query()
-            ->doPromotor($promotor->agencia_id, $promotor->id, $data->toDateString())
-            ->with(['visitas.pdv', 'visitas.industria'])
-            ->first();
-        $supervisor = $roteiro?->supervisor();
-
-        $visitas = $roteiro?->visitas ?? collect();
-
-        // SKUs ativos de cada indústria do dia, enviados uma vez só (o app associa pela indústria).
-        $industrias = $visitas->pluck('industria')->unique('id')->values()->map(fn ($industria) => [
-            'id' => $industria->id,
-            'nome' => $industria->nome,
-            'skus' => Sku::query()
-                ->where('industria_id', $industria->id)
-                ->where('ativo', true)
-                ->with('embalagens')
-                ->orderBy('descricao')
-                ->get()
-                ->map(fn (Sku $sku) => [
-                    'id' => $sku->id,
-                    'codigo' => $sku->codigo,
-                    'descricao' => $sku->descricao,
-                    'categoria' => $sku->categoria,
-                    'foto_url' => $sku->foto ? route('api.skus.foto', $sku) : null,
-                    'embalagens' => $sku->embalagensOrdenadas()->map(fn ($e) => [
-                        'tipo' => $e->tipo->value,
-                        'quantidade' => $e->quantidade,
-                        'gtin' => $e->gtin,
-                    ])->all(),
-                ])->all(),
-        ])->all();
-
-        return response()->json([
-            'data' => $data->toDateString(),
-            'roteiro_id' => $roteiro?->id,
-            'supervisor' => $supervisor ? ['id' => $supervisor->id, 'nome' => $supervisor->nome] : null,
-            'visitas' => $visitas->values()->map(fn (Visita $v, int $i) => [
-                'id' => $v->id,
-                'ordem' => $i + 1,
-                'origem' => $v->origem->value,
-                'status' => $v->status->value,
-                'check_in' => $v->check_in,
-                'industria_id' => $v->industria_id,
-                'pdv' => [
-                    'id' => $v->pdv->id,
-                    'nome' => $v->pdv->nome,
-                    'cnpj' => $v->pdv->cnpj,
-                    'endereco' => $v->pdv->enderecoCompleto(),
-                    'lat' => $v->pdv->lat,
-                    'lng' => $v->pdv->lng,
-                    'raio_m' => $v->pdv->raio_m,
-                ],
-            ])->all(),
-            'industrias' => $industrias,
-        ]);
+        return response()->json(['data' => $data->toDateString()] + $montador->montar($promotor, $data));
     }
 
     /** Foto do SKU para o app: só de indústrias que o promotor tem no roteiro (30 dias para trás ou para frente). */
@@ -91,10 +45,10 @@ class RoteiroController extends Controller
 
         $temIndustria = Visita::query()
             ->where('industria_id', $sku->industria_id)
+            ->where('agencia_id', $promotor->agencia_id)
             ->whereHas('roteiro', fn ($q) => $q->where('promotor_id', $promotor->id))
             ->whereBetween('data', [today()->subDays(30)->toDateString(), today()->addDays(30)->toDateString()])
             ->exists();
-
         abort_unless($temIndustria && $sku->foto && Storage::disk('local')->exists($sku->foto), 404);
 
         return Storage::disk('local')->response($sku->foto, headers: ['Cache-Control' => 'private, max-age=604800']);

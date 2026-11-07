@@ -9,6 +9,7 @@ use App\Models\Visita;
 use App\Models\VisitaSku;
 use App\Services\Operacao\Equipe;
 use App\Services\Operacao\Indicadores;
+use App\Support\Contexto;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -29,7 +30,7 @@ class PainelBi
     /** 'industria' ou 'agencia': o gerente de trade sempre enxerga a visão da marca. */
     public static function visao(User $usuario): string
     {
-        return $usuario->perfil === Perfil::GerenteTrade || tenant()->tipo === TipoInstalacao::Industria
+        return $usuario->perfil === Perfil::GerenteTrade || Contexto::instalacao()?->tipo === TipoInstalacao::Industria
             ? 'industria'
             : 'agencia';
     }

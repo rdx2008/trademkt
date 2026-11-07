@@ -6,7 +6,10 @@
     // Marca própria da instalação: nome, cor e logos (padrão: o nome do cliente e o azul do tema).
     $aparencia = \App\Services\Marca\Aparencia::atual();
     $nomeMarca = $aparencia->nome();
-    $creditos = tenant()->mostrarCreditos();
+    $creditos = \App\Support\Contexto::instalacao()?->mostrarCreditos();
+    // Agência: em qual indústria vinculada está trabalhando (seletor no cabeçalho).
+    $operacoes = $eu && \App\Support\Contexto::instalacaoEhAgencia() ? app(\App\Services\Rede\Operacao::class)->industriasDe(\App\Support\Contexto::instalacao()) : collect();
+    $operacaoAtual = \App\Support\Contexto::operacao();
     $logoClaro = $aparencia->urlLogoParaClaro();
     $logoEscuro = $aparencia->urlLogoParaEscuro();
     $icone = $aparencia->url('icone');
@@ -92,6 +95,21 @@
                     <div class="header-left">
                         <div class="dashboard_bar">{{ $titulo ?? $nomeMarca }}</div>
                         <span class="marca-cliente d-none d-md-inline">{{ $nomeMarca }}</span>
+                        @if ($operacoes->isNotEmpty())
+                            <div class="dropdown seletor-operacao ms-3">
+                                <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Indústria em que você está trabalhando">
+                                    <i class="flaticon-381-briefcase me-1"></i>{{ $operacaoAtual?->nome ?? 'Escolher indústria' }}
+                                </button>
+                                <div class="dropdown-menu">
+                                    @foreach ($operacoes as $industriaOperada)
+                                        <form method="POST" action="{{ route('operacao.selecionar', $industriaOperada) }}" class="m-0">
+                                            @csrf
+                                            <button type="submit" @class(['dropdown-item', 'active' => $operacaoAtual?->id === $industriaOperada->id])>{{ $industriaOperada->nome }}</button>
+                                        </form>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                     </div>
                     <ul class="navbar-nav header-right">
                         <li class="nav-item dropdown notification_dropdown">

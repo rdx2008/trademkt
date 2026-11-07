@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Route;
  * Cada item respeita as mesmas permissões do menu antigo: quem não pode abrir a tela não
  * a vê. Tópicos que ficam sem nenhum item somem; tópico com um único item vira link direto.
  *
+ * Na agência, a operação é a da indústria escolhida: PDVs, catálogo, regiões e redes são
+ * consulta dos dados da indústria; a equipe e a aparência são da própria agência.
+ *
  * @phpstan-type Item array{rotulo: string, url: string, ativo: bool}
  * @phpstan-type Topico array{rotulo: string, icone: string, url: ?string, ativo: bool, badge: ?int, itens: list<Item>}
  */
@@ -23,10 +26,13 @@ class MenuLateral
     /** @return list<Topico> */
     public static function montar(User $eu): array
     {
-        $industria = tenant()->tipo === TipoInstalacao::Industria;
+        $instalacao = Contexto::instalacao();
+        $industria = $instalacao?->tipo === TipoInstalacao::Industria;
+        $agencia = $instalacao?->tipo === TipoInstalacao::Agencia;
         $gestao = $eu->temPerfil(Perfil::AdminInstalacao, Perfil::AdminAgencia);
         $acompanha = $eu->temPerfil(Perfil::AdminInstalacao, Perfil::AdminAgencia, Perfil::Supervisor, Perfil::GerenteTrade, Perfil::Representante);
-        $catalogoEditavel = $eu->temPerfil(Perfil::AdminInstalacao, Perfil::GerenteTrade);
+        $catalogoEditavel = ! $agencia && $eu->temPerfil(Perfil::AdminInstalacao, Perfil::GerenteTrade);
+        $cadastraOperacao = $gestao && ! $agencia;
 
         $inicio = match ($eu->perfil) {
             Perfil::Promotor => 'Minha agenda',
@@ -49,14 +55,14 @@ class MenuLateral
                 self::item(PainelBi::visao($eu) === 'industria' ? 'BI da indústria' : 'BI da agência', 'bi.index', ['bi.*'], $eu->podeVerBi()),
             ]),
 
-            self::topico('Cadastros', 'flaticon-381-folder-1', [
+            self::topico($agencia ? 'Indústria atendida' : 'Cadastros', 'flaticon-381-folder-1', [
                 self::item('PDVs', 'pdvs.index', ['pdvs.*'], $acompanha || $eu->perfil === Perfil::GerentePdv),
                 self::item('Catálogo de SKUs', 'skus.index', ['skus.*'], $acompanha, exceto: ['skus.importar*']),
                 self::item('Importar produtos', 'skus.importar', ['skus.importar*'], $catalogoEditavel),
-                self::item('Agências', 'agencias.index', ['agencias.*'], $acompanha),
-                self::item('Indústrias', 'industrias.index', ['industrias.*'], $eu->temPerfil(Perfil::AdminInstalacao)),
-                self::item('Regiões', 'regioes.index', ['regioes.*'], $gestao && ! $eu->agenciaVinculada()),
-                self::item('Redes de supermercados', 'redes.index', ['redes.*'], $gestao && ! $eu->agenciaVinculada()),
+                self::item('Agências', 'agencias.index', ['agencias.*'], $acompanha && ! $agencia),
+                self::item('Indústrias', 'industrias.index', ['industrias.*'], $eu->perfil === Perfil::AdminInstalacao && ! $agencia),
+                self::item('Regiões', 'regioes.index', ['regioes.*'], $gestao),
+                self::item('Redes de supermercados', 'redes.index', ['redes.*'], $gestao),
             ]),
 
             self::topico('Equipe', 'flaticon-381-user-9', [
@@ -64,7 +70,7 @@ class MenuLateral
             ]),
 
             self::topico('Configurações', 'flaticon-381-settings-2', [
-                self::item('Aparência', 'configuracoes.aparencia', ['configuracoes.*'], $eu->temPerfil(Perfil::AdminInstalacao) && tenant()->whiteLabelAtivo()),
+                self::item('Aparência', 'configuracoes.aparencia', ['configuracoes.*'], $eu->temPerfil(Perfil::AdminInstalacao) && $instalacao?->whiteLabelAtivo()),
             ]),
 
             self::link(

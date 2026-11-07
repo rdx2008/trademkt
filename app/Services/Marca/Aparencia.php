@@ -3,6 +3,8 @@
 namespace App\Services\Marca;
 
 use App\Models\Configuracao;
+use App\Services\Operacao\Equipe;
+use App\Support\Contexto;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -34,15 +36,27 @@ class Aparencia
     /** @var array<string, self> leitura em memória por cliente (uma requisição) */
     private static array $atual = [];
 
-    /** @param  array<string, string>  $valores */
-    private function __construct(private array $valores) {}
+    /**
+     * @param  array<string, string>  $valores
+     * @param  ?string  $raiz  pasta dos arquivos quando não é a do disco em uso (operação aberta pela agência)
+     */
+    private function __construct(private array $valores, private ?string $raiz = null) {}
 
-    /** Aparência da instalação atual (lida uma vez por requisição). */
+    /**
+     * Aparência da instalação em que o usuário entrou (lida uma vez por requisição). Quando a
+     * agência está dentro da operação de uma indústria, a marca continua sendo a da agência.
+     */
     public static function atual(): self
     {
-        $cliente = (string) tenant('id');
+        $instalacao = Contexto::instalacao();
+        $cliente = (string) $instalacao?->id;
 
-        return self::$atual[$cliente] ??= new self(tenant()?->whiteLabelAtivo() === false ? [] : Configuracao::todas());
+        return self::$atual[$cliente] ??= new self(
+            $instalacao?->whiteLabelAtivo() === false ? [] : (Contexto::viaAgencia()
+                ? Configuracao::on(Equipe::conexao($instalacao))->pluck('valor', 'chave')->all()
+                : Configuracao::todas()),
+            Contexto::viaAgencia() ? storage_path('clientes/'.$instalacao->id.'/app') : null,
+        );
     }
 
     /** Descarta a leitura em memória (depois de salvar e nos testes). */
@@ -55,7 +69,7 @@ class Aparencia
     {
         $nome = trim((string) ($this->valores['marca.nome'] ?? ''));
 
-        return $nome !== '' ? $nome : (string) tenant('nome');
+        return $nome !== '' ? $nome : (string) Contexto::instalacao()?->nome;
     }
 
     public function nomePersonalizado(): ?string
@@ -81,7 +95,7 @@ class Aparencia
     {
         $caminho = $this->caminho($tipo);
 
-        return $caminho !== null && Storage::disk('local')->exists($caminho);
+        return $caminho !== null && ($this->raiz !== null ? file_exists($this->raiz.'/'.$caminho) : Storage::disk('local')->exists($caminho));
     }
 
     public function caminho(string $tipo): ?string
