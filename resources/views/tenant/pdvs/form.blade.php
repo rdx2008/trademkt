@@ -57,7 +57,8 @@
         <div class="linha">
             <div class="campo">
                 <label for="cep">CEP</label>
-                <input type="text" id="cep" name="cep" value="{{ old('cep', $pdv->cep) }}" inputmode="numeric" maxlength="9">
+                <input type="text" id="cep" name="cep" value="{{ old('cep', $pdv->cep) }}" inputmode="numeric" maxlength="9" placeholder="00000-000" autocomplete="postal-code">
+                <div class="dica" id="cep-aviso">Ao digitar o CEP, o endereço e a posição no mapa são preenchidos sozinhos.</div>
             </div>
             <div class="campo">
                 <label for="logradouro">Logradouro</label>
@@ -91,8 +92,8 @@
         <h2>Localização e check-in</h2>
         <p class="dica">
             @if ($geocodingDisponivel)
-                Ao salvar, o endereço é localizado automaticamente. Se o pino não cair na porta da loja, arraste-o
-                (ou clique no mapa) e salve de novo: o ajuste manual prevalece.
+                Latitude e longitude são preenchidas automaticamente pelo endereço. Se o pino não cair na porta
+                da loja, arraste-o (ou clique no mapa) e salve: o ajuste manual prevalece.
             @else
                 Localização automática desligada nesta instalação: clique no mapa ou arraste o pino até a loja.
             @endif
@@ -146,6 +147,8 @@
 
                 var pino = null;
                 var circulo = null;
+                // Posição ajustada à mão (pino arrastado, clique no mapa ou coordenadas digitadas): a busca automática não a troca.
+                var manual = {{ ($pdv->coordenadas_origem ?? null) === 'manual' ? 'true' : 'false' }};
 
                 function raio() {
                     var r = parseInt(campoRaio.value, 10);
@@ -157,7 +160,7 @@
                         pino = L.marker(latlng, { draggable: true }).addTo(mapa);
                         circulo = L.circle(latlng, { radius: raio(), color: '#c62828', weight: 1, fillOpacity: 0.1 }).addTo(mapa);
                         pino.on('drag', function (e) { circulo.setLatLng(e.target.getLatLng()); });
-                        pino.on('dragend', function (e) { gravar(e.target.getLatLng()); });
+                        pino.on('dragend', function (e) { manual = true; gravar(e.target.getLatLng()); });
                     } else {
                         pino.setLatLng(latlng);
                         circulo.setLatLng(latlng);
@@ -172,14 +175,81 @@
 
                 if (temPonto) posicionar(centro, false);
 
-                mapa.on('click', function (e) { posicionar(e.latlng, true); });
+                mapa.on('click', function (e) { manual = true; posicionar(e.latlng, true); });
+                // Vem do preenchimento por CEP/endereço: move o pino, a menos que já tenha sido ajustado à mão.
+                document.addEventListener('pdv:ponto', function (e) {
+                    if (manual) return;
+                    posicionar([e.detail.lat, e.detail.lng], true);
+                    mapa.setView([e.detail.lat, e.detail.lng], 17);
+                });
                 campoRaio.addEventListener('input', function () { if (circulo) circulo.setRadius(raio()); });
                 [campoLat, campoLng].forEach(function (campo) {
                     campo.addEventListener('change', function () {
+                        manual = true;
                         var lat = parseFloat(campoLat.value), lng = parseFloat(campoLng.value);
                         if (!isNaN(lat) && !isNaN(lng)) { posicionar([lat, lng], false); mapa.setView([lat, lng], 17); }
                     });
                 });
+            })();
+        </script>
+        <script>
+            // CEP → endereço, e endereço → coordenadas (campos e pino do mapa).
+            (function () {
+                var campo = function (id) { return document.getElementById(id); };
+                var cep = campo('cep'), aviso = campo('cep-aviso');
+                var urlCep = @json(route('pdvs.cep', ['cep' => '00000000']));
+                var urlLocalizar = @json(route('pdvs.localizar'));
+                var textoAviso = aviso.textContent;
+                var ultimoCep = (cep.value || '').replace(/\D/g, '');
+                var pedido = 0;
+
+                function dizer(texto, erro) { aviso.textContent = texto; aviso.style.color = erro ? '#c62828' : ''; }
+
+                function localizar() {
+                    if (!campo('cidade').value || !campo('uf').value) return;
+                    var consulta = new URLSearchParams({
+                        logradouro: campo('logradouro').value, numero: campo('numero').value, bairro: campo('bairro').value,
+                        cidade: campo('cidade').value, uf: campo('uf').value, cep: cep.value
+                    });
+                    var este = ++pedido;
+                    fetch(urlLocalizar + '?' + consulta, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+                        .then(function (r) { return r.ok ? r.json() : null; })
+                        .then(function (ponto) {
+                            if (este !== pedido || !ponto) return;
+                            campo('lat').value = ponto.lat; campo('lng').value = ponto.lng;
+                            document.dispatchEvent(new CustomEvent('pdv:ponto', { detail: ponto }));
+                        })
+                        .catch(function () {});
+                }
+
+                function buscarCep() {
+                    var digitos = cep.value.replace(/\D/g, '');
+                    if (digitos.length !== 8 || digitos === ultimoCep) return;
+                    ultimoCep = digitos;
+                    cep.value = digitos.slice(0, 5) + '-' + digitos.slice(5);
+                    dizer('Buscando o endereço...');
+                    fetch(urlCep.replace('00000000', digitos), { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+                        .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+                        .then(function (res) {
+                            if (!res.ok) { dizer(res.j.message || 'CEP não encontrado.', true); return; }
+                            var e = res.j;
+                            if (e.logradouro) campo('logradouro').value = e.logradouro;
+                            if (e.bairro) campo('bairro').value = e.bairro;
+                            campo('cidade').value = e.cidade; campo('uf').value = e.uf;
+                            dizer(textoAviso);
+                            campo(e.logradouro ? 'numero' : 'logradouro').focus();
+                            if (e.lat !== null && e.lng !== null && !campo('lat').value) {
+                                campo('lat').value = e.lat; campo('lng').value = e.lng;
+                                document.dispatchEvent(new CustomEvent('pdv:ponto', { detail: { lat: e.lat, lng: e.lng } }));
+                            }
+                            localizar();
+                        })
+                        .catch(function () { dizer('Não foi possível consultar o CEP agora. Preencha o endereço manualmente.', true); });
+                }
+
+                cep.addEventListener('input', buscarCep);
+                cep.addEventListener('blur', buscarCep);
+                ['numero', 'logradouro', 'bairro', 'cidade', 'uf'].forEach(function (id) { campo(id).addEventListener('change', localizar); });
             })();
         </script>
     @endpush

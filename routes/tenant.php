@@ -142,6 +142,8 @@ Route::middleware([
             Route::post('/pdvs/importar/{importacao}', [ImportacaoPdvController::class, 'update'])->name('pdvs.importar.gravar');
             Route::delete('/pdvs/importar/{importacao}', [ImportacaoPdvController::class, 'destroy'])->name('pdvs.importar.descartar');
 
+            Route::get('/pdvs/cep/{cep}', [PdvController::class, 'cep'])->where('cep', '[0-9-]{8,9}')->middleware('throttle:60,1')->name('pdvs.cep');
+            Route::get('/pdvs/localizar', [PdvController::class, 'localizar'])->middleware('throttle:30,1')->name('pdvs.localizar');
             Route::resource('pdvs', PdvController::class)
                 ->only(['create', 'store', 'edit', 'update'])
                 ->parameters(['pdvs' => 'pdv']);

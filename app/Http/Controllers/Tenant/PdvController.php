@@ -9,8 +9,10 @@ use App\Models\Pdv;
 use App\Models\Rede;
 use App\Models\Regiao;
 use App\Rules\Cnpj;
+use App\Services\Geocoding\ConsultaCep;
 use App\Services\Geocoding\Geocodificador;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -135,13 +137,43 @@ class PdvController extends Controller
             $pdv->coordenadas_origem = 'manual';
         } elseif (! $informouCoordenadas || ($pdv->coordenadas_origem !== 'manual' && $enderecoAntes !== $pdv->enderecoCompleto())) {
             // Sem coordenadas, ou endereço mudou sem ajuste manual: consulta o geocoding.
-            $coordenadas = $this->geocodificador->coordenadas($pdv->enderecoCompleto());
+            $coordenadas = $this->geocodificador->coordenadas($pdv->variacoesDeEndereco());
             $pdv->lat = $coordenadas['lat'] ?? ($informouCoordenadas ? $pdv->lat : null);
             $pdv->lng = $coordenadas['lng'] ?? ($informouCoordenadas ? $pdv->lng : null);
             $pdv->coordenadas_origem = $coordenadas ? 'geocoding' : ($pdv->temCoordenadas() ? $pdv->coordenadas_origem : null);
         }
 
         $pdv->save();
+    }
+
+    /** Endereço (e coordenadas, quando a fonte as traz) de um CEP, para o formulário. */
+    public function cep(string $cep, ConsultaCep $consulta): JsonResponse
+    {
+        $achado = $consulta->consultar($cep);
+
+        return $achado
+            ? response()->json($achado)
+            : response()->json(['message' => 'CEP não encontrado. Preencha o endereço manualmente.'], 404);
+    }
+
+    /** Coordenadas do endereço digitado, para posicionar o pino no mapa. */
+    public function localizar(Request $request): JsonResponse
+    {
+        $dados = $request->validate([
+            'logradouro' => ['nullable', 'string', 'max:150'],
+            'numero' => ['nullable', 'string', 'max:20'],
+            'bairro' => ['nullable', 'string', 'max:80'],
+            'cidade' => ['required', 'string', 'max:80'],
+            'uf' => ['required', 'string', 'size:2', 'alpha'],
+            'cep' => ['nullable', 'string', 'max:9'],
+        ]);
+        $pdv = new Pdv($dados);
+        $pdv->cep = isset($dados['cep']) ? preg_replace('/\D/', '', $dados['cep']) : null;
+        $achado = $this->geocodificador->coordenadas($pdv->variacoesDeEndereco());
+
+        return $achado
+            ? response()->json($achado)
+            : response()->json(['message' => 'Endereço não localizado. Clique no mapa para marcar a loja.'], 404);
     }
 
     private function mensagem(string $texto, Pdv $pdv): string

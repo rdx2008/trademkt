@@ -26,7 +26,7 @@ class GeocodificarPdv implements ShouldQueue
             return;
         }
 
-        $coordenadas = $geocodificador->coordenadas($pdv->enderecoCompleto());
+        $coordenadas = $geocodificador->coordenadas($pdv->variacoesDeEndereco());
 
         if ($coordenadas) {
             $pdv->forceFill($coordenadas + ['coordenadas_origem' => 'geocoding'])->save();

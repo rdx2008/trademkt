@@ -18,6 +18,8 @@ return [
     // Geocoding do endereço do PDV (só no cadastro, com cache)
     'geocoding' => [
         'google_key' => env('GOOGLE_MAPS_API_KEY'),
+        // Sem chave do Google, usa o OpenStreetMap (gratuito, sem cadastro).
+        'osm' => env('GEOCODING_OSM', true),
         'cache_dias' => 90,
     ],
 

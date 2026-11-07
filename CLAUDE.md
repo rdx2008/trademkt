@@ -79,7 +79,9 @@ Só o promotor usa o app; os demais usam o painel web (responsivo).
   contratos recorrentes, tela semanal, atribuição/movimentação e `GET /api/v1/roteiro`.
 - `roteiros:gerar` roda diariamente às 04:30. Visitas guardam `data` (agenda) e
   `data_prevista` (contrato); mover a agenda não é desfeito pela geração.
-- Geocoding usa `GOOGLE_MAPS_API_KEY`; sem chave, a posição pode ser marcada manualmente.
+- No cadastro de PDV, o CEP preenche o endereço (BrasilAPI, com ViaCEP de reserva) e latitude/longitude saem
+  sozinhas pelo endereço: Google com `GOOGLE_MAPS_API_KEY` ou, sem chave, OpenStreetMap (`GEOCODING_OSM`,
+  ligado por padrão). O pino arrastado ou clicado no mapa é ajuste manual e prevalece.
 
 ### Vínculo indústria–agência e domínios
 

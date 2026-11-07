@@ -110,6 +110,32 @@ class Pdv extends Model
         return implode(', ', array_filter([$rua, $this->bairro, $cidade, $cep, $this->cidade ? 'Brasil' : null]));
     }
 
+    /**
+     * Endereços para o geocoding, do mais preciso ao mais geral: o completo, depois sem bairro e
+     * CEP (que confundem o OpenStreetMap) e, por fim, a rua sem o número. Nunca cai para a cidade
+     * inteira: um pino no centro da cidade liberaria check-in no lugar errado.
+     *
+     * @return list<string>
+     */
+    public function variacoesDeEndereco(): array
+    {
+        $rua = trim(implode(', ', array_filter([$this->logradouro, $this->numero])));
+        $semNumero = trim((string) $this->logradouro);
+        if ($semNumero === '') {
+            return array_values(array_filter([$this->enderecoCompleto()]));
+        }
+        $cidade = trim(implode(', ', array_filter([$this->cidade, $this->uf])));
+        $brasil = $this->cidade ? 'Brasil' : null;
+
+        $variacoes = [
+            $this->enderecoCompleto(),
+            implode(', ', array_filter([$rua, $cidade, $brasil])),
+            $semNumero !== '' ? implode(', ', array_filter([$semNumero, $cidade, $brasil])) : null,
+        ];
+
+        return array_values(array_unique(array_filter($variacoes)));
+    }
+
     public function temCoordenadas(): bool
     {
         return $this->lat !== null && $this->lng !== null;
