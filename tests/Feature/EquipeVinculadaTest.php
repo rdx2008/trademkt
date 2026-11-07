@@ -104,13 +104,15 @@ class EquipeVinculadaTest extends TestCase
             ->assertSessionHasNoErrors();
         $this->get(self::URL.'/usuarios')->assertOk()->assertDontSee('>Promotor<', false);
 
-        // Na agência, o admin cadastra a equipe sem escolher agência: todos são da própria.
+        // Na agência, o admin cadastra supervisores sem escolher agência (todos são da própria); promotores
+        // têm tela própria.
         $adminAgencia = $this->agencia->run(fn () => User::where('perfil', Perfil::AdminInstalacao->value)->sole());
         $this->actingAs($adminAgencia)->get('http://sul.test/usuarios/create')->assertOk()
-            ->assertSee('>Promotor<', false)->assertDontSee('Gerente de trade')->assertDontSee('name="agencia_id"', false);
-        $this->post('http://sul.test/usuarios', ['nome' => 'Nova Promotora', 'email' => 'nova@sul.test', 'perfil' => 'promotor', 'tipo_vinculo' => 'freelancer', 'password' => 'senha1234', 'password_confirmation' => 'senha1234', 'ativo' => '1'])
+            ->assertSee('>Supervisor<', false)->assertDontSee('>Promotor<', false)->assertDontSee('Gerente de trade')->assertDontSee('name="agencia_id"', false);
+        $this->post('http://sul.test/usuarios', ['nome' => 'Novo Supervisor', 'email' => 'novo@sul.test', 'perfil' => 'supervisor', 'password' => 'senha1234', 'password_confirmation' => 'senha1234', 'ativo' => '1'])
             ->assertSessionHasNoErrors();
-        $this->agencia->run(fn () => $this->assertNotNull(User::where('email', 'nova@sul.test')->sole()->agencia_id));
+        $this->agencia->run(fn () => $this->assertNotNull(User::where('email', 'novo@sul.test')->sole()->agencia_id));
+        $this->get('http://sul.test/promotores/novo')->assertOk()->assertSee('Cadastrar e gerar convite');
     }
 
     public function test_roteiro_guarda_a_agencia_e_a_industria_so_ve_o_primeiro_nome_do_promotor(): void

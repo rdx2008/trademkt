@@ -82,9 +82,10 @@ enum Perfil: string
     {
         $tipo ??= Contexto::instalacao()?->tipo;
 
+        // Promotor tem tela própria (Promotores), com CPF, foto e convite: não entra por Usuários.
         return match ($this) {
-            self::AdminInstalacao => self::daInstalacao($tipo),
-            self::AdminAgencia => [self::Supervisor, self::Promotor],
+            self::AdminInstalacao => array_values(array_filter(self::daInstalacao($tipo), fn (self $p) => $p !== self::Promotor)),
+            self::AdminAgencia => [self::Supervisor],
             self::GerenteTrade => [self::Representante],
             default => [],
         };

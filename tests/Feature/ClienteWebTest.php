@@ -50,7 +50,7 @@ class ClienteWebTest extends TestCase
         ])->assertSessionHasErrors('email');
     }
 
-    public function test_admin_da_agencia_so_cadastra_supervisor_e_promotor_da_propria_agencia(): void
+    public function test_admin_da_agencia_cadastra_supervisor_pela_tela_de_usuarios_e_promotor_pela_tela_propria(): void
     {
         $tenant = $this->criarCliente('xyz', 'agencia');
         [$agenciaA, $agenciaB] = $tenant->run(fn () => [
@@ -63,21 +63,24 @@ class ClienteWebTest extends TestCase
 
         // Tenta mandar para outra agência: o sistema força a própria.
         $this->post('http://xyz.test/usuarios', [
-            'nome' => 'Promotor 1',
-            'email' => 'p1@xyz.test',
-            'perfil' => 'promotor',
+            'nome' => 'Supervisor 1',
+            'email' => 's1@xyz.test',
+            'perfil' => 'supervisor',
             'agencia_id' => $agenciaB,
-            'tipo_vinculo' => 'freelancer',
             'password' => 'senha1234',
             'password_confirmation' => 'senha1234',
             'ativo' => '1',
         ])->assertRedirect('http://xyz.test/usuarios');
 
         $tenant->run(function () use ($agenciaA) {
-            $promotor = User::where('email', 'p1@xyz.test')->first();
-            $this->assertSame($agenciaA, $promotor->agencia_id);
-            $this->assertSame('freelancer', $promotor->tipo_vinculo->value);
+            $this->assertSame($agenciaA, User::where('email', 's1@xyz.test')->first()->agencia_id);
         });
+
+        // Promotor não entra pela tela de Usuários: tem tela própria (CPF, foto e convite).
+        $this->post('http://xyz.test/usuarios', [
+            'nome' => 'Promotor 1', 'email' => 'p1@xyz.test', 'perfil' => 'promotor', 'tipo_vinculo' => 'freelancer',
+            'password' => 'senha1234', 'password_confirmation' => 'senha1234',
+        ])->assertSessionHasErrors('perfil');
 
         // Não pode criar admin da instalação.
         $this->post('http://xyz.test/usuarios', [
@@ -99,17 +102,14 @@ class ClienteWebTest extends TestCase
         $this->actingAs($promotor)->get('http://xyz.test/agencias')->assertForbidden();
     }
 
-    public function test_promotor_exige_vinculo_e_agencia_quando_admin_cadastra(): void
+    public function test_promotor_exige_cpf_e_vinculo_quando_admin_cadastra(): void
     {
         $tenant = $this->criarCliente('xyz', 'agencia');
         $admin = $tenant->run(fn () => User::first());
 
-        $this->actingAs($admin)->post('http://xyz.test/usuarios', [
+        $this->actingAs($admin)->post('http://xyz.test/promotores', [
             'nome' => 'Promotor',
             'email' => 'p@xyz.test',
-            'perfil' => 'promotor',
-            'password' => 'senha1234',
-            'password_confirmation' => 'senha1234',
-        ])->assertSessionHasErrors(['tipo_vinculo'])->assertSessionDoesntHaveErrors(['agencia_id']);
+        ])->assertSessionHasErrors(['cpf', 'tipo_vinculo'])->assertSessionDoesntHaveErrors(['agencia_id']);
     }
 }

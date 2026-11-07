@@ -4,10 +4,12 @@ namespace App\Models;
 
 use App\Enums\Perfil;
 use App\Enums\TipoVinculo;
+use App\Rules\Cpf;
 use App\Support\Contexto;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -32,9 +34,16 @@ class User extends Authenticatable
         'agencia_id',
         'tipo_vinculo',
         'ativo',
+        'cpf',
+        'cpf_hash',
+        'foto',
+        'cidade_base',
+        'uf_base',
+        'observacoes',
+        'aceite_privacidade_em',
     ];
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = ['password', 'remember_token', 'cpf', 'cpf_hash'];
 
     protected function casts(): array
     {
@@ -43,7 +52,9 @@ class User extends Authenticatable
             'perfil' => Perfil::class,
             'tipo_vinculo' => TipoVinculo::class,
             'ativo' => 'boolean',
+            'cpf' => 'encrypted',
             'ultimo_acesso_em' => 'datetime',
+            'aceite_privacidade_em' => 'datetime',
         ];
     }
 
@@ -58,6 +69,39 @@ class User extends Authenticatable
     }
 
     /** O usuário é de uma agência vinculada e está operando dentro da instalação de uma indústria. */
+    /** Promotores e supervisores consultam a equipe de campo; só o admin cadastra e edita. */
+    public function podeVerPromotores(): bool
+    {
+        return $this->temPerfil(Perfil::AdminInstalacao, Perfil::AdminAgencia, Perfil::Supervisor);
+    }
+
+    public function podeGerirPromotores(): bool
+    {
+        return $this->temPerfil(Perfil::AdminInstalacao, Perfil::AdminAgencia);
+    }
+
+    /** CPF mascarado para listas (o número inteiro só aparece para quem edita o cadastro). */
+    public function cpfMascarado(): string
+    {
+        return Cpf::mascarar($this->cpf);
+    }
+
+    public function convites(): HasMany
+    {
+        return $this->hasMany(Convite::class, 'usuario_id');
+    }
+
+    public function auditoria(): HasMany
+    {
+        return $this->hasMany(AuditoriaUsuario::class, 'usuario_id')->latest('id');
+    }
+
+    /** Promotor que ainda não abriu o convite: não tem senha própria. */
+    public function conviteAceito(): bool
+    {
+        return $this->aceite_privacidade_em !== null;
+    }
+
     public function agenciaVinculada(): bool
     {
         return Contexto::viaAgencia();

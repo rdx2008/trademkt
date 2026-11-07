@@ -67,6 +67,7 @@ class MenuLateral
 
             self::topico('Equipe', 'flaticon-381-user-9', [
                 self::item('Usuários', 'usuarios.index', ['usuarios.*'], $eu->temPerfil(Perfil::AdminInstalacao, Perfil::AdminAgencia, Perfil::GerenteTrade)),
+                self::item('Promotores', 'promotores.index', ['promotores.*'], $agencia && $eu->podeVerPromotores()),
             ]),
 
             self::topico('Configurações', 'flaticon-381-settings-2', [

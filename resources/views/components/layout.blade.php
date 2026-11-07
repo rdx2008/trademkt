@@ -1,6 +1,6 @@
 @if (function_exists('tenancy') && tenancy()->initialized && ! in_array(request()->getHost(), config('tenancy.central_domains'), true))
     {{-- Telas dos clientes usam o tema novo; o painel do super admin (central) mantém o visual próprio. --}}
-    <x-layout-cliente :titulo="$titulo ?? null" :marca="$marca ?? null">{{ $slot }}</x-layout-cliente>
+    <x-layout-cliente :titulo="$titulo ?? null" :marca="$marca ?? null" :visitante="$visitante ?? false">{{ $slot }}</x-layout-cliente>
 @else
 <!DOCTYPE html>
 <html lang="pt-BR">

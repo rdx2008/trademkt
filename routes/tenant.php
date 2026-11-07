@@ -12,6 +12,7 @@ use App\Http\Controllers\Tenant\AparenciaController;
 use App\Http\Controllers\Tenant\AuthController;
 use App\Http\Controllers\Tenant\BiController;
 use App\Http\Controllers\Tenant\ContratoVisitaController;
+use App\Http\Controllers\Tenant\ConviteController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\DemandaController;
 use App\Http\Controllers\Tenant\ImportacaoPdvController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\Tenant\IndustriaController;
 use App\Http\Controllers\Tenant\MarcaController;
 use App\Http\Controllers\Tenant\OperacaoController;
 use App\Http\Controllers\Tenant\PdvController;
+use App\Http\Controllers\Tenant\PromotorController;
 use App\Http\Controllers\Tenant\RedeController;
 use App\Http\Controllers\Tenant\RegiaoController;
 use App\Http\Controllers\Tenant\RoteiroController;
@@ -49,6 +51,11 @@ Route::middleware([
     // Marca da instalação (folha de estilo e logos): públicos, a tela de entrada precisa deles.
     Route::get('/marca/tema.css', [MarcaController::class, 'css'])->name('marca.css');
     Route::get('/marca/{tipo}', [MarcaController::class, 'arquivo'])->whereIn('tipo', ['claro', 'escuro', 'icone'])->name('marca.arquivo');
+
+    // Primeiro acesso do promotor: o token do convite é a credencial.
+    Route::get('/convite/{token}', [ConviteController::class, 'mostrar'])->where('token', '[A-Za-z0-9]{48}')->middleware('throttle:30,1')->name('convite.mostrar');
+    Route::post('/convite/{token}', [ConviteController::class, 'aceitar'])->where('token', '[A-Za-z0-9]{48}')->middleware('throttle:10,1')->name('convite.aceitar');
+    Route::get('/convite', [ConviteController::class, 'pronto'])->name('convite.pronto');
 
     Route::middleware('guest')->group(function () {
         Route::get('/entrar', [AuthController::class, 'create'])->name('login');
@@ -81,6 +88,23 @@ Route::middleware([
         Route::get('/visitas/{visita}/fotos/{foto}', [VisitaController::class, 'foto'])->whereNumber(['visita', 'foto'])->name('visitas.fotos');
         Route::post('/sair', [AuthController::class, 'destroy'])->name('logout');
         Route::get('/painel', DashboardController::class)->name('dashboard');
+
+        // Promotores da agência: supervisor consulta, admin cadastra (conferido no controller).
+        Route::middleware('perfil:admin_instalacao,admin_agencia,supervisor')->group(function () {
+            Route::get('/promotores', [PromotorController::class, 'index'])->name('promotores.index');
+            Route::get('/promotores/novo', [PromotorController::class, 'create'])->name('promotores.create');
+            Route::post('/promotores', [PromotorController::class, 'store'])->name('promotores.store');
+            Route::get('/promotores/importar', [PromotorController::class, 'importar'])->name('promotores.importar');
+            Route::post('/promotores/importar', [PromotorController::class, 'importarEnviar'])->name('promotores.importar.enviar');
+            Route::get('/promotores/importar/resultado', [PromotorController::class, 'importarResultado'])->name('promotores.importar.resultado');
+            Route::get('/promotores/importar/links', [PromotorController::class, 'importarLinks'])->name('promotores.importar.links');
+            Route::get('/promotores/importar/modelo', [PromotorController::class, 'modelo'])->name('promotores.importar.modelo');
+            Route::get('/promotores/{promotor}/editar', [PromotorController::class, 'edit'])->whereNumber('promotor')->name('promotores.edit');
+            Route::put('/promotores/{promotor}', [PromotorController::class, 'update'])->whereNumber('promotor')->name('promotores.update');
+            Route::patch('/promotores/{promotor}/ativo', [PromotorController::class, 'ativo'])->whereNumber('promotor')->name('promotores.ativo');
+            Route::post('/promotores/{promotor}/convite', [PromotorController::class, 'convite'])->whereNumber('promotor')->name('promotores.convite');
+            Route::get('/promotores/{promotor}/foto', [PromotorController::class, 'foto'])->whereNumber('promotor')->name('promotores.foto');
+        });
 
         Route::middleware('perfil:admin_instalacao,admin_agencia,gerente_trade')->group(function () {
             Route::resource('usuarios', UsuarioController::class)

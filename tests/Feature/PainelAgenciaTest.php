@@ -94,7 +94,8 @@ class PainelAgenciaTest extends TestCase
         $this->post(self::SUL.'/operacao/outra')->assertNotFound();
 
         // A equipe continua na própria agência.
-        $this->get(self::SUL.'/usuarios')->assertOk()->assertSee('João da Silva')->assertSee('Ana Supervisora');
+        $this->get(self::SUL.'/usuarios')->assertOk()->assertSee('Ana Supervisora')->assertDontSee('João da Silva');
+        $this->get(self::SUL.'/promotores')->assertOk()->assertSee('João da Silva');
         $this->sul->run(fn () => $this->assertSame(Perfil::AdminInstalacao, $this->adminSul->fresh()->perfil, 'a apresentação como admin da agência não é gravada'));
         $this->gaboardi->run(fn () => $this->assertSame(0, User::where('perfil', 'promotor')->count()));
     }

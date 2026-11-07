@@ -66,7 +66,8 @@ class VisibilidadeIndustriaTest extends TestCase
 
         $this->actingAs($this->gerente)->get('http://xyz.test/usuarios')
             ->assertOk()
-            ->assertSee(['Admin da prestadora', 'Supervisor da prestadora', 'Promotor da prestadora', 'Representante da marca'])
+            ->assertSee(['Admin da prestadora', 'Supervisor da prestadora', 'Representante da marca'])
+            ->assertDontSee('Promotor da prestadora')
             ->assertDontSee('Promotor reservado')
             ->assertDontSee('Supervisor reservado');
 
@@ -108,7 +109,7 @@ class VisibilidadeIndustriaTest extends TestCase
             $this->get('http://xyz.test/roteiros?agencia_id='.$this->outraAgencia->id)->assertForbidden();
         }
 
-        $this->actingAs($this->gerente)->get('http://xyz.test/usuarios')->assertOk()->assertSee('Promotor da prestadora');
+        $this->actingAs($this->gerente)->get('http://xyz.test/usuarios')->assertOk()->assertSee($this->gerente->nome)->assertDontSee('Promotor da prestadora');
     }
 
     public function test_industria_acompanha_todas_as_prestadoras_mas_so_visitas_da_sua_marca(): void

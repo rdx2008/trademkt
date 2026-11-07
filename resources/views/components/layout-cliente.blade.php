@@ -1,6 +1,7 @@
-@props(['titulo' => null, 'marca' => null])
+@props(['titulo' => null, 'marca' => null, 'visitante' => false])
 @php
-    $eu = auth()->user();
+    // `visitante`: páginas públicas (convite do promotor) sempre na tela simples, mesmo com outra pessoa logada no navegador.
+    $eu = $visitante ? null : auth()->user();
     $topicos = $eu ? \App\Support\MenuLateral::montar($eu) : [];
     $naoLidos = $eu ? \App\Models\Alerta::visiveisPara($eu)->whereNull('lida_em')->count() : 0;
     // Marca própria da instalação: nome, cor e logos (padrão: o nome do cliente e o azul do tema).

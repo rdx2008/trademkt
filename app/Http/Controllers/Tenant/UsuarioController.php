@@ -28,6 +28,8 @@ class UsuarioController extends Controller
 
         $usuarios = User::query()
             ->visiveisPara($eu)
+            // Na agência, a equipe de campo tem tela própria (Promotores).
+            ->when(Contexto::instalacaoEhAgencia(), fn ($q) => $q->where('perfil', '!=', Perfil::Promotor->value))
             ->with(['industria', 'agencia'])
             ->when($request->filled('perfil'), fn ($q) => $q->where('perfil', $request->string('perfil')))
             ->when($request->filled('busca'), function ($q) use ($request) {
@@ -41,7 +43,7 @@ class UsuarioController extends Controller
         return view('tenant.usuarios.index', [
             'usuarios' => $usuarios,
             'eu' => $eu,
-            'perfis' => Perfil::opcoes(),
+            'perfis' => Contexto::instalacaoEhAgencia() ? array_diff_key(Perfil::opcoes(), [Perfil::Promotor->value => 1]) : Perfil::opcoes(),
         ]);
     }
 
