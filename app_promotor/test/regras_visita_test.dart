@@ -12,36 +12,36 @@ void main() {
 
   group('check-in', () {
     test('aceita visita prevista dentro do raio', () {
-      expect(RegrasVisita.validarCheckIn(visitaPadrao(), const ExecucaoVisita(visitaId: 1), posicaoNoPdv(gpsEm: t0), agora: t0), isNull);
+      expect(RegrasVisita.validarCheckIn(visitaPadrao(), const ExecucaoVisita(visitaId: '1'), posicaoNoPdv(gpsEm: t0), agora: t0), isNull);
     });
 
     test('aceita visita marcada como não executada (sincronização tardia reabre)', () {
       final visita = visitaPadrao(status: 'nao_executada');
 
-      expect(RegrasVisita.validarCheckIn(visita, const ExecucaoVisita(visitaId: 1), posicaoNoPdv(gpsEm: t0), agora: t0), isNull);
+      expect(RegrasVisita.validarCheckIn(visita, const ExecucaoVisita(visitaId: '1'), posicaoNoPdv(gpsEm: t0), agora: t0), isNull);
     });
 
     test('bloqueia localização simulada', () {
-      final erro = RegrasVisita.validarCheckIn(visitaPadrao(), const ExecucaoVisita(visitaId: 1), posicaoNoPdv(simulada: true));
+      final erro = RegrasVisita.validarCheckIn(visitaPadrao(), const ExecucaoVisita(visitaId: '1'), posicaoNoPdv(simulada: true));
 
       expect(erro, contains('simulada'));
     });
 
     test('bloqueia fora do raio e respeita o raio específico do PDV', () {
-      expect(RegrasVisita.validarCheckIn(visitaPadrao(), const ExecucaoVisita(visitaId: 1), posicaoNoPdv(lat: -29.178)), contains('m do PDV'));
-      expect(RegrasVisita.validarCheckIn(visitaPadrao(), const ExecucaoVisita(visitaId: 1), posicaoNoPdv(lat: -29.169)), isNull);
-      expect(RegrasVisita.validarCheckIn(visitaPadrao(raio: 150), const ExecucaoVisita(visitaId: 1), posicaoNoPdv(lat: -29.1696)), isNotNull);
+      expect(RegrasVisita.validarCheckIn(visitaPadrao(), const ExecucaoVisita(visitaId: '1'), posicaoNoPdv(lat: -29.178)), contains('m do PDV'));
+      expect(RegrasVisita.validarCheckIn(visitaPadrao(), const ExecucaoVisita(visitaId: '1'), posicaoNoPdv(lat: -29.169)), isNull);
+      expect(RegrasVisita.validarCheckIn(visitaPadrao(raio: 150), const ExecucaoVisita(visitaId: '1'), posicaoNoPdv(lat: -29.1696)), isNotNull);
     });
 
     test('bloqueia check-in repetido, visita encerrada e PDV sem coordenadas', () {
-      expect(RegrasVisita.validarCheckIn(visitaPadrao(), ExecucaoVisita(visitaId: 1, checkIn: checkInPadrao()), posicaoNoPdv()), contains('já foi feito'));
-      expect(RegrasVisita.validarCheckIn(visitaPadrao(status: 'realizada'), const ExecucaoVisita(visitaId: 1), posicaoNoPdv()), contains('Realizada'));
+      expect(RegrasVisita.validarCheckIn(visitaPadrao(), ExecucaoVisita(visitaId: '1', checkIn: checkInPadrao()), posicaoNoPdv()), contains('já foi feito'));
+      expect(RegrasVisita.validarCheckIn(visitaPadrao(status: 'realizada'), const ExecucaoVisita(visitaId: '1'), posicaoNoPdv()), contains('Realizada'));
       final semCoordenadas = visitaPadrao().copiarCom();
       expect(semCoordenadas.pdv.temCoordenadas, isTrue);
     });
 
     test('o status confirmado pelo servidor prevalece sobre o do roteiro salvo', () {
-      final execucao = const ExecucaoVisita(visitaId: 1, statusServidor: 'realizada');
+      final execucao = const ExecucaoVisita(visitaId: '1', statusServidor: 'realizada');
 
       expect(RegrasVisita.validarCheckIn(visitaPadrao(), execucao, posicaoNoPdv()), contains('Realizada'));
     });
@@ -49,7 +49,7 @@ void main() {
     test('bloqueia hora do GPS no futuro além da tolerância de 5 minutos', () {
       final erro = RegrasVisita.validarCheckIn(
         visitaPadrao(),
-        const ExecucaoVisita(visitaId: 1),
+        const ExecucaoVisita(visitaId: '1'),
         posicaoNoPdv(gpsEm: t0.add(const Duration(minutes: 6))),
         agora: t0,
       );
@@ -59,10 +59,10 @@ void main() {
   });
 
   group('fotos', () {
-    final comCheckIn = ExecucaoVisita(visitaId: 1, checkIn: checkInPadrao(gpsEm: t0));
+    final comCheckIn = ExecucaoVisita(visitaId: '1', checkIn: checkInPadrao(gpsEm: t0));
 
     test('exigem check-in', () {
-      expect(RegrasVisita.validarFoto(visitaPadrao(), const ExecucaoVisita(visitaId: 1), TipoFoto.antes, posicaoNoPdv(gpsEm: t1)), contains('check-in'));
+      expect(RegrasVisita.validarFoto(visitaPadrao(), const ExecucaoVisita(visitaId: '1'), TipoFoto.antes, posicaoNoPdv(gpsEm: t1)), contains('check-in'));
       expect(RegrasVisita.validarFoto(visitaPadrao(), comCheckIn, TipoFoto.antes, posicaoNoPdv(gpsEm: t1)), isNull);
     });
 
@@ -92,7 +92,7 @@ void main() {
 
   group('conclusão', () {
     final pronta = ExecucaoVisita(
-      visitaId: 1,
+      visitaId: '1',
       checkIn: checkInPadrao(gpsEm: t0),
       fotos: [fotoPadrao(TipoFoto.antes, gpsEm: t1), fotoPadrao(TipoFoto.depois, gpsEm: t2)],
     );
@@ -119,14 +119,14 @@ void main() {
     });
 
     test('impedimento exige observação e dispensa fotos e SKUs', () {
-      final soCheckIn = ExecucaoVisita(visitaId: 1, checkIn: checkInPadrao(gpsEm: t0));
+      final soCheckIn = ExecucaoVisita(visitaId: '1', checkIn: checkInPadrao(gpsEm: t0));
 
       expect(RegrasVisita.validarConclusao(soCheckIn, TipoConclusao.impedimento, itens: const [], observacao: '  ', finalizadaEm: t3), contains('Descreva'));
       expect(RegrasVisita.validarConclusao(soCheckIn, TipoConclusao.impedimento, itens: const [], observacao: 'Loja fechada', finalizadaEm: t3), isNull);
     });
 
     test('sem check-in ou já concluída não conclui; SKU repetido é recusado', () {
-      expect(RegrasVisita.validarConclusao(const ExecucaoVisita(visitaId: 1), TipoConclusao.impedimento, itens: const [], observacao: 'x', finalizadaEm: t3), contains('check-in'));
+      expect(RegrasVisita.validarConclusao(const ExecucaoVisita(visitaId: '1'), TipoConclusao.impedimento, itens: const [], observacao: 'x', finalizadaEm: t3), contains('check-in'));
       final concluida = pronta.copiarCom(conclusao: ConclusaoLocal(uuid: 'c', tipo: TipoConclusao.normal, finalizadaEm: t3, observacao: '', itens: itens));
       expect(RegrasVisita.validarConclusao(concluida, TipoConclusao.normal, itens: itens, observacao: '', finalizadaEm: t3), contains('já foi concluída'));
       expect(
@@ -137,8 +137,8 @@ void main() {
   });
 
   test('etapa atual segue o fluxo check-in → foto antes → trabalho → concluída', () {
-    expect(RegrasVisita.etapa(const ExecucaoVisita(visitaId: 1)), EtapaVisita.checkIn);
-    final comCheckIn = ExecucaoVisita(visitaId: 1, checkIn: checkInPadrao(gpsEm: t0));
+    expect(RegrasVisita.etapa(const ExecucaoVisita(visitaId: '1')), EtapaVisita.checkIn);
+    final comCheckIn = ExecucaoVisita(visitaId: '1', checkIn: checkInPadrao(gpsEm: t0));
     expect(RegrasVisita.etapa(comCheckIn), EtapaVisita.fotoAntes);
     expect(RegrasVisita.etapa(comCheckIn.copiarCom(fotos: [fotoPadrao(TipoFoto.antes)])), EtapaVisita.trabalho);
     expect(RegrasVisita.etapa(comCheckIn.copiarCom(fotos: [fotoPadrao(TipoFoto.ruptura)])), EtapaVisita.trabalho);

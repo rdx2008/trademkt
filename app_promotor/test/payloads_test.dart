@@ -123,7 +123,7 @@ void main() {
   group('ExecucaoVisita', () {
     test('vai e volta em JSON preservando horários, fotos e conclusão', () {
       final execucao = ExecucaoVisita(
-        visitaId: 1,
+        visitaId: '1',
         checkIn: checkInPadrao(gpsEm: hora, enviado: true),
         fotos: [fotoPadrao(TipoFoto.antes, gpsEm: hora), fotoPadrao(TipoFoto.depois, gpsEm: hora, enviada: true)],
         itens: const [ItemTrabalhado(skuId: 10, estoque: SituacaoEstoque.temEstoque)],

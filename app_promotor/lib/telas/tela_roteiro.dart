@@ -166,7 +166,7 @@ class _CartaoVisita extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final execucao = estado.execucao(visita.id);
+    final execucao = estado.execucao(visita.chave);
     final status = estado.statusExibido(visita);
     final cor = corStatus(context, status);
 
@@ -205,7 +205,7 @@ class _CartaoVisita extends StatelessWidget {
         isThreeLine: true,
         trailing: const Icon(Icons.chevron_right),
         onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => TelaVisita(estado: estado, visitaId: visita.id)),
+          MaterialPageRoute<void>(builder: (_) => TelaVisita(estado: estado, visitaId: visita.chave)),
         ),
       ),
     );

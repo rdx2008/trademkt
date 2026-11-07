@@ -66,20 +66,31 @@ class Sku {
       };
 }
 
+/// Chave de uma visita ou indústria no aparelho: `<empresa>:<id>` quando o promotor entra pela
+/// agência (cada indústria tem a própria numeração) ou só `<id>` quando entra pela indústria.
+String chaveDe(String industria, int id) => industria.isEmpty ? '$id' : '$industria:$id';
+
 class Industria {
-  const Industria({required this.id, required this.nome, this.skus = const []});
+  const Industria({required this.id, required this.nome, this.industria = '', this.skus = const []});
 
   final int id;
+
+  /// Código da empresa (indústria) de onde vem, vazio quando o login é na própria indústria.
+  final String industria;
   final String nome;
   final List<Sku> skus;
 
+  String get chave => chaveDe(industria, id);
+
   factory Industria.fromJson(Map<String, dynamic> json) => Industria(
         id: json['id'] as int,
+        industria: json['industria'] as String? ?? '',
         nome: json['nome'] as String,
         skus: ((json['skus'] as List?) ?? const []).map((e) => Sku.fromJson(e as Map<String, dynamic>)).toList(),
       );
 
-  Map<String, dynamic> toJson() => {'id': id, 'nome': nome, 'skus': skus.map((e) => e.toJson()).toList()};
+  Map<String, dynamic> toJson() =>
+      {'id': id, 'industria': industria, 'nome': nome, 'skus': skus.map((e) => e.toJson()).toList()};
 }
 
 class Pdv {
@@ -148,10 +159,14 @@ class Visita {
     required this.status,
     required this.industriaId,
     required this.pdv,
+    this.industria = '',
     this.checkIn,
   });
 
   final int id;
+
+  /// Código da empresa (indústria) dona da visita; vazio no login pela própria indústria.
+  final String industria;
   final int ordem;
   final String origem;
   final String status;
@@ -161,8 +176,12 @@ class Visita {
   /// Check-in já registrado no servidor, quando houver.
   final Map<String, dynamic>? checkIn;
 
+  /// Identifica a visita no aparelho e nas rotas da API.
+  String get chave => chaveDe(industria, id);
+
   factory Visita.fromJson(Map<String, dynamic> json) => Visita(
         id: json['id'] as int,
+        industria: json['industria'] as String? ?? '',
         ordem: (json['ordem'] as num?)?.toInt() ?? 0,
         origem: json['origem'] as String? ?? 'contrato',
         status: json['status'] as String? ?? StatusVisita.previsto,
@@ -173,6 +192,7 @@ class Visita {
 
   Map<String, dynamic> toJson() => {
         'id': id,
+        'industria': industria,
         'ordem': ordem,
         'origem': origem,
         'status': status,
@@ -183,6 +203,7 @@ class Visita {
 
   Visita copiarCom({String? status, Map<String, dynamic>? checkIn}) => Visita(
         id: id,
+        industria: industria,
         ordem: ordem,
         origem: origem,
         status: status ?? this.status,
@@ -229,9 +250,10 @@ class Roteiro {
         'industrias': industrias.map((e) => e.toJson()).toList(),
       };
 
-  Industria? industria(int id) {
+  /// Indústria da visita (mesma empresa e mesmo id).
+  Industria? industria(Visita visita) {
     for (final industria in industrias) {
-      if (industria.id == id) {
+      if (industria.industria == visita.industria && industria.id == visita.industriaId) {
         return industria;
       }
     }
@@ -239,9 +261,9 @@ class Roteiro {
     return null;
   }
 
-  Visita? visita(int id) {
+  Visita? visita(String chave) {
     for (final visita in visitas) {
-      if (visita.id == id) {
+      if (visita.chave == chave) {
         return visita;
       }
     }
@@ -254,7 +276,7 @@ class Roteiro {
         data: data,
         roteiroId: roteiroId,
         supervisorNome: supervisorNome,
-        visitas: visitas.map((v) => v.id == atualizada.id ? atualizada : v).toList(),
+        visitas: visitas.map((v) => v.chave == atualizada.chave ? atualizada : v).toList(),
         industrias: industrias,
       );
 }

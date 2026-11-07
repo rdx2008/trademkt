@@ -71,7 +71,7 @@ class Sincronizador {
     _emAndamento = true;
     try {
       final fila = ordenarFila(await repositorio.listarFila(estado: EstadoItemFila.pendente));
-      final visitasBloqueadas = <int>{};
+      final visitasBloqueadas = <String>{};
 
       for (final itemDaLista in fila) {
         if (visitasBloqueadas.contains(itemDaLista.visitaId)) {
@@ -172,7 +172,7 @@ class Sincronizador {
   Future<void> _confirmar(ItemFila item) =>
       repositorio.atualizarItem(item.copiarCom(estado: EstadoItemFila.enviado, limparErro: true));
 
-  Future<void> _atualizarExecucao(int visitaId, ExecucaoVisita Function(ExecucaoVisita) alterar) =>
+  Future<void> _atualizarExecucao(String visitaId, ExecucaoVisita Function(ExecucaoVisita) alterar) =>
       repositorio.modificarExecucao(visitaId, alterar);
 
   /// O servidor respondeu 409: consulta a visita e confere se o item já está lá.
@@ -209,14 +209,14 @@ class Sincronizador {
   }
 
   /// Reconciliação explícita: baixa o estado da visita e alinha o que há no aparelho.
-  Future<ExecucaoVisita> reconciliar(int visitaId) async {
+  Future<ExecucaoVisita> reconciliar(String visitaId) async {
     final visita = await api.visita(visitaId);
 
     return aplicarEstadoDoServidor(visitaId, visita);
   }
 
   /// Marca como enviado o que o servidor já tem e registra o status confirmado.
-  Future<ExecucaoVisita> aplicarEstadoDoServidor(int visitaId, Map<String, dynamic> visita) async {
+  Future<ExecucaoVisita> aplicarEstadoDoServidor(String visitaId, Map<String, dynamic> visita) async {
     final fotosServidor = _fotosDoServidor(visita);
     final checkInServidor = visita['check_in'] as Map<String, dynamic>?;
     final concluidaNoServidor = visita['tipo_conclusao'] != null;

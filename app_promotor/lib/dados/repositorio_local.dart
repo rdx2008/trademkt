@@ -16,7 +16,8 @@ class RepositorioLocal {
 
   final Database _db;
 
-  static const _versao = 1;
+  // 2: a visita passou a ser identificada por chave de texto (empresa:id).
+  static const _versao = 2;
 
   /// Abre (ou cria) o banco. Em testes, passe a `databaseFactoryFfi` e `inMemoryDatabasePath`.
   static Future<RepositorioLocal> abrir({DatabaseFactory? fabrica, String? caminho}) async {
@@ -24,7 +25,7 @@ class RepositorioLocal {
     final destino = caminho ?? p.join(await f.getDatabasesPath(), 'app_promotor.db');
     final db = await f.openDatabase(
       destino,
-      options: OpenDatabaseOptions(version: _versao, onCreate: _criar),
+      options: OpenDatabaseOptions(version: _versao, onCreate: _criar, onUpgrade: _atualizar),
     );
 
     return RepositorioLocal._(db);
@@ -62,14 +63,14 @@ class RepositorioLocal {
       )''');
     await db.execute('''
       CREATE TABLE execucoes (
-        visita_id INTEGER PRIMARY KEY,
+        visita_id TEXT PRIMARY KEY,
         json TEXT NOT NULL,
         atualizado_em TEXT NOT NULL
       )''');
     await db.execute('''
       CREATE TABLE fila (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        visita_id INTEGER NOT NULL,
+        visita_id TEXT NOT NULL,
         tipo TEXT NOT NULL,
         chave TEXT NOT NULL UNIQUE,
         payload TEXT NOT NULL,
@@ -81,6 +82,14 @@ class RepositorioLocal {
         estado TEXT NOT NULL DEFAULT 'pendente'
       )''');
     await db.execute('CREATE INDEX fila_estado ON fila (estado, visita_id)');
+  }
+
+  /// Versões anteriores guardavam a visita por número; nada do que havia serve mais.
+  static Future<void> _atualizar(Database db, int de, int para) async {
+    for (final tabela in ['fila', 'execucoes', 'roteiros']) {
+      await db.execute('DROP TABLE IF EXISTS $tabela');
+    }
+    await _criar(db, para);
   }
 
   Future<void> fechar() => _db.close();
@@ -124,7 +133,7 @@ class RepositorioLocal {
   /// nunca gravem uma por cima da outra (ler → alterar → gravar sem intercalar).
   Future<void> _ultimaAlteracao = Future.value();
 
-  Future<ExecucaoVisita> modificarExecucao(int visitaId, ExecucaoVisita Function(ExecucaoVisita atual) alterar) {
+  Future<ExecucaoVisita> modificarExecucao(String visitaId, ExecucaoVisita Function(ExecucaoVisita atual) alterar) {
     final resultado = _ultimaAlteracao.then((_) async {
       final atual = await obterExecucao(visitaId) ?? ExecucaoVisita(visitaId: visitaId);
       final nova = alterar(atual);
@@ -137,7 +146,7 @@ class RepositorioLocal {
     return resultado;
   }
 
-  Future<ExecucaoVisita?> obterExecucao(int visitaId) async {
+  Future<ExecucaoVisita?> obterExecucao(String visitaId) async {
     final linhas = await _db.query('execucoes', where: 'visita_id = ?', whereArgs: [visitaId], limit: 1);
     if (linhas.isEmpty) {
       return null;
@@ -146,12 +155,12 @@ class RepositorioLocal {
     return ExecucaoVisita.fromJson(jsonDecode(linhas.first['json'] as String) as Map<String, dynamic>);
   }
 
-  Future<Map<int, ExecucaoVisita>> listarExecucoes() async {
+  Future<Map<String, ExecucaoVisita>> listarExecucoes() async {
     final linhas = await _db.query('execucoes');
 
     return {
       for (final linha in linhas)
-        linha['visita_id'] as int:
+        linha['visita_id'] as String:
             ExecucaoVisita.fromJson(jsonDecode(linha['json'] as String) as Map<String, dynamic>),
     };
   }
@@ -179,7 +188,7 @@ class RepositorioLocal {
     return linhas.isEmpty ? null : _deLinha(linhas.first);
   }
 
-  Future<List<ItemFila>> listarFila({EstadoItemFila? estado, int? visitaId}) async {
+  Future<List<ItemFila>> listarFila({EstadoItemFila? estado, String? visitaId}) async {
     final condicoes = <String>[];
     final args = <Object>[];
     if (estado != null) {
@@ -216,7 +225,7 @@ class RepositorioLocal {
   }
 
   /// Volta itens com erro/conflito da visita para a fila (nova tentativa manual).
-  Future<void> reabrirItens(int visitaId) => _db.update(
+  Future<void> reabrirItens(String visitaId) => _db.update(
         'fila',
         {'estado': EstadoItemFila.pendente.valor, 'ultimo_erro': null},
         where: "visita_id = ? AND estado IN ('erro', 'conflito')",
@@ -253,7 +262,7 @@ class RepositorioLocal {
 
   ItemFila _deLinha(Map<String, Object?> linha) => ItemFila(
         id: linha['id'] as int,
-        visitaId: linha['visita_id'] as int,
+        visitaId: linha['visita_id'] as String,
         tipo: TipoItemFila.deValor(linha['tipo'] as String),
         chave: linha['chave'] as String,
         payload: jsonDecode(linha['payload'] as String) as Map<String, dynamic>,

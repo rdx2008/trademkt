@@ -77,7 +77,7 @@ class EstadoApp extends ChangeNotifier {
   String dataRoteiro = formatarDataIso(DateTime.now());
   Roteiro? roteiro;
   DateTime? roteiroBaixadoEm;
-  Map<int, ExecucaoVisita> execucoes = {};
+  Map<String, ExecucaoVisita> execucoes = {};
   int pendentes = 0;
   int comProblema = 0;
 
@@ -376,10 +376,10 @@ class EstadoApp extends ChangeNotifier {
   /// O roteiro traz status e check-in de cada visita: alinha o que está no aparelho.
   Future<void> _alinharComServidor(Roteiro novo) async {
     for (final visita in novo.visitas) {
-      if (!execucoes.containsKey(visita.id)) {
+      if (!execucoes.containsKey(visita.chave)) {
         continue;
       }
-      await repositorio.modificarExecucao(visita.id, (atual) {
+      await repositorio.modificarExecucao(visita.chave, (atual) {
         var alterada = atual;
         if (visita.checkIn != null && atual.checkIn != null && !atual.checkIn!.enviado) {
           alterada = alterada.copiarCom(checkIn: atual.checkIn!.copiarCom(enviado: true));
@@ -394,13 +394,13 @@ class EstadoApp extends ChangeNotifier {
     await _recarregarExecucoes();
   }
 
-  ExecucaoVisita execucao(int visitaId) => execucoes[visitaId] ?? ExecucaoVisita(visitaId: visitaId);
+  ExecucaoVisita execucao(String visitaId) => execucoes[visitaId] ?? ExecucaoVisita(visitaId: visitaId);
 
-  Industria? industriaDa(Visita visita) => roteiro?.industria(visita.industriaId);
+  Industria? industriaDa(Visita visita) => roteiro?.industria(visita);
 
   /// Status a exibir: o confirmado pelo servidor, senão o do roteiro, ajustado pelo que há no aparelho.
   String statusExibido(Visita visita) {
-    final e = execucao(visita.id);
+    final e = execucao(visita.chave);
     if (e.concluida) {
       return e.conclusao!.tipo == TipoConclusao.impedimento ? StatusVisita.emAtencao : StatusVisita.realizada;
     }
@@ -413,7 +413,7 @@ class EstadoApp extends ChangeNotifier {
 
   // ------------------------------------------------------------- execução
 
-  Future<void> _gravar(int visitaId, ExecucaoVisita Function(ExecucaoVisita atual) alterar, ItemFila item) async {
+  Future<void> _gravar(String visitaId, ExecucaoVisita Function(ExecucaoVisita atual) alterar, ItemFila item) async {
     await repositorio.modificarExecucao(visitaId, alterar);
     await repositorio.enfileirar(item);
     await _recarregarExecucoes();
@@ -429,7 +429,7 @@ class EstadoApp extends ChangeNotifier {
     } on ErroLocalizacao catch (erro) {
       return erro.mensagem;
     }
-    final e = execucao(visita.id);
+    final e = execucao(visita.chave);
     final erro = RegrasVisita.validarCheckIn(visita, e, posicao);
     if (erro != null) {
       return erro;
@@ -442,12 +442,12 @@ class EstadoApp extends ChangeNotifier {
       distanciaM: RegrasVisita.distanciaAoPdv(visita.pdv, posicao),
     );
     await _gravar(
-      visita.id,
+      visita.chave,
       (atual) => atual.copiarCom(checkIn: checkIn),
       ItemFila(
-        visitaId: visita.id,
+        visitaId: visita.chave,
         tipo: TipoItemFila.checkIn,
-        chave: ItemFila.chaveCheckIn(visita.id),
+        chave: ItemFila.chaveCheckIn(visita.chave),
         payload: CheckInPayload.deLocal(checkIn).toJson(),
         prioridade: prioridadeFila(TipoItemFila.checkIn),
         criadoEm: DateTime.now(),
@@ -465,21 +465,21 @@ class EstadoApp extends ChangeNotifier {
     } on ErroLocalizacao catch (erro) {
       return (posicao: null, erro: erro.mensagem);
     }
-    final erro = RegrasVisita.validarFoto(visita, execucao(visita.id), tipo, posicao);
+    final erro = RegrasVisita.validarFoto(visita, execucao(visita.chave), tipo, posicao);
 
     return (posicao: erro == null ? posicao : null, erro: erro);
   }
 
   /// Grava a foto capturada (bytes JPEG da câmera) com marca d'água e a põe na fila.
   Future<String?> registrarFoto(Visita visita, TipoFoto tipo, Uint8List bytes, Posicao posicao) async {
-    final e = execucao(visita.id);
+    final e = execucao(visita.chave);
     final erro = RegrasVisita.validarFoto(visita, e, tipo, posicao);
     if (erro != null) {
       return erro;
     }
     final uuid = const Uuid().v4();
     final caminho = await fotos.gravar(
-      visitaId: visita.id,
+      visitaId: visita.chave,
       uuid: uuid,
       original: bytes,
       linhasMarca: linhasMarcaDagua(
@@ -501,10 +501,10 @@ class EstadoApp extends ChangeNotifier {
       aparelhoEm: DateTime.now(),
     );
     await _gravar(
-      visita.id,
+      visita.chave,
       (atual) => atual.copiarCom(fotos: [...atual.fotos, foto]),
       ItemFila(
-        visitaId: visita.id,
+        visitaId: visita.chave,
         tipo: TipoItemFila.foto,
         chave: uuid,
         payload: FotoPayload.deLocal(foto).toJson(),
@@ -517,7 +517,7 @@ class EstadoApp extends ChangeNotifier {
     return null;
   }
 
-  Future<void> salvarItens(int visitaId, List<ItemTrabalhado> itens) async {
+  Future<void> salvarItens(String visitaId, List<ItemTrabalhado> itens) async {
     await repositorio.modificarExecucao(visitaId, (atual) => atual.copiarCom(itens: itens));
     await _recarregarExecucoes();
     notifyListeners();
@@ -530,7 +530,7 @@ class EstadoApp extends ChangeNotifier {
     List<ItemTrabalhado>? itens,
     String observacao = '',
   }) async {
-    final e = execucao(visita.id);
+    final e = execucao(visita.chave);
     final lista = switch (tipo) {
       TipoConclusao.impedimento => const <ItemTrabalhado>[],
       TipoConclusao.ruptura => (itens ?? const []).map((i) => ItemTrabalhado(skuId: i.skuId)).toList(),
@@ -555,10 +555,10 @@ class EstadoApp extends ChangeNotifier {
       itens: lista,
     );
     await _gravar(
-      visita.id,
+      visita.chave,
       (atual) => atual.copiarCom(conclusao: conclusao, itens: lista),
       ItemFila(
-        visitaId: visita.id,
+        visitaId: visita.chave,
         tipo: TipoItemFila.conclusao,
         chave: conclusao.uuid,
         payload: ConclusaoPayload.deLocal(conclusao).toJson(),
@@ -607,15 +607,15 @@ class EstadoApp extends ChangeNotifier {
     return resultado;
   }
 
-  Future<void> tentarNovamente(int visitaId) async {
+  Future<void> tentarNovamente(String visitaId) async {
     await repositorio.reabrirItens(visitaId);
     await sincronizar();
   }
 
-  Future<List<ItemFila>> itensDaFila(int visitaId) => repositorio.listarFila(visitaId: visitaId);
+  Future<List<ItemFila>> itensDaFila(String visitaId) => repositorio.listarFila(visitaId: visitaId);
 
   /// Consulta o servidor e alinha a execução local. Devolve erro ou `null`.
-  Future<String?> reconciliar(int visitaId) async {
+  Future<String?> reconciliar(String visitaId) async {
     final sincronizador = _sincronizador;
     if (sincronizador == null) {
       return 'Sem sessão.';

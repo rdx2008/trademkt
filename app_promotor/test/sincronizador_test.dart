@@ -61,12 +61,12 @@ void main() {
       observacao: '',
       itens: const [ItemTrabalhado(skuId: 10, estoque: SituacaoEstoque.temEstoque)],
     );
-    await repo.salvarExecucao(ExecucaoVisita(visitaId: 1, checkIn: checkIn, fotos: [antes, depois], conclusao: conclusao));
+    await repo.salvarExecucao(ExecucaoVisita(visitaId: '1', checkIn: checkIn, fotos: [antes, depois], conclusao: conclusao));
 
-    await repo.enfileirar(ItemFila(visitaId: 1, tipo: TipoItemFila.conclusao, chave: uuidConclusao, payload: ConclusaoPayload.deLocal(conclusao).toJson(), prioridade: 4, criadoEm: t3));
-    await repo.enfileirar(ItemFila(visitaId: 1, tipo: TipoItemFila.foto, chave: uuidDepois, payload: FotoPayload.deLocal(depois).toJson(), arquivo: depois.caminho, prioridade: 3, criadoEm: t2));
-    await repo.enfileirar(ItemFila(visitaId: 1, tipo: TipoItemFila.foto, chave: uuidAntes, payload: FotoPayload.deLocal(antes).toJson(), arquivo: antes.caminho, prioridade: 1, criadoEm: t1));
-    await repo.enfileirar(ItemFila(visitaId: 1, tipo: TipoItemFila.checkIn, chave: ItemFila.chaveCheckIn(1), payload: CheckInPayload.deLocal(checkIn).toJson(), prioridade: 0, criadoEm: t0));
+    await repo.enfileirar(ItemFila(visitaId: '1', tipo: TipoItemFila.conclusao, chave: uuidConclusao, payload: ConclusaoPayload.deLocal(conclusao).toJson(), prioridade: 4, criadoEm: t3));
+    await repo.enfileirar(ItemFila(visitaId: '1', tipo: TipoItemFila.foto, chave: uuidDepois, payload: FotoPayload.deLocal(depois).toJson(), arquivo: depois.caminho, prioridade: 3, criadoEm: t2));
+    await repo.enfileirar(ItemFila(visitaId: '1', tipo: TipoItemFila.foto, chave: uuidAntes, payload: FotoPayload.deLocal(antes).toJson(), arquivo: antes.caminho, prioridade: 1, criadoEm: t1));
+    await repo.enfileirar(ItemFila(visitaId: '1', tipo: TipoItemFila.checkIn, chave: ItemFila.chaveCheckIn('1'), payload: CheckInPayload.deLocal(checkIn).toJson(), prioridade: 0, criadoEm: t0));
   }
 
   test('envia na ordem check-in → foto antes → foto depois → conclusão com os payloads do contrato', () async {
@@ -119,7 +119,7 @@ void main() {
       ],
     });
 
-    final execucao = (await repo.obterExecucao(1))!;
+    final execucao = (await repo.obterExecucao('1'))!;
     expect(execucao.checkIn!.enviado, isTrue);
     expect(execucao.fotos.every((f) => f.enviada), isTrue);
     expect(execucao.conclusao!.enviada, isTrue);
@@ -198,8 +198,8 @@ void main() {
   test('erro de uma visita não impede o envio de outra', () async {
     await prepararVisitaCompleta();
     final checkIn2 = checkInPadrao(gpsEm: t0);
-    await repo.salvarExecucao(ExecucaoVisita(visitaId: 2, checkIn: checkIn2));
-    await repo.enfileirar(ItemFila(visitaId: 2, tipo: TipoItemFila.checkIn, chave: 'check-in:2', payload: CheckInPayload.deLocal(checkIn2).toJson(), prioridade: 0, criadoEm: t3));
+    await repo.salvarExecucao(ExecucaoVisita(visitaId: '2', checkIn: checkIn2));
+    await repo.enfileirar(ItemFila(visitaId: '2', tipo: TipoItemFila.checkIn, chave: 'check-in:2', payload: CheckInPayload.deLocal(checkIn2).toJson(), prioridade: 0, criadoEm: t3));
     servidor.responder('POST /api/v1/visitas/1/check-in', 404, {'message': 'No query results.'});
     servidor.responder('POST /api/v1/visitas/2/check-in', 201, {'id': 2, 'status': 'em_andamento', 'check_in': {'lat': -29.168, 'lng': -51.179, 'gps_em': formatarIso8601ComFuso(t0), 'aparelho_em': formatarIso8601ComFuso(t0)}});
 
@@ -208,7 +208,7 @@ void main() {
     expect(resultado.erros, 1);
     expect(resultado.enviados, 1);
     expect(servidor.chamadas.map((c) => c.caminho), ['/api/v1/visitas/1/check-in', '/api/v1/visitas/2/check-in']);
-    expect((await repo.obterExecucao(2))!.checkIn!.enviado, isTrue);
+    expect((await repo.obterExecucao('2'))!.checkIn!.enviado, isTrue);
   });
 
   test('5xx mantém o item pendente para a próxima rodada', () async {
@@ -257,7 +257,7 @@ void main() {
     expect(resultado.enviados, 4);
     expect(resultado.tudoCerto, isTrue);
     expect(servidor.das('visitas/1').where((c) => c.metodo == 'GET').length, 1, reason: 'a segunda foto já foi alinhada pela primeira reconciliação');
-    final execucao = (await repo.obterExecucao(1))!;
+    final execucao = (await repo.obterExecucao('1'))!;
     expect(execucao.fotos.every((f) => f.enviada), isTrue);
     expect(execucao.conclusao!.enviada, isTrue);
   });
@@ -276,7 +276,7 @@ void main() {
     expect(resultado.mensagens.single, contains('outra finalização'));
     final item = (await repo.obterItemPorChave(uuidConclusao))!;
     expect(item.estado, EstadoItemFila.conflito);
-    expect((await repo.obterExecucao(1))!.statusServidor, 'em_atencao');
+    expect((await repo.obterExecucao('1'))!.statusServidor, 'em_atencao');
   });
 
   test('409 no check-in de visita já encerrada é aceito se o servidor tem o check-in', () async {
@@ -298,8 +298,8 @@ void main() {
   test('foto sem arquivo no aparelho vira erro definitivo em vez de travar a fila', () async {
     final checkIn = checkInPadrao(gpsEm: t0, enviado: true);
     final foto = FotoLocal(uuid: uuidAntes, tipo: TipoFoto.antes, caminho: '/fotos/inexistente.jpg', lat: -29.168, lng: -51.179, gpsEm: t1, aparelhoEm: t1);
-    await repo.salvarExecucao(ExecucaoVisita(visitaId: 1, checkIn: checkIn, fotos: [foto]));
-    await repo.enfileirar(ItemFila(visitaId: 1, tipo: TipoItemFila.foto, chave: uuidAntes, payload: FotoPayload.deLocal(foto).toJson(), arquivo: foto.caminho, prioridade: 1, criadoEm: t1));
+    await repo.salvarExecucao(ExecucaoVisita(visitaId: '1', checkIn: checkIn, fotos: [foto]));
+    await repo.enfileirar(ItemFila(visitaId: '1', tipo: TipoItemFila.foto, chave: uuidAntes, payload: FotoPayload.deLocal(foto).toJson(), arquivo: foto.caminho, prioridade: 1, criadoEm: t1));
 
     final resultado = await sinc.sincronizar();
 
@@ -313,7 +313,7 @@ void main() {
       'visita': {'id': 1, 'status': 'em_andamento', 'tipo_conclusao': null, 'check_in': {'lat': -29.168, 'lng': -51.179, 'gps_em': formatarIso8601ComFuso(t0), 'aparelho_em': formatarIso8601ComFuso(t0), 'distancia_m': 12.5}, 'itens': [], 'fotos': []},
     });
 
-    final execucao = await sinc.reconciliar(1);
+    final execucao = await sinc.reconciliar('1');
 
     expect(execucao.checkIn!.enviado, isTrue);
     expect(execucao.checkIn!.distanciaM, 12.5);

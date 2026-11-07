@@ -59,16 +59,17 @@ void main() {
       expect(roteiro.roteiroId, 55);
       expect(roteiro.supervisorNome, 'Supervisora');
       expect(roteiro.visitas.length, 2);
-      expect(roteiro.visita(2)!.checkIn, {'lat': -29.168});
-      expect(roteiro.visita(2)!.status, 'em_andamento');
+      expect(roteiro.visita('2')!.checkIn, {'lat': -29.168});
+      expect(roteiro.visita('2')!.status, 'em_andamento');
       final pdv = roteiro.visitas.first.pdv;
       expect(pdv.lat, -29.168);
       expect(pdv.raioM, 200);
       expect(pdv.temCoordenadas, isTrue);
-      final sku = roteiro.industria(3)!.skus.first;
+      final sku = roteiro.industria(roteiro.visitas.first)!.skus.first;
       expect(sku.codigo, 'ALG-25');
       expect(sku.embalagens.map((e) => e.tipo), ['unidade', 'caixa_master']);
-      expect(roteiro.industria(99), isNull);
+      expect(roteiro.industria(roteiro.visitas.first.copiarCom(status: 'x')), isNotNull);
+      expect(roteiro.visita('99'), isNull);
     });
 
     test('coordenadas podem vir como texto ou nulas', () {

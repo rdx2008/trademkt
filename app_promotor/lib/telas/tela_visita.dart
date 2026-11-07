@@ -19,7 +19,7 @@ class TelaVisita extends StatefulWidget {
   const TelaVisita({super.key, required this.estado, required this.visitaId});
 
   final EstadoApp estado;
-  final int visitaId;
+  final String visitaId;
 
   @override
   State<TelaVisita> createState() => _TelaVisitaState();
@@ -95,7 +95,7 @@ class _TelaVisitaState extends State<TelaVisita> {
 
       return;
     }
-    final atuais = ruptura ? _itensRuptura : estado.execucao(visita.id).itens;
+    final atuais = ruptura ? _itensRuptura : estado.execucao(visita.chave).itens;
     final escolhidos = await Navigator.of(context).push<List<ItemTrabalhado>>(
       MaterialPageRoute(builder: (_) => TelaSkus(industria: industria, iniciais: atuais, ruptura: ruptura)),
     );
@@ -105,7 +105,7 @@ class _TelaVisitaState extends State<TelaVisita> {
     if (ruptura) {
       setState(() => _itensRuptura = escolhidos);
     } else {
-      await estado.salvarItens(visita.id, escolhidos);
+      await estado.salvarItens(visita.chave, escolhidos);
     }
   }
 
@@ -183,7 +183,7 @@ class _TelaVisitaState extends State<TelaVisita> {
             body: const Center(child: Text('Visita não encontrada no roteiro salvo.')),
           );
         }
-        final e = estado.execucao(visita.id);
+        final e = estado.execucao(visita.chave);
         final etapa = RegrasVisita.etapa(e);
         final industria = estado.industriaDa(visita);
         final status = estado.statusExibido(visita);
@@ -330,7 +330,7 @@ class _TelaVisitaState extends State<TelaVisita> {
                   onTap: () => _impedimento(visita),
                 ),
               ] else
-                _Envios(estado: estado, visitaId: visita.id, e: e),
+                _Envios(estado: estado, visitaId: visita.chave, e: e),
             ],
           ),
         );
@@ -508,7 +508,7 @@ class _Envios extends StatelessWidget {
   const _Envios({required this.estado, required this.visitaId, required this.e});
 
   final EstadoApp estado;
-  final int visitaId;
+  final String visitaId;
   final ExecucaoVisita e;
 
   @override

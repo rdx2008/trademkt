@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'apoio.dart';
 
 ItemFila item({
-  int visita = 1,
+  String visita = '1',
   required TipoItemFila tipo,
   TipoFoto? foto,
   required String chave,
@@ -51,10 +51,10 @@ void main() {
 
     test('visitas são enviadas na ordem em que começaram, sem intercalar', () {
       final fila = [
-        item(visita: 2, tipo: TipoItemFila.checkIn, chave: 'check-in:2', criadoEm: em(40)),
-        item(visita: 1, tipo: TipoItemFila.conclusao, chave: 'c1', criadoEm: em(50)),
-        item(visita: 2, tipo: TipoItemFila.foto, foto: TipoFoto.antes, chave: 'a2', criadoEm: em(45)),
-        item(visita: 1, tipo: TipoItemFila.checkIn, chave: 'check-in:1', criadoEm: em(0)),
+        item(visita: '2', tipo: TipoItemFila.checkIn, chave: 'check-in:2', criadoEm: em(40)),
+        item(visita: '1', tipo: TipoItemFila.conclusao, chave: 'c1', criadoEm: em(50)),
+        item(visita: '2', tipo: TipoItemFila.foto, foto: TipoFoto.antes, chave: 'a2', criadoEm: em(45)),
+        item(visita: '1', tipo: TipoItemFila.checkIn, chave: 'check-in:1', criadoEm: em(0)),
       ];
 
       expect(ordenarFila(fila).map((i) => i.chave), ['check-in:1', 'c1', 'check-in:2', 'a2']);
@@ -73,20 +73,20 @@ void main() {
       final salvo = await repo.obterRoteiro('2026-10-31');
 
       expect(salvo!.visitas.single.pdv.nome, 'Mercado Centro');
-      expect(salvo.industria(3)!.skus.length, 2);
-      expect(salvo.industria(3)!.skus.first.embalagens.last.gtin, '17891000315504');
+      expect(salvo.industria(salvo.visitas.single)!.skus.length, 2);
+      expect(salvo.industria(salvo.visitas.single)!.skus.first.embalagens.last.gtin, '17891000315504');
       expect(await repo.baixadoEm('2026-10-31'), isNotNull);
     });
 
     test('guarda a execução da visita e a lista', () async {
-      await repo.salvarExecucao(ExecucaoVisita(visitaId: 1, checkIn: checkInPadrao()));
-      await repo.salvarExecucao(ExecucaoVisita(visitaId: 1, checkIn: checkInPadrao(enviado: true)));
-      await repo.salvarExecucao(const ExecucaoVisita(visitaId: 2));
+      await repo.salvarExecucao(ExecucaoVisita(visitaId: '1', checkIn: checkInPadrao()));
+      await repo.salvarExecucao(ExecucaoVisita(visitaId: '1', checkIn: checkInPadrao(enviado: true)));
+      await repo.salvarExecucao(const ExecucaoVisita(visitaId: '2'));
 
       final todas = await repo.listarExecucoes();
-      expect(todas.keys, [1, 2]);
-      expect(todas[1]!.checkIn!.enviado, isTrue);
-      expect((await repo.obterExecucao(1))!.checkIn!.lat, -29.168);
+      expect(todas.keys, ['1', '2']);
+      expect(todas['1']!.checkIn!.enviado, isTrue);
+      expect((await repo.obterExecucao('1'))!.checkIn!.lat, -29.168);
     });
 
     test('enfileirar é idempotente por chave e preserva o primeiro payload', () async {
@@ -111,9 +111,9 @@ void main() {
       expect(await repo.contarPendentes(), 0);
       expect(await repo.contarComProblema(), 2);
       expect((await repo.listarFila(estado: EstadoItemFila.erro)).single.ultimoErro, 'Fora do raio');
-      expect((await repo.listarFila(visitaId: 1)).length, 3);
+      expect((await repo.listarFila(visitaId: '1')).length, 3);
 
-      await repo.reabrirItens(1);
+      await repo.reabrirItens('1');
       expect(await repo.contarPendentes(), 2);
       expect((await repo.obterItemPorChave('f1'))!.ultimoErro, isNull);
       expect((await repo.obterItemPorChave('f1'))!.tentativas, 1);
@@ -122,7 +122,7 @@ void main() {
 
     test('limpa enviados antigos e tudo', () async {
       final antigo = await repo.enfileirar(item(tipo: TipoItemFila.checkIn, chave: 'check-in:1', criadoEm: DateTime.now().subtract(const Duration(days: 10))));
-      final novo = await repo.enfileirar(item(tipo: TipoItemFila.checkIn, chave: 'check-in:2', visita: 2, criadoEm: DateTime.now()));
+      final novo = await repo.enfileirar(item(tipo: TipoItemFila.checkIn, chave: 'check-in:2', visita: '2', criadoEm: DateTime.now()));
       await repo.atualizarItem(antigo.copiarCom(estado: EstadoItemFila.enviado));
       await repo.atualizarItem(novo.copiarCom(estado: EstadoItemFila.enviado));
 

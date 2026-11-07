@@ -92,7 +92,7 @@ void main() {
     final erro = await estado.fazerCheckIn(estado.roteiro!.visitas.single);
 
     expect(erro, contains('simulada'));
-    expect(estado.execucao(1).temCheckIn, isFalse);
+    expect(estado.execucao('1').temCheckIn, isFalse);
     expect(await estado.repositorio.contarPendentes(), 0);
     expect(servidor.das('check-in'), isEmpty);
   });
@@ -114,7 +114,7 @@ void main() {
 
     expect(await estado.fazerCheckIn(visita), isNull);
     await _aguardarFila(estado);
-    expect(estado.execucao(1).checkIn!.enviado, isTrue);
+    expect(estado.execucao('1').checkIn!.enviado, isTrue);
 
     gps.posicao = posicaoNoPdv(gpsEm: inicio.add(const Duration(minutes: 1)));
     final preparoAntes = await estado.prepararFoto(visita, TipoFoto.antes);
@@ -122,7 +122,7 @@ void main() {
     expect(await estado.registrarFoto(visita, TipoFoto.antes, jpegDeTeste(), preparoAntes.posicao!), isNull);
 
     // Foto depois antes de existir foto antes não acontece; aqui a sequência é válida.
-    await estado.salvarItens(1, const [ItemTrabalhado(skuId: 10, estoque: SituacaoEstoque.somenteGondola)]);
+    await estado.salvarItens('1', const [ItemTrabalhado(skuId: 10, estoque: SituacaoEstoque.somenteGondola)]);
     gps.posicao = posicaoNoPdv(gpsEm: inicio.add(const Duration(minutes: 2)));
     final preparoDepois = await estado.prepararFoto(visita, TipoFoto.depois);
     expect(await estado.registrarFoto(visita, TipoFoto.depois, jpegDeTeste(), preparoDepois.posicao!), isNull);
@@ -130,7 +130,7 @@ void main() {
     expect(await estado.concluir(visita, TipoConclusao.normal), isNull);
     await _aguardarFila(estado);
 
-    final execucao = estado.execucao(1);
+    final execucao = estado.execucao('1');
     expect(execucao.fotos.map((f) => f.tipo), [TipoFoto.antes, TipoFoto.depois]);
     expect(File(execucao.fotos.first.caminho).existsSync(), isTrue, reason: 'foto com marca d\'água gravada no aparelho');
     expect(execucao.temPendencias, isFalse);
@@ -142,7 +142,7 @@ void main() {
     expect(servidor.das('concluir').single.json['itens'], [
       {'sku_id': 10, 'estoque': 'somente_gondola'},
     ]);
-    final fila = await estado.repositorio.listarFila(visitaId: 1);
+    final fila = await estado.repositorio.listarFila(visitaId: '1');
     expect(fila.map((i) => i.estado).toSet(), {EstadoItemFila.enviado});
   });
 
@@ -175,7 +175,7 @@ void main() {
     await _aguardarFila(estado);
 
     expect(estado.pendentes, 3);
-    expect(estado.execucao(1).temPendencias, isTrue);
+    expect(estado.execucao('1').temPendencias, isTrue);
     expect(await estado.sair(), isFalse, reason: 'não deixa sair com pendências');
 
     servidor.offline = false;

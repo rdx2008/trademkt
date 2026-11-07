@@ -17,8 +17,8 @@ class ServicoFotos {
 
   final Future<Directory> Function() _pastaBase;
 
-  Future<Directory> _pastaVisita(int visitaId) async {
-    final pasta = Directory(p.join((await _pastaBase()).path, 'fotos', 'visita_$visitaId'));
+  Future<Directory> _pastaVisita(String visitaId) async {
+    final pasta = Directory(p.join((await _pastaBase()).path, 'fotos', 'visita_${visitaId.replaceAll(RegExp(r'[^A-Za-z0-9_-]'), '_')}'));
     if (!await pasta.exists()) {
       await pasta.create(recursive: true);
     }
@@ -28,7 +28,7 @@ class ServicoFotos {
 
   /// Aplica a marca d'água em outro isolate e grava `<uuid>.jpg`. Devolve o caminho.
   Future<String> gravar({
-    required int visitaId,
+    required String visitaId,
     required String uuid,
     required Uint8List original,
     required List<String> linhasMarca,

@@ -238,7 +238,8 @@ class ExecucaoVisita {
     this.statusServidor,
   });
 
-  final int visitaId;
+  /// Chave da visita no aparelho (ver `Visita.chave`).
+  final String visitaId;
   final CheckInLocal? checkIn;
   final List<FotoLocal> fotos;
 
@@ -292,7 +293,7 @@ class ExecucaoVisita {
       );
 
   factory ExecucaoVisita.fromJson(Map<String, dynamic> json) => ExecucaoVisita(
-        visitaId: json['visita_id'] as int,
+        visitaId: json['visita_id'].toString(),
         checkIn: json['check_in'] == null ? null : CheckInLocal.fromJson(json['check_in'] as Map<String, dynamic>),
         fotos: ((json['fotos'] as List?) ?? const []).map((e) => FotoLocal.fromJson(e as Map<String, dynamic>)).toList(),
         itens: ((json['itens'] as List?) ?? const [])

@@ -64,7 +64,9 @@ class ItemFila {
   });
 
   final int? id;
-  final int visitaId;
+
+  /// Chave da visita no aparelho (ver `Visita.chave`).
+  final String visitaId;
   final TipoItemFila tipo;
 
   /// UUID da foto/conclusão ou `check-in:<visita>`; identifica o item para reenvio idempotente.
@@ -96,14 +98,14 @@ class ItemFila {
         estado: estado ?? this.estado,
       );
 
-  static String chaveCheckIn(int visitaId) => 'check-in:$visitaId';
+  static String chaveCheckIn(String visitaId) => 'check-in:$visitaId';
 }
 
 /// Ordena a fila para envio: as visitas na ordem em que começaram a ser
 /// executadas e, dentro de cada visita, por prioridade e hora de criação.
 List<ItemFila> ordenarFila(Iterable<ItemFila> itens) {
   final lista = itens.toList();
-  final inicioPorVisita = <int, DateTime>{};
+  final inicioPorVisita = <String, DateTime>{};
   for (final item in lista) {
     final atual = inicioPorVisita[item.visitaId];
     if (atual == null || item.criadoEm.isBefore(atual)) {

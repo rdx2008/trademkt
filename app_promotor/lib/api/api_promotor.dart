@@ -67,32 +67,40 @@ class ApiPromotor {
     return Roteiro.fromJson(resposta.corpo);
   }
 
-  /// `POST /visitas/{visita}/check-in`.
-  Future<RespostaJson> checkIn(int visitaId, Map<String, dynamic> payload) =>
-      cliente.post('visitas/$visitaId/check-in', payload);
+  /// Caminho da visita pela chave: `visitas/{id}` na própria indústria ou
+  /// `industrias/{empresa}/visitas/{id}` quando o promotor entrou pela agência.
+  static String caminhoDaVisita(String chave) {
+    final partes = chave.split(':');
 
-  /// `POST /visitas/{visita}/fotos` (multipart).
+    return partes.length == 2 ? 'industrias/${partes[0]}/visitas/${partes[1]}' : 'visitas/$chave';
+  }
+
+  /// `POST .../visitas/{visita}/check-in`.
+  Future<RespostaJson> checkIn(String visitaId, Map<String, dynamic> payload) =>
+      cliente.post('${caminhoDaVisita(visitaId)}/check-in', payload);
+
+  /// `POST .../visitas/{visita}/fotos` (multipart).
   Future<RespostaJson> enviarFoto(
-    int visitaId,
+    String visitaId,
     Map<String, String> campos, {
     required Uint8List bytes,
     required String nomeArquivo,
   }) =>
       cliente.postMultipart(
-        'visitas/$visitaId/fotos',
+        '${caminhoDaVisita(visitaId)}/fotos',
         campos,
         campoArquivo: 'foto',
         bytes: bytes,
         nomeArquivo: nomeArquivo,
       );
 
-  /// `POST /visitas/{visita}/concluir`.
-  Future<RespostaJson> concluir(int visitaId, Map<String, dynamic> payload) =>
-      cliente.post('visitas/$visitaId/concluir', payload);
+  /// `POST .../visitas/{visita}/concluir`.
+  Future<RespostaJson> concluir(String visitaId, Map<String, dynamic> payload) =>
+      cliente.post('${caminhoDaVisita(visitaId)}/concluir', payload);
 
-  /// `GET /visitas/{visita}`: estado atual para reconciliação.
-  Future<Map<String, dynamic>> visita(int visitaId) async {
-    final resposta = await cliente.get('visitas/$visitaId');
+  /// `GET .../visitas/{visita}`: estado atual para reconciliação.
+  Future<Map<String, dynamic>> visita(String visitaId) async {
+    final resposta = await cliente.get(caminhoDaVisita(visitaId));
 
     return resposta.corpo['visita'] as Map<String, dynamic>;
   }
