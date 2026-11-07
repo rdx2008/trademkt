@@ -30,6 +30,7 @@
         </div>
         <div class="acoes">
             <a class="botao secundario" href="{{ route('promotores.index') }}">Voltar à lista</a>
+            <a class="botao secundario" href="{{ route('promotores.cracha', $p->id) }}">Crachá</a>
             @if ($podeGerir)
                 <a class="botao" href="{{ route('promotores.edit', $p->id) }}">Editar cadastro</a>
             @endif
@@ -91,6 +92,26 @@
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <div class="cartao">
+        <h2>Indústrias em que atua</h2>
+        <p class="dica">Só nas marcadas ele recebe visitas e vê o roteiro no app. Nenhuma marcada = todas as indústrias que a agência atende.</p>
+        @if ($industrias->isEmpty())
+            <p>A agência ainda não está vinculada a nenhuma indústria.</p>
+        @elseif ($podeGerir)
+            <form method="POST" action="{{ route('promotores.industrias', $p->id) }}">
+                @csrf @method('PUT')
+                <div class="campo">
+                    @foreach ($industrias as $i)
+                        <label class="check"><input type="checkbox" name="industrias[]" value="{{ $i->id }}" @checked(in_array($i->id, $habilitadas, true))> {{ $i->nome ?? $i->id }}</label>
+                    @endforeach
+                </div>
+                <button type="submit" class="botao">Salvar</button>
+            </form>
+        @else
+            <p>{{ $habilitadas === [] ? 'Todas as indústrias atendidas.' : $industrias->whereIn('id', $habilitadas)->map(fn ($i) => $i->nome ?? $i->id)->implode(', ') }}</p>
+        @endif
     </div>
 
     <div class="cartao">

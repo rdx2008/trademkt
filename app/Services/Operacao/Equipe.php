@@ -44,15 +44,25 @@ class Equipe
             return collect();
         }
 
-        return self::$cache[$agencia->id] ??= $this->ler($agencia);
+        return self::$cache[(tenant()?->getTenantKey() ?? '').':'.$agencia->id] ??= $this->ler($agencia);
     }
 
-    /** @return Collection<int, Pessoa> promotores da agência (por padrão só os ativos), por nome */
-    public function promotores(Agencia|int $agencia, bool $somenteAtivos = true): Collection
+    /**
+     * @return Collection<int, Pessoa> promotores da agência por nome. Por padrão só os ativos e
+     *                                 habilitados para a indústria em uso; com `$cidade`, quem tem
+     *                                 aquela cidade base vem primeiro.
+     */
+    public function promotores(Agencia|int $agencia, bool $somenteAtivos = true, bool $somenteHabilitados = true, ?string $cidade = null): Collection
     {
+        $industria = tenant()?->getTenantKey();
+        $cidade = $cidade ? mb_strtolower(trim($cidade)) : null;
+
         return $this->de($agencia)
-            ->filter(fn (Pessoa $p) => $p->perfil === Perfil::Promotor && (! $somenteAtivos || $p->ativo))
-            ->sortBy('nome')->values();
+            ->filter(fn (Pessoa $p) => $p->perfil === Perfil::Promotor
+                && (! $somenteAtivos || $p->ativo)
+                && (! $somenteHabilitados || $p->habilitadoPara($industria)))
+            ->sortBy(fn (Pessoa $p) => [$cidade && mb_strtolower((string) $p->cidadeBase) === $cidade ? 0 : 1, mb_strtolower($p->nome)])
+            ->values();
     }
 
     /** Quem gere a equipe (admins e supervisores ativos): destinatários dos avisos. */
@@ -78,11 +88,21 @@ class Equipe
         return $this->de($agencia)->first(fn (Pessoa $p) => $p->id === $id);
     }
 
-    public function promotorAtivo(Agencia|int|null $agencia, ?int $id): ?Pessoa
+    /**
+     * Promotor ativo que pode receber visitas desta indústria. Com `$data`, também não pode
+     * estar afastado nesse dia.
+     */
+    public function promotorAtivo(Agencia|int|null $agencia, ?int $id, ?string $data = null): ?Pessoa
     {
         $p = $this->pessoa($agencia, $id);
+        if (! $p || ! $p->ativo || $p->perfil !== Perfil::Promotor) {
+            return null;
+        }
+        if (! $p->habilitadoPara(tenant()?->getTenantKey()) || ($data !== null && $p->afastadoEm($data))) {
+            return null;
+        }
 
-        return $p && $p->ativo && $p->perfil === Perfil::Promotor ? $p : null;
+        return $p;
     }
 
     public function nome(Agencia|int|null $agencia, ?int $id): ?string
@@ -93,7 +113,7 @@ class Equipe
     /** @return Collection<int, Pessoa> */
     private function ler(Agencia $agencia): Collection
     {
-        $colunas = ['id', 'nome', 'perfil', 'ativo', 'tipo_vinculo', 'agencia_id'];
+        $colunas = ['id', 'nome', 'perfil', 'ativo', 'tipo_vinculo', 'agencia_id', 'cidade_base', 'uf_base'];
 
         if ($agencia->agencia_tenant_id === null) {
             $usuarios = User::whereIn('perfil', [Perfil::AdminAgencia->value, Perfil::Supervisor->value, Perfil::Promotor->value])
@@ -105,9 +125,19 @@ class Equipe
             }
             // Na instalação da agência todo mundo é da própria agência; o admin da instalação é o
             // admin da agência.
-            $usuarios = User::on(self::conexao($origem))
+            $conexao = self::conexao($origem);
+            $usuarios = User::on($conexao)
                 ->whereIn('perfil', [Perfil::AdminInstalacao->value, Perfil::AdminAgencia->value, Perfil::Supervisor->value, Perfil::Promotor->value])
                 ->get($colunas);
+            $habilitacoes = DB::connection($conexao)->table('promotor_industrias')->get(['usuario_id', 'industria_id'])->groupBy('usuario_id');
+            $afastamentos = DB::connection($conexao)->table('afastamentos')->whereDate('fim', '>=', today()->toDateString())->get(['usuario_id', 'inicio', 'fim'])->groupBy('usuario_id');
+
+            return $usuarios->map(fn (User $u) => Pessoa::deUsuario(
+                $u,
+                $agencia->id,
+                ($habilitacoes[$u->id] ?? collect())->pluck('industria_id')->all(),
+                ($afastamentos[$u->id] ?? collect())->map(fn ($a) => [substr((string) $a->inicio, 0, 10), substr((string) $a->fim, 0, 10)])->all(),
+            ))->values();
         }
 
         return $usuarios->map(fn (User $u) => Pessoa::deUsuario($u, $agencia->id))->values();

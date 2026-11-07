@@ -13,9 +13,12 @@ use App\Models\Roteiro;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Visita;
+use App\Services\Operacao\Equipe;
 use App\Services\Roteiros\Atribuicao;
 use App\Services\Roteiros\GeradorVisitas;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /** Ficha do promotor: agenda e histórico vindos da indústria, afastamentos, ocorrências e aparelhos. */
@@ -165,5 +168,124 @@ class FichaPromotorTest extends TestCase
         $this->app['auth']->forgetGuards();
         $adminIndustria = $this->industria->run(fn () => User::where('perfil', Perfil::AdminInstalacao->value)->sole());
         $this->actingAs($adminIndustria)->get('http://gaboardi.test/promotores/1')->assertStatus(403);
+    }
+
+    private function outraIndustria(): Tenant
+    {
+        $outra = $this->criarCliente('norte');
+        $this->vincular($outra, $this->agencia);
+
+        return $outra;
+    }
+
+    public function test_habilitacao_por_industria_restringe_atribuicao_e_roteiro_do_app(): void
+    {
+        $outra = $this->outraIndustria();
+        $this->actingAs($this->admin);
+
+        $this->put(self::URL."/promotores/{$this->joao->id}/industrias", ['industrias' => ['inexistente']])->assertSessionHasErrors('industrias.0');
+        $this->put(self::URL."/promotores/{$this->joao->id}/industrias", ['industrias' => [$outra->id]])->assertRedirect();
+        $this->agencia->run(fn () => $this->assertSame([$outra->id], $this->joao->industriasHabilitadas()));
+
+        $this->industria->run(function () {
+            Equipe::esquecer();
+            $local = Agencia::where('agencia_tenant_id', $this->agencia->id)->sole();
+            $equipe = app(Equipe::class);
+            $this->assertNull($equipe->promotorAtivo($local, $this->joao->id), 'habilitado só para a outra indústria');
+            $this->assertCount(0, $equipe->promotores($local));
+            $this->assertCount(1, $equipe->promotores($local, true, false), 'a leitura completa continua enxergando');
+        });
+
+        // O app deixa de receber o roteiro da indústria em que ele não está habilitado.
+        Sanctum::actingAs($this->joao, ['promotor']);
+        $this->getJson(self::URL.'/api/v1/roteiro?data=2026-10-14')->assertOk()->assertJsonCount(0, 'visitas');
+
+        // Voltar para "todas" (nenhuma marcada).
+        $this->app['auth']->forgetGuards();
+        $this->actingAs($this->admin)->put(self::URL."/promotores/{$this->joao->id}/industrias", [])->assertRedirect();
+        $this->agencia->run(fn () => $this->assertSame([], $this->joao->industriasHabilitadas()));
+        $this->industria->run(function () {
+            Equipe::esquecer();
+            $local = Agencia::where('agencia_tenant_id', $this->agencia->id)->sole();
+            $this->assertNotNull(app(Equipe::class)->promotorAtivo($local, $this->joao->id));
+        });
+    }
+
+    public function test_afastamento_impede_atribuir_visita_no_periodo(): void
+    {
+        $this->agencia->run(fn () => $this->joao->afastamentos()->create(['tipo' => 'ferias', 'inicio' => '2026-10-20', 'fim' => '2026-10-22']));
+
+        $this->industria->run(function () {
+            Equipe::esquecer();
+            $local = Agencia::where('agencia_tenant_id', $this->agencia->id)->sole();
+            $equipe = app(Equipe::class);
+            $this->assertNull($equipe->promotorAtivo($local, $this->joao->id, '2026-10-21'));
+            $this->assertNotNull($equipe->promotorAtivo($local, $this->joao->id, '2026-10-23'));
+            $this->assertNotNull($equipe->promotorAtivo($local, $this->joao->id), 'sem data, só ativo e habilitado');
+
+            $visita = Visita::whereDate('data', '2026-10-21')->sole();
+            $this->expectException(ValidationException::class);
+            app(Atribuicao::class)->mover($visita, $this->joao->id, $visita->data, null);
+        });
+    }
+
+    public function test_cidade_base_poe_o_promotor_da_cidade_primeiro(): void
+    {
+        $propria = $this->agencia->run(fn () => Agencia::first()->id);
+        $this->agencia->run(function () {
+            $this->joao->forceFill(['cidade_base' => 'Bento Gonçalves', 'uf_base' => 'RS'])->save();
+        });
+        $this->criarUsuario($this->agencia, Perfil::Promotor, ['nome' => 'Zélia Souza', 'email' => 'zelia@sul.test', 'agencia_id' => $propria, 'cidade_base' => 'Caxias do Sul', 'uf_base' => 'RS']);
+
+        $this->industria->run(function () {
+            Equipe::esquecer();
+            $local = Agencia::where('agencia_tenant_id', $this->agencia->id)->sole();
+            $equipe = app(Equipe::class);
+            $this->assertSame(['João da Silva', 'Zélia Souza'], $equipe->promotores($local)->pluck('nome')->all(), 'sem cidade: por nome');
+            $this->assertSame(['Zélia Souza', 'João da Silva'], $equipe->promotores($local, true, true, 'caxias do sul')->pluck('nome')->all());
+        });
+    }
+
+    public function test_cracha_e_verificacao_publica_sem_dados_sensiveis(): void
+    {
+        $this->agencia->run(fn () => $this->joao->forceFill(['cpf' => '529.982.247-25', 'telefone' => '(54) 99999-0000'])->save());
+
+        $pagina = $this->actingAs($this->admin)->get(self::URL."/promotores/{$this->joao->id}/cracha")->assertOk()->assertSee('João da Silva');
+        $codigo = $this->agencia->run(fn () => $this->joao->fresh()->cracha_token);
+        $this->assertSame(40, strlen($codigo));
+        $pagina->assertSee(self::URL.'/verificar/'.$codigo, false);
+
+        // Página pública: sem login, só primeiro nome e situação.
+        $this->app['auth']->forgetGuards();
+        $this->get(self::URL."/verificar/{$codigo}")->assertOk()
+            ->assertSee('João')->assertSee('Cadastro ativo')
+            ->assertDontSee('da Silva')->assertDontSee('joao@sul.test')->assertDontSee('529.982.247-25')->assertDontSee('99999-0000')
+            ->assertHeader('Referrer-Policy', 'no-referrer');
+        $this->get(self::URL.'/verificar/'.str_repeat('a', 40))->assertNotFound();
+
+        // Promotor desativado aparece como inativo.
+        $this->agencia->run(fn () => $this->joao->forceFill(['ativo' => false])->save());
+        $this->get(self::URL."/verificar/{$codigo}")->assertOk()->assertSee('Cadastro inativo')->assertDontSee('Cadastro ativo');
+        $this->get(self::URL."/verificar/{$codigo}/foto")->assertNotFound();
+
+        // O código é da instalação da agência: na indústria não existe.
+        $this->get('http://gaboardi.test/verificar/'.$codigo)->assertNotFound();
+    }
+
+    public function test_cracha_so_para_gestao_da_agencia(): void
+    {
+        $this->actingAs($this->joao)->get(self::URL."/promotores/{$this->joao->id}/cracha")->assertForbidden();
+    }
+
+    public function test_app_recebe_o_endereco_do_cracha_so_para_promotor(): void
+    {
+        Sanctum::actingAs($this->joao, ['promotor']);
+        $url = $this->getJson(self::URL.'/api/v1/me')->assertOk()->json('usuario.cracha_url');
+        $codigo = $this->agencia->run(fn () => $this->joao->fresh()->cracha_token);
+        $this->assertSame(self::URL.'/verificar/'.$codigo, $url);
+
+        $this->app['auth']->forgetGuards();
+        Sanctum::actingAs($this->supervisor, ['*']);
+        $this->getJson(self::URL.'/api/v1/me')->assertOk()->assertJsonPath('usuario.cracha_url', null);
     }
 }

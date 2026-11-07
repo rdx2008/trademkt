@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\Perfil;
+use App\Enums\TipoInstalacao;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Tenant\CrachaController;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -73,6 +76,9 @@ class AuthController extends Controller
             'tipo_vinculo' => $usuario->tipo_vinculo?->value,
             'agencia' => $usuario->agencia ? ['id' => $usuario->agencia->id, 'nome' => $usuario->agencia->nome] : null,
             'empresa' => ['codigo' => tenant('codigo'), 'nome' => tenant('nome')],
+            'cracha_url' => $usuario->perfil === Perfil::Promotor && tenant()->tipo === TipoInstalacao::Agencia
+                ? route('cracha.verificar', CrachaController::codigo($usuario))
+                : null,
         ];
     }
 }

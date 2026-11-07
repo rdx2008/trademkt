@@ -87,6 +87,7 @@ class Usuario {
     this.agenciaNome,
     this.empresaCodigo,
     this.empresaNome,
+    this.crachaUrl,
   });
 
   final int id;
@@ -97,6 +98,9 @@ class Usuario {
   final String? agenciaNome;
   final String? empresaCodigo;
   final String? empresaNome;
+
+  /// Endereço que o QR do crachá aponta (página pública de conferência).
+  final String? crachaUrl;
 
   bool get freelancer => tipoVinculo == 'freelancer';
 
@@ -113,6 +117,7 @@ class Usuario {
       agenciaNome: agencia?['nome'] as String?,
       empresaCodigo: empresa?['codigo'] as String?,
       empresaNome: empresa?['nome'] as String?,
+      crachaUrl: json['cracha_url'] as String?,
     );
   }
 
@@ -124,6 +129,7 @@ class Usuario {
         'tipo_vinculo': tipoVinculo,
         'agencia': agenciaNome == null ? null : {'nome': agenciaNome},
         'empresa': {'codigo': empresaCodigo, 'nome': empresaNome},
+        'cracha_url': crachaUrl,
       };
 }
 

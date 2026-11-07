@@ -64,7 +64,7 @@ class RoteiroController extends Controller
         $linhas = collect();
         if ($podeEditar && $agenciaId) {
             foreach ($equipe->promotores($agenciaId) as $p) {
-                $linhas[$chave($agenciaId, $p->id)] = ['id' => $chave($agenciaId, $p->id), 'nome' => $p->nome, 'ativo' => $p->ativo];
+                $linhas[$chave($agenciaId, $p->id)] = ['id' => $chave($agenciaId, $p->id), 'nome' => $p->nome.($p->cidadeBase ? ' ('.$p->cidadeBase.')' : ''), 'ativo' => $p->ativo];
             }
         }
         foreach ($visitas as $v) {
@@ -103,7 +103,7 @@ class RoteiroController extends Controller
             'ordem.*' => ['integer'],
         ]);
 
-        $promotor = isset($dados['promotor_id']) ? $equipe->promotorAtivo($visita->agencia_id, (int) $dados['promotor_id']) : null;
+        $promotor = isset($dados['promotor_id']) ? $equipe->promotorAtivo($visita->agencia_id, (int) $dados['promotor_id'], $dados['data']) : null;
         if (isset($dados['promotor_id']) && ! $promotor) {
             throw ValidationException::withMessages(['promotor_id' => 'Escolha um promotor ativo da agência responsável pela visita.']);
         }

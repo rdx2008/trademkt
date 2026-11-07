@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
@@ -43,7 +44,7 @@ class User extends Authenticatable
         'aceite_privacidade_em',
     ];
 
-    protected $hidden = ['password', 'remember_token', 'cpf', 'cpf_hash'];
+    protected $hidden = ['password', 'remember_token', 'cpf', 'cpf_hash', 'cracha_token'];
 
     protected function casts(): array
     {
@@ -89,6 +90,12 @@ class User extends Authenticatable
     public function convites(): HasMany
     {
         return $this->hasMany(Convite::class, 'usuario_id');
+    }
+
+    /** Ids das instalações de indústria para as quais o promotor está habilitado (vazio = todas). */
+    public function industriasHabilitadas(): array
+    {
+        return DB::table('promotor_industrias')->where('usuario_id', $this->id)->pluck('industria_id')->all();
     }
 
     public function afastamentos(): HasMany

@@ -105,7 +105,7 @@ class DemandaController extends Controller
         $d = Demanda::visiveisPara($request->user())->with(['pdv', 'industria', 'agencia', 'visita.roteiro'])->findOrFail($demanda);
         $podeGerir = Visita::podeAtribuir($request->user()) && $request->user()->agencia_id === $d->agencia_id;
 
-        return view('tenant.demandas.show', ['demanda' => $d, 'podeGerir' => $podeGerir, 'promotores' => $podeGerir ? $equipe->promotores($d->agencia_id) : collect(), 'skus' => Sku::where('industria_id', $d->industria_id)->whereIn('id', $d->skus ?? [])->get()]);
+        return view('tenant.demandas.show', ['demanda' => $d, 'podeGerir' => $podeGerir, 'promotores' => $podeGerir ? $equipe->promotores($d->agencia_id, true, true, $d->pdv?->cidade) : collect(), 'skus' => Sku::where('industria_id', $d->industria_id)->whereIn('id', $d->skus ?? [])->get()]);
     }
 
     public function decidir(Request $request, int $demanda, AlertasOperacao $alertas, Equipe $equipe)
@@ -113,7 +113,7 @@ class DemandaController extends Controller
         abort_unless(Visita::podeAtribuir($request->user()), 403);
         $dados = $request->validate(['decisao' => ['required', Rule::in(['aprovar', 'recusar'])], 'promotor_id' => ['nullable', 'required_if:decisao,aprovar', 'integer'], 'resposta' => ['nullable', 'required_if:decisao,recusar', 'string', 'max:2000']]);
         // A equipe é lida antes da transação: vem de outro banco.
-        $promotor = $dados['decisao'] === 'aprovar' ? $equipe->promotorAtivo($request->user()->agencia_id, (int) $dados['promotor_id']) : null;
+        $promotor = $dados['decisao'] === 'aprovar' ? $equipe->promotorAtivo($request->user()->agencia_id, (int) $dados['promotor_id'], today()->toDateString()) : null;
         DB::connection('tenant')->transaction(function () use ($request, $demanda, $dados, $alertas, $promotor) {
             $d = Demanda::where('agencia_id', $request->user()->agencia_id)->lockForUpdate()->findOrFail($demanda);
             if ($d->status !== 'aberta') {

@@ -36,8 +36,8 @@ class Atribuicao
         }
 
         $promotorId = $promotor instanceof Pessoa ? $promotor->id : $promotor;
-        if ($promotorId !== null && ! $this->equipe->promotorAtivo($visita->agencia_id, $promotorId)) {
-            throw ValidationException::withMessages(['promotor_id' => 'Escolha um promotor ativo da agência responsável pela visita.']);
+        if ($promotorId !== null && ! $this->equipe->promotorAtivo($visita->agencia_id, $promotorId, $data->toDateString())) {
+            throw ValidationException::withMessages(['promotor_id' => 'Escolha um promotor ativo da agência, habilitado para esta indústria e sem afastamento nesse dia.']);
         }
         $responsavelId = $responsavel instanceof User || $responsavel instanceof Pessoa ? $responsavel->id : $responsavel;
 

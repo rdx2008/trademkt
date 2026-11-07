@@ -116,7 +116,7 @@ class GeradorVisitas
 
         $roteiro = $anterior?->roteiro;
         $promotor = $roteiro && $anterior->agencia_id === $visita->agencia_id
-            ? $this->equipe->promotorAtivo($visita->agencia_id, $roteiro->promotor_id)
+            ? $this->equipe->promotorAtivo($visita->agencia_id, $roteiro->promotor_id, $visita->data->toDateString())
             : null;
 
         if (! $promotor) {

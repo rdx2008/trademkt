@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../estado_app.dart';
 import '../modelos/usuario.dart';
 import 'logo_marca.dart';
+import 'tela_cracha.dart';
 
 /// Menu do app: quem está logado, as contas do aparelho (uma por empresa/agência),
 /// troca de conta, acrescentar empresa e sair.
@@ -126,6 +127,16 @@ class MenuLateral extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 estado.sincronizar();
+              },
+            ),
+            ListTile(
+              key: const Key('meu-cracha'),
+              leading: const Icon(Icons.badge_outlined),
+              title: const Text('Meu crachá'),
+              subtitle: const Text('QR para o supermercado conferir'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => TelaCracha(sessao: atual)));
               },
             ),
             const Divider(),

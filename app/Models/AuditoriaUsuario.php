@@ -32,6 +32,7 @@ class AuditoriaUsuario extends Model
         'cpf_alterado' => 'CPF alterado',
         'cpf_visualizado' => 'CPF consultado',
         'importado' => 'Cadastrado por planilha',
+        'habilitacao_alterada' => 'Habilitação por indústria alterada',
         'afastamento_registrado' => 'Afastamento registrado',
         'afastamento_removido' => 'Afastamento removido',
         'ocorrencia_registrada' => 'Ocorrência registrada',

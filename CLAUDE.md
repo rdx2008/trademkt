@@ -126,8 +126,14 @@ Tela própria em **Equipe → Promotores** (só instalação de agência); o pro
 - Ficha (`/promotores/{id}`): agenda dos 7 dias e histórico de 30 dias somando as indústrias atendidas
   (lidas do banco de cada indústria, `FichaOperacional`), métricas, afastamentos, ocorrências internas,
   aparelhos conectados (com desconectar) e histórico de alterações.
-- Ainda não implementado: afastamento influenciando a sugestão de atribuição, habilitação por
-  indústria, crachá digital com QR.
+- Habilitação por indústria (`promotor_industrias`, na agência): sem linhas = todas as atendidas. Restringe
+  atribuição (`Equipe::promotorAtivo`), listas de promotores e o roteiro do app. Afastamento também
+  barra a atribuição no período; a repetição semanal automática pula quem está afastado.
+- Cidade base: nas telas de atribuição o promotor aparece com a cidade e, na decisão de demanda, quem é da
+  cidade do PDV vem primeiro.
+- Crachá digital: `/promotores/{id}/cracha` (imprimir, QR) e página pública `/verificar/{codigo}` (código de
+  40 caracteres, só foto, primeiro nome e ativo/inativo; nunca CPF, e-mail, telefone nem afastamento).
+  O app tem "Meu crachá" no menu (QR do endereço vindo em `usuario.cracha_url`; sessão antiga precisa entrar de novo).
 
 ### Painéis e permissões
 
@@ -191,7 +197,7 @@ Referência: `docs/FASE-3.md`, seção 3.4.
 - O promotor entra pelo código da **agência**; o roteiro junta as indústrias atendidas. Visita e
   indústria têm chave `empresa:id` (`Visita.chave`), e a execução vai para
   `industrias/{empresa}/visitas/{id}/...`. Banco local versão 2 (recriado na atualização).
-- `flutter analyze` e `flutter test` (90 testes) passam. Sem iOS (fase 8).
+- `flutter analyze` e `flutter test` (94 testes) passam. Sem iOS (fase 8).
 
 ### Importação de catálogo (planilha e PDF, sem IA)
 

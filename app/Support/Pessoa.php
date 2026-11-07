@@ -20,11 +20,42 @@ final class Pessoa
         public readonly Perfil $perfil,
         public readonly bool $ativo,
         public readonly ?TipoVinculo $tipoVinculo = null,
+        public readonly ?string $cidadeBase = null,
+        public readonly ?string $ufBase = null,
+        /** @var list<string>|null ids das indústrias habilitadas; null = todas */
+        public readonly ?array $industrias = null,
+        /** @var list<array{0: string, 1: string}> períodos de afastamento [início, fim] (Y-m-d) */
+        public readonly array $afastamentos = [],
     ) {}
 
-    public static function deUsuario(User $usuario, int $agenciaId): self
+    /**
+     * @param  list<string>|null  $industrias
+     * @param  list<array{0: string, 1: string}>  $afastamentos
+     */
+    public static function deUsuario(User $usuario, int $agenciaId, ?array $industrias = null, array $afastamentos = []): self
     {
-        return new self($usuario->id, $agenciaId, $usuario->nome, $usuario->perfil, $usuario->ativo, $usuario->tipo_vinculo);
+        return new self(
+            $usuario->id, $agenciaId, $usuario->nome, $usuario->perfil, $usuario->ativo, $usuario->tipo_vinculo,
+            $usuario->cidade_base, $usuario->uf_base, $industrias ?: null, $afastamentos,
+        );
+    }
+
+    /** Habilitado para a indústria (id da instalação)? Sem restrição cadastrada vale para todas. */
+    public function habilitadoPara(?string $industriaId): bool
+    {
+        return $this->industrias === null || $industriaId === null || in_array($industriaId, $this->industrias, true);
+    }
+
+    /** Está afastado no dia (Y-m-d)? */
+    public function afastadoEm(string $data): bool
+    {
+        foreach ($this->afastamentos as [$inicio, $fim]) {
+            if ($data >= $inicio && $data <= $fim) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Só o primeiro nome: é o que a indústria vê sobre quem esteve na loja. */

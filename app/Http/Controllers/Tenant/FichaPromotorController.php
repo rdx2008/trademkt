@@ -10,8 +10,10 @@ use App\Models\Ocorrencia;
 use App\Models\User;
 use App\Services\Promotores\Cadastro;
 use App\Services\Promotores\FichaOperacional;
+use App\Services\Rede\Operacao;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -57,9 +59,34 @@ class FichaPromotorController extends Controller
             'afastadoHoje' => $usuario->afastamentoEm(),
             'ocorrencias' => $usuario->ocorrencias()->limit(30)->get(),
             'aparelhos' => $usuario->tokens()->orderByDesc('last_used_at')->orderByDesc('id')->get(),
+            'industrias' => app(Operacao::class)->industriasDe(tenant()),
+            'habilitadas' => $usuario->industriasHabilitadas(),
             'tiposAfastamento' => Afastamento::TIPOS,
             'tiposOcorrencia' => Ocorrencia::TIPOS,
         ]);
+    }
+
+    /** Indústrias em que o promotor pode receber visitas. Nenhuma marcada = todas as atendidas. */
+    public function habilitar(Request $request, int $promotor): RedirectResponse
+    {
+        $eu = $this->gerir($request);
+        $usuario = $this->promotor($promotor);
+        $atendidas = app(Operacao::class)->industriasDe(tenant())->pluck('id')->all();
+        $dados = $request->validate([
+            'industrias' => ['nullable', 'array'],
+            'industrias.*' => ['string', Rule::in($atendidas)],
+        ]);
+        $escolhidas = array_values(array_unique($dados['industrias'] ?? []));
+
+        DB::transaction(function () use ($usuario, $escolhidas) {
+            DB::table('promotor_industrias')->where('usuario_id', $usuario->id)->delete();
+            foreach ($escolhidas as $industria) {
+                DB::table('promotor_industrias')->insert(['usuario_id' => $usuario->id, 'industria_id' => $industria, 'created_at' => now(), 'updated_at' => now()]);
+            }
+        });
+        $this->cadastro->auditar($usuario, 'habilitacao_alterada', $eu, ['industrias' => $escolhidas]);
+
+        return redirect()->route('promotores.ficha', $usuario)->with('status', $escolhidas === [] ? 'Promotor habilitado para todas as indústrias.' : 'Habilitação atualizada.');
     }
 
     public function afastar(Request $request, int $promotor): RedirectResponse

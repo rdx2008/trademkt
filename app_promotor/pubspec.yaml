@@ -19,6 +19,7 @@ dependencies:
   image: ^4.12.0
   path: ^1.9.1
   path_provider: ^2.1.6
+  qr_flutter: ^4.1.0
   sqflite: ^2.4.5
   uuid: ^4.6.0
 

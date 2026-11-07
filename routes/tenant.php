@@ -13,6 +13,7 @@ use App\Http\Controllers\Tenant\AuthController;
 use App\Http\Controllers\Tenant\BiController;
 use App\Http\Controllers\Tenant\ContratoVisitaController;
 use App\Http\Controllers\Tenant\ConviteController;
+use App\Http\Controllers\Tenant\CrachaController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\DemandaController;
 use App\Http\Controllers\Tenant\FichaPromotorController;
@@ -57,6 +58,9 @@ Route::middleware([
     Route::get('/convite/{token}', [ConviteController::class, 'mostrar'])->where('token', '[A-Za-z0-9]{48}')->middleware('throttle:30,1')->name('convite.mostrar');
     Route::post('/convite/{token}', [ConviteController::class, 'aceitar'])->where('token', '[A-Za-z0-9]{48}')->middleware('throttle:10,1')->name('convite.aceitar');
     Route::get('/convite', [ConviteController::class, 'pronto'])->name('convite.pronto');
+    // Conferência do crachá: quem lê o QR vê foto, primeiro nome e se o cadastro está ativo.
+    Route::get('/verificar/{codigo}', [CrachaController::class, 'verificar'])->where('codigo', '[A-Za-z0-9]{40}')->middleware('throttle:60,1')->name('cracha.verificar');
+    Route::get('/verificar/{codigo}/foto', [CrachaController::class, 'foto'])->where('codigo', '[A-Za-z0-9]{40}')->middleware('throttle:60,1')->name('cracha.foto');
 
     Route::middleware('guest')->group(function () {
         Route::get('/entrar', [AuthController::class, 'create'])->name('login');
@@ -105,6 +109,8 @@ Route::middleware([
             Route::patch('/promotores/{promotor}/ativo', [PromotorController::class, 'ativo'])->whereNumber('promotor')->name('promotores.ativo');
             Route::post('/promotores/{promotor}/convite', [PromotorController::class, 'convite'])->whereNumber('promotor')->name('promotores.convite');
             Route::get('/promotores/{promotor}', [FichaPromotorController::class, 'show'])->whereNumber('promotor')->name('promotores.ficha');
+            Route::get('/promotores/{promotor}/cracha', [CrachaController::class, 'mostrar'])->whereNumber('promotor')->name('promotores.cracha');
+            Route::put('/promotores/{promotor}/industrias', [FichaPromotorController::class, 'habilitar'])->whereNumber('promotor')->name('promotores.industrias');
             Route::post('/promotores/{promotor}/afastamentos', [FichaPromotorController::class, 'afastar'])->whereNumber('promotor')->name('promotores.afastar');
             Route::delete('/promotores/{promotor}/afastamentos/{afastamento}', [FichaPromotorController::class, 'encerrarAfastamento'])->whereNumber(['promotor', 'afastamento'])->name('promotores.afastamento.remover');
             Route::post('/promotores/{promotor}/ocorrencias', [FichaPromotorController::class, 'ocorrencia'])->whereNumber('promotor')->name('promotores.ocorrencia');
