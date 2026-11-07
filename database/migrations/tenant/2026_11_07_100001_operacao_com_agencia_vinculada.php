@@ -31,6 +31,8 @@ return new class extends Migration
         Schema::table('roteiros', function (Blueprint $table) {
             $table->dropForeign(['promotor_id']);
             $table->dropForeign(['supervisor_id']);
+        });
+        Schema::table('roteiros', function (Blueprint $table) {
             $table->dropUnique(['promotor_id', 'data']);
         });
         Schema::table('roteiros', function (Blueprint $table) {
@@ -47,9 +49,12 @@ return new class extends Migration
             $table->unsignedBigInteger('solicitante_agencia_id')->nullable()->after('solicitante_id');
         });
 
+        // No MySQL a chave estrangeira usa o índice único: ela sai primeiro.
+        Schema::table('alertas', function (Blueprint $table) {
+            $table->dropForeign(['usuario_id']);
+        });
         Schema::table('alertas', function (Blueprint $table) {
             $table->dropUnique(['usuario_id', 'chave']);
-            $table->dropForeign(['usuario_id']);
         });
         Schema::table('alertas', function (Blueprint $table) {
             $table->unsignedBigInteger('agencia_id')->nullable()->after('usuario_id');
