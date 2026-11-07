@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:app_promotor/dados/repositorio_local.dart';
+import 'package:app_promotor/estado_app.dart';
 import 'package:app_promotor/dominio/regras_visita.dart';
 import 'package:app_promotor/modelos/execucao.dart';
 import 'package:app_promotor/modelos/roteiro.dart';
@@ -158,4 +159,15 @@ class LocalizacaoFalsa implements ServicoLocalizacao {
 
     return posicao;
   }
+}
+
+/// Abre a visita como o promotor faz: tirando a foto de antes da gôndola, que é o check-in.
+/// Devolve a mensagem de erro, ou `null` se deu certo.
+Future<String?> abrirVisita(EstadoApp estado, Visita visita) async {
+  final preparo = await estado.prepararFoto(visita, TipoFoto.antes);
+  if (preparo.erro != null) {
+    return preparo.erro;
+  }
+
+  return estado.registrarFoto(visita, TipoFoto.antes, jpegDeTeste(), preparo.posicao!);
 }

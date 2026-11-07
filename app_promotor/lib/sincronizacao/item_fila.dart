@@ -41,6 +41,7 @@ int prioridadeFila(TipoItemFila tipo, {TipoFoto? tipoFoto}) => switch (tipo) {
       TipoItemFila.checkIn => 0,
       TipoItemFila.foto => switch (tipoFoto) {
           TipoFoto.antes => 1,
+          TipoFoto.impedimento => 1,
           TipoFoto.ruptura => 2,
           TipoFoto.depois => 3,
           null => 3,

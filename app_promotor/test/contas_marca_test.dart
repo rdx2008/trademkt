@@ -226,7 +226,7 @@ void main() {
       await entrarEm('alfa');
       final visita = estado.roteiro!.visitas.single;
       servidor.offline = true;
-      expect(await estado.fazerCheckIn(visita), isNull);
+      expect(await abrirVisita(estado, visita), isNull);
       await estado.sincronizar();
       for (var i = 0; i < 100 && estado.sincronizando; i++) {
         await Future<void>.delayed(const Duration(milliseconds: 20));
@@ -237,16 +237,16 @@ void main() {
       servidor.offline = false;
       await entrarEm('beta');
       expect(estado.pendentes, 0, reason: 'a fila da Alfa não aparece na Beta');
-      expect(servidor.das('check-in'), isEmpty);
+      expect(servidor.das('fotos'), isEmpty);
 
-      servidor.responder('POST /api/v1/visitas/1/check-in', 201, {'id': 1, 'status': 'em_andamento', 'check_in': {'lat': -29.168, 'lng': -51.179}});
+      servidor.responder('POST /api/v1/visitas/1/fotos', 201, {'foto': {'id': 1}, 'status': 'em_andamento', 'check_in': {'lat': -29.168, 'lng': -51.179}});
       await estado.trocarConta(estado.contas.first);
       expect(estado.pendentes, greaterThan(0));
       for (var i = 0; i < 100 && estado.pendentes > 0; i++) {
         await Future<void>.delayed(const Duration(milliseconds: 20));
       }
       expect(estado.pendentes, 0);
-      expect(servidor.das('check-in').single.cabecalhos['Authorization'], 'Bearer 1|alfa');
+      expect(servidor.das('fotos').single.cabecalhos['Authorization'], 'Bearer 1|alfa');
     });
 
     test('sair de uma conta mantém as outras e ativa a próxima; sair da última volta ao início', () async {

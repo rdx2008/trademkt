@@ -57,15 +57,6 @@ class _TelaVisitaState extends State<TelaVisita> {
     }
   }
 
-  Future<void> _checkIn(Visita visita) => _executar(() async {
-        final erro = await estado.fazerCheckIn(visita);
-        if (erro == null) {
-          _avisar('Check-in registrado.');
-        }
-
-        return erro;
-      });
-
   Future<void> _tirarFoto(Visita visita, TipoFoto tipo) => _executar(() async {
         final preparo = await estado.prepararFoto(visita, tipo);
         if (preparo.erro != null) {
@@ -129,6 +120,13 @@ class _TelaVisitaState extends State<TelaVisita> {
   }
 
   Future<void> _impedimento(Visita visita) async {
+    // Sem foto de antes não há visita aberta: a foto da entrada da loja faz esse papel.
+    if (!estado.execucao(visita.chave).temCheckIn) {
+      await _tirarFoto(visita, TipoFoto.impedimento);
+      if (!mounted || !estado.execucao(visita.chave).temCheckIn) {
+        return;
+      }
+    }
     final controle = TextEditingController();
     final observacao = await showDialog<String>(
       context: context,
@@ -198,42 +196,36 @@ class _TelaVisitaState extends State<TelaVisita> {
               const SizedBox(height: 12),
               _Passo(
                 numero: 1,
-                titulo: 'Check-in no PDV',
-                feito: e.temCheckIn,
-                child: e.temCheckIn
-                    ? _Linha(
-                        'Check-in às ${formatarDataHoraBr(e.checkIn!.gpsEm)} · ${e.checkIn!.distanciaM.round()} m do PDV',
+                titulo: 'Foto antes da gôndola (abre a visita)',
+                feito: e.temFotoAntes,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (e.temCheckIn)
+                      _Linha(
+                        'Visita aberta às ${formatarDataHoraBr(e.checkIn!.gpsEm)} · ${e.checkIn!.distanciaM.round()} m do PDV',
                         enviado: e.checkIn!.enviado,
                       )
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text('Raio permitido: ${visita.pdv.raioM} m. O GPS é lido só neste momento.'),
-                          const SizedBox(height: 8),
-                          FilledButton.icon(
-                            onPressed: bloqueado || !StatusVisita.aceitaCheckIn(e.statusServidor ?? visita.status)
-                                ? null
-                                : () => _checkIn(visita),
-                            icon: const Icon(Icons.location_on),
-                            label: const Text('Fazer check-in'),
-                          ),
-                        ],
+                    else
+                      Text(
+                        'A foto é o seu check-in: guarda a hora e o local. Raio permitido: ${visita.pdv.raioM} m. '
+                        'O GPS é lido só ao tirar as fotos.',
                       ),
-              ),
-              _Passo(
-                numero: 2,
-                titulo: 'Foto antes',
-                feito: e.temFotoAntes,
-                child: _Fotos(
-                  fotos: e.fotosDoTipo(TipoFoto.antes),
-                  rotulo: 'Tirar foto antes',
-                  onTirar: bloqueado || etapa == EtapaVisita.checkIn || e.temFotoDepois
-                      ? null
-                      : () => _tirarFoto(visita, TipoFoto.antes),
+                    const SizedBox(height: 8),
+                    _Fotos(
+                      fotos: e.fotosDoTipo(TipoFoto.antes),
+                      rotulo: 'Tirar foto antes',
+                      onTirar: bloqueado ||
+                              e.temFotoDepois ||
+                              (!e.temCheckIn && !StatusVisita.aceitaCheckIn(e.statusServidor ?? visita.status))
+                          ? null
+                          : () => _tirarFoto(visita, TipoFoto.antes),
+                    ),
+                  ],
                 ),
               ),
               _Passo(
-                numero: 3,
+                numero: 2,
                 titulo: 'SKUs trabalhados e estoque',
                 feito: e.itens.isNotEmpty && e.itens.every((i) => i.estoque != null),
                 child: Column(
@@ -255,7 +247,7 @@ class _TelaVisitaState extends State<TelaVisita> {
                       }),
                     const SizedBox(height: 8),
                     OutlinedButton.icon(
-                      onPressed: bloqueado || etapa == EtapaVisita.checkIn ? null : () => _selecionarSkus(visita, ruptura: false),
+                      onPressed: bloqueado || etapa == EtapaVisita.fotoAntes ? null : () => _selecionarSkus(visita, ruptura: false),
                       icon: const Icon(Icons.checklist),
                       label: Text(e.itens.isEmpty ? 'Selecionar SKUs' : 'Alterar SKUs (${e.itens.length})'),
                     ),
@@ -263,7 +255,7 @@ class _TelaVisitaState extends State<TelaVisita> {
                 ),
               ),
               _Passo(
-                numero: 4,
+                numero: 3,
                 titulo: 'Foto depois',
                 feito: e.temFotoDepois,
                 child: _Fotos(
@@ -295,7 +287,7 @@ class _TelaVisitaState extends State<TelaVisita> {
                 ExpansionTile(
                   leading: const Icon(Icons.remove_shopping_cart_outlined),
                   title: const Text('Ruptura de estoque'),
-                  subtitle: const Text('Produto em falta no PDV. Exige foto e lista de produtos.'),
+                  subtitle: const Text('Produto em falta no PDV. Exige a foto antes, a foto da ruptura e a lista de produtos.'),
                   childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   children: [
                     _Fotos(
@@ -324,9 +316,13 @@ class _TelaVisitaState extends State<TelaVisita> {
                 ListTile(
                   leading: const Icon(Icons.block),
                   title: const Text('Impedimento de acesso'),
-                  subtitle: const Text('Não foi possível executar a visita. Exige observação.'),
+                  subtitle: Text(
+                    e.temCheckIn
+                        ? 'Não foi possível executar a visita. Exige observação.'
+                        : 'Sem acesso à gôndola: fotografe a entrada da loja e descreva o motivo.',
+                  ),
                   trailing: const Icon(Icons.chevron_right),
-                  enabled: !bloqueado && e.temCheckIn,
+                  enabled: !bloqueado && (e.temCheckIn || StatusVisita.aceitaCheckIn(e.statusServidor ?? visita.status)),
                   onTap: () => _impedimento(visita),
                 ),
               ] else

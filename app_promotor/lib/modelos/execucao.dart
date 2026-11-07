@@ -7,7 +7,10 @@ import '../util/datas.dart';
 enum TipoFoto {
   antes('antes'),
   depois('depois'),
-  ruptura('ruptura');
+  ruptura('ruptura'),
+
+  /// Foto da entrada da loja, só no impedimento de acesso (não há gôndola para fotografar).
+  impedimento('impedimento');
 
   const TipoFoto(this.valor);
 
@@ -19,6 +22,7 @@ enum TipoFoto {
         TipoFoto.antes => 'Antes',
         TipoFoto.depois => 'Depois',
         TipoFoto.ruptura => 'Ruptura',
+        TipoFoto.impedimento => 'Entrada',
       };
 }
 
@@ -256,6 +260,7 @@ class ExecucaoVisita {
   bool get temFotoAntes => fotos.any((f) => f.tipo == TipoFoto.antes);
   bool get temFotoDepois => fotos.any((f) => f.tipo == TipoFoto.depois);
   bool get temFotoRuptura => fotos.any((f) => f.tipo == TipoFoto.ruptura);
+  bool get temFotoImpedimento => fotos.any((f) => f.tipo == TipoFoto.impedimento);
   bool get concluida => conclusao != null;
 
   /// Há algo gravado no aparelho que ainda não chegou ao servidor?

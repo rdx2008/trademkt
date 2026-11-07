@@ -421,42 +421,6 @@ class EstadoApp extends ChangeNotifier {
     unawaited(sincronizar(silencioso: true));
   }
 
-  /// Faz o check-in. Devolve a mensagem de erro, ou `null` se deu certo.
-  Future<String?> fazerCheckIn(Visita visita) async {
-    Posicao posicao;
-    try {
-      posicao = await localizacao.obterPosicao();
-    } on ErroLocalizacao catch (erro) {
-      return erro.mensagem;
-    }
-    final e = execucao(visita.chave);
-    final erro = RegrasVisita.validarCheckIn(visita, e, posicao);
-    if (erro != null) {
-      return erro;
-    }
-    final checkIn = CheckInLocal(
-      lat: posicao.lat,
-      lng: posicao.lng,
-      gpsEm: posicao.gpsEm,
-      aparelhoEm: DateTime.now(),
-      distanciaM: RegrasVisita.distanciaAoPdv(visita.pdv, posicao),
-    );
-    await _gravar(
-      visita.chave,
-      (atual) => atual.copiarCom(checkIn: checkIn),
-      ItemFila(
-        visitaId: visita.chave,
-        tipo: TipoItemFila.checkIn,
-        chave: ItemFila.chaveCheckIn(visita.chave),
-        payload: CheckInPayload.deLocal(checkIn).toJson(),
-        prioridade: prioridadeFila(TipoItemFila.checkIn),
-        criadoEm: DateTime.now(),
-      ),
-    );
-
-    return null;
-  }
-
   /// Lê o GPS e confere se a foto pode ser tirada. Devolve a posição ou a mensagem de erro.
   Future<({Posicao? posicao, String? erro})> prepararFoto(Visita visita, TipoFoto tipo) async {
     Posicao posicao;
@@ -470,7 +434,8 @@ class EstadoApp extends ChangeNotifier {
     return (posicao: erro == null ? posicao : null, erro: erro);
   }
 
-  /// Grava a foto capturada (bytes JPEG da câmera) com marca d'água e a põe na fila.
+  /// Grava a foto capturada (bytes JPEG da câmera) com marca d'água e a põe na fila. A foto de
+  /// antes da gôndola (ou da entrada, no impedimento) é o check-in: hora e posição dela abrem a visita.
   Future<String?> registrarFoto(Visita visita, TipoFoto tipo, Uint8List bytes, Posicao posicao) async {
     final e = execucao(visita.chave);
     final erro = RegrasVisita.validarFoto(visita, e, tipo, posicao);
@@ -500,9 +465,19 @@ class EstadoApp extends ChangeNotifier {
       gpsEm: posicao.gpsEm,
       aparelhoEm: DateTime.now(),
     );
+    final abreVisita = !e.temCheckIn && (tipo == TipoFoto.antes || tipo == TipoFoto.impedimento);
+    final checkIn = abreVisita
+        ? CheckInLocal(
+            lat: posicao.lat,
+            lng: posicao.lng,
+            gpsEm: posicao.gpsEm,
+            aparelhoEm: foto.aparelhoEm,
+            distanciaM: RegrasVisita.distanciaAoPdv(visita.pdv, posicao),
+          )
+        : null;
     await _gravar(
       visita.chave,
-      (atual) => atual.copiarCom(fotos: [...atual.fotos, foto]),
+      (atual) => atual.copiarCom(fotos: [...atual.fotos, foto], checkIn: atual.checkIn ?? checkIn),
       ItemFila(
         visitaId: visita.chave,
         tipo: TipoItemFila.foto,

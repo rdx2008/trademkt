@@ -45,7 +45,7 @@ void main() {
     expect(copia.visitas.last.chave, 'gaboardi:1', reason: 'a empresa sobrevive ao cache local');
   });
 
-  test('check-in de uma visita da agência vai para a rota da indústria', () async {
+  test('foto de antes (check-in) de uma visita da agência vai para a rota da indústria', () async {
     final servidor = ServidorFalso();
     final hoje = formatarDataIso(DateTime.now());
     final pasta = await Directory.systemTemp.createTemp('app_promotor_agencia');
@@ -63,7 +63,7 @@ void main() {
       'usuario': {'id': 2, 'nome': 'João', 'email': 'joao@sul.test', 'perfil': 'promotor', 'tipo_vinculo': 'clt', 'agencia': {'id': 1, 'nome': 'Sul'}, 'empresa': {'codigo': 'sul', 'nome': 'Agência Sul'}},
     });
     servidor.responder('GET /api/v1/roteiro', 200, roteiroJson(data: hoje, visitas: [visitaJson(id: 1)..['industria'] = 'gaboardi']));
-    servidor.responder('POST /api/v1/industrias/gaboardi/visitas/1/check-in', 201, {'id': 1, 'status': 'em_andamento', 'check_in': {'lat': -29.168, 'lng': -51.179}});
+    servidor.responder('POST /api/v1/industrias/gaboardi/visitas/1/fotos', 201, {'foto': {'id': 1}, 'status': 'em_andamento', 'check_in': {'lat': -29.168, 'lng': -51.179}});
 
     await estado.carregar();
     await estado.descobrirEmpresa('sul');
@@ -72,11 +72,11 @@ void main() {
     final visita = estado.roteiro!.visitas.single;
     expect(visita.chave, 'gaboardi:1');
 
-    expect(await estado.fazerCheckIn(visita), isNull);
+    expect(await abrirVisita(estado, visita), isNull);
     for (var i = 0; i < 100 && estado.pendentes > 0; i++) {
       await Future<void>.delayed(const Duration(milliseconds: 20));
     }
-    expect(servidor.das('check-in').single.caminho, '/api/v1/industrias/gaboardi/visitas/1/check-in');
+    expect(servidor.das('fotos').single.caminho, '/api/v1/industrias/gaboardi/visitas/1/fotos');
     expect(estado.execucao('gaboardi:1').checkIn!.enviado, isTrue);
     await estado.repositorio.fechar();
     await pasta.delete(recursive: true);

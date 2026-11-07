@@ -48,8 +48,8 @@ void main() {
       expect(payload.nomeArquivo, '1d0b0d4e-4bd9-4d3c-9b1a-8a3a8f6f3e21.jpg');
     });
 
-    test('tipos aceitos pela API: antes, depois e ruptura', () {
-      expect(TipoFoto.values.map((t) => t.valor), ['antes', 'depois', 'ruptura']);
+    test('tipos aceitos pela API: antes, depois, ruptura e impedimento (entrada)', () {
+      expect(TipoFoto.values.map((t) => t.valor), ['antes', 'depois', 'ruptura', 'impedimento']);
     });
 
     test('vai e volta da fila preservando o caminho do arquivo', () {

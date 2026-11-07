@@ -39,8 +39,8 @@ Só o promotor usa o app; os demais usam o painel web (responsivo).
 ## Regras de negócio já fechadas
 
 - Visitas recorrentes por contrato (1, 2 ou 3x/semana) e sob demanda (prazo: mesmo dia).
-- Fluxo da visita: check-in por GPS no raio do PDV (padrão 200 m, configurável 150–300 m) →
-  foto antes → reposição/arrumação → SKUs trabalhados + situação de estoque
+- Fluxo da visita: foto antes da gôndola, que é o check-in (hora e GPS da foto, dentro do raio do
+  PDV, padrão 200 m, configurável 150–300 m; sem botão de check-in nem selfie) → reposição/arrumação → SKUs trabalhados + situação de estoque
   ("tem estoque" / "estoque somente na gôndola") → foto depois → enviar.
 - GPS só no check-in e nas fotos de antes e depois. Sem rastreio contínuo.
 - Fotos só pela câmera do app, com marca d'água (data, hora, coordenadas, PDV). Bloquear GPS falso.
@@ -136,8 +136,9 @@ Referência: `docs/PAINEIS.md`.
 
 Referência e contratos completos: `docs/FASE-3.md`.
 
-- `POST /api/v1/visitas/{visita}/check-in`: promotor ativo atribuído à visita, GPS,
-  cálculo de raio no servidor, horários GPS/aparelho/recebimento e reenvio idempotente.
+- A foto `antes` abre a visita (check-in pela foto): promotor ativo atribuído, GPS, raio calculado no
+  servidor, horários GPS/aparelho/recebimento e reenvio idempotente. No impedimento de acesso, a foto
+  da entrada (`tipo=impedimento`) faz o mesmo. `POST .../check-in` fica só para o APK anterior.
 - `POST /api/v1/visitas/{visita}/fotos`: fotos antes/depois/ruptura, coordenadas,
   horário com fuso e UUID. Valida raio e sequência; JPEG/PNG até 5 MB, 4096 px por
   dimensão e 8 milhões de pixels. GD recodifica em JPEG com marca d'água, removendo

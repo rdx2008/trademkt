@@ -6,8 +6,9 @@ import '../modelos/execucao.dart';
 import '../modelos/roteiro.dart';
 import '../util/geo.dart';
 
-/// Etapa em que a visita está, para a tela saber o que oferecer.
-enum EtapaVisita { checkIn, fotoAntes, trabalho, concluida }
+/// Etapa em que a visita está, para a tela saber o que oferecer. A foto de antes da gôndola
+/// é o check-in: sem ela a visita ainda não foi aberta.
+enum EtapaVisita { fotoAntes, trabalho, concluida }
 
 /// Posição lida do GPS do aparelho.
 class Posicao {
@@ -40,10 +41,7 @@ class RegrasVisita {
     if (e.concluida) {
       return EtapaVisita.concluida;
     }
-    if (!e.temCheckIn) {
-      return EtapaVisita.checkIn;
-    }
-    if (!e.temFotoAntes && !e.temFotoRuptura) {
+    if (!e.temCheckIn || (!e.temFotoAntes && !e.temFotoRuptura && !e.temFotoImpedimento)) {
       return EtapaVisita.fotoAntes;
     }
 
@@ -62,14 +60,15 @@ class RegrasVisita {
     return null;
   }
 
-  /// Motivo pelo qual o check-in não pode ser feito agora, ou `null` se pode.
+  /// Motivo pelo qual a visita não pode ser aberta agora, ou `null` se pode. Vale para a foto de
+  /// antes (ou da entrada, no impedimento), que é o check-in.
   static String? validarCheckIn(Visita visita, ExecucaoVisita e, Posicao p, {DateTime? agora}) {
     final bloqueio = validarPosicao(p);
     if (bloqueio != null) {
       return bloqueio;
     }
     if (e.temCheckIn) {
-      return 'O check-in desta visita já foi feito.';
+      return 'Esta visita já foi aberta.';
     }
     final status = e.statusServidor ?? visita.status;
     if (!StatusVisita.aceitaCheckIn(status)) {
@@ -81,7 +80,7 @@ class RegrasVisita {
     }
     final distancia = distanciaMetros(p.lat, p.lng, pdv.lat!, pdv.lng!);
     if (distancia > pdv.raioM) {
-      return 'Você está a ${distancia.round()} m do PDV. O check-in só vale até ${pdv.raioM} m.';
+      return 'Você está a ${distancia.round()} m do PDV. A foto só vale até ${pdv.raioM} m da loja.';
     }
     final hoje = agora ?? DateTime.now();
     if (p.gpsEm.isAfter(hoje.add(toleranciaFuturo))) {
@@ -104,7 +103,12 @@ class RegrasVisita {
       return 'A visita já foi concluída.';
     }
     if (!e.temCheckIn) {
-      return 'Faça o check-in antes de fotografar.';
+      // A foto de antes da gôndola abre a visita; a da entrada faz o mesmo no impedimento.
+      if (tipo == TipoFoto.antes || tipo == TipoFoto.impedimento) {
+        return validarCheckIn(visita, e, p);
+      }
+
+      return 'Tire primeiro a foto de antes da gôndola: ela abre a visita.';
     }
     final pdv = visita.pdv;
     if (pdv.temCoordenadas && distanciaMetros(p.lat, p.lng, pdv.lat!, pdv.lng!) > pdv.raioM) {
@@ -127,6 +131,7 @@ class RegrasVisita {
           return 'A foto de depois precisa ter horário posterior à foto de antes.';
         }
       case TipoFoto.ruptura:
+      case TipoFoto.impedimento:
         break;
     }
 
@@ -145,7 +150,7 @@ class RegrasVisita {
       return 'A visita já foi concluída.';
     }
     if (!e.temCheckIn) {
-      return 'Faça o check-in antes de concluir.';
+      return 'Tire a foto de antes da gôndola para abrir a visita.';
     }
     switch (tipo) {
       case TipoConclusao.normal:

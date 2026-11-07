@@ -4,6 +4,18 @@ Referência: `ESCOPO.md`. Entregar em etapas pequenas, com testes.
 
 ## 3.1 Check-in na API
 
+**Check-in pela foto da gôndola (07/11/2026).** No app não há botão de check-in: a foto de
+**antes da gôndola** é o check-in. Ao receber essa foto numa visita ainda sem check-in
+(`POST /api/v1/visitas/{visita}/fotos`, `tipo=antes`), o servidor valida o raio do PDV (Haversine),
+o dia e a hora do GPS (mesmas regras abaixo) e abre a visita: status `em_andamento` e `check_in`
+com a posição e a hora da própria foto, mais `origem: "foto"` e `foto_uuid`. A resposta traz `foto`,
+`status` e `check_in`. No impedimento de acesso, em que não há gôndola, a foto da entrada da loja
+(`tipo=impedimento`) abre a visita do mesmo modo. `depois` e `ruptura` exigem a visita aberta (409:
+"Tire primeiro a foto de antes da gôndola"). Foto fora do raio ou de GPS simulado é recusada (422) e
+nada é gravado. Reenvio com o mesmo UUID devolve a foto sem mexer no check-in. A duração da visita
+conta da foto de antes. O endpoint `POST /api/v1/visitas/{visita}/check-in` continua valendo, só
+para o APK anterior.
+
 - `POST /api/v1/visitas/{visita}/check-in`, com token do promotor atribuído.
 - Conferir coordenadas pelo cálculo de Haversine e pelo raio cadastrado no PDV.
 - Registrar coordenadas, distância, hora do GPS, hora do aparelho e recebimento no servidor.
@@ -129,8 +141,9 @@ fase 8). Textos em português. Validado com `flutter analyze` e `flutter test` (
    Itens pendentes de uma conta só são enviados enquanto ela está ativa.
 3. **Roteiro**: `GET /roteiro?data=AAAA-MM-DD` salvo em cache por dia; sem rede, o roteiro
    salvo continua disponível. Setas trocam o dia; puxar para baixo atualiza.
-4. **Visita**: check-in → foto antes → SKUs com estoque → foto depois → concluir; ou ruptura
-   (foto de ruptura + produtos) ou impedimento (observação). Cada passo valida localmente as
+4. **Visita**: foto antes da gôndola (é o check-in: guarda hora e local) → SKUs com estoque → foto
+   depois → concluir; ou ruptura (foto antes + foto de ruptura + produtos) ou impedimento (foto da
+   entrada + observação). Cada passo valida localmente as
    mesmas regras do servidor antes de gravar (`RegrasVisita`).
 5. **GPS**: lido apenas no check-in e em cada foto. Posição com `isMocked` (mock location)
    é bloqueada e nada é gravado; por isso `gps_simulado` enviado é sempre `false`.
@@ -138,8 +151,8 @@ fase 8). Textos em português. Validado com `flutter analyze` e `flutter test` (
 6. **Fotos**: só pela câmera do app (`camera`), nunca da galeria. A imagem é reduzida a no
    máximo 1600 px, recebe faixa com PDV, tipo, data/hora do GPS e coordenadas e é gravada
    como JPEG na pasta privada do app até o servidor confirmar.
-7. **Fila**: cada gravação vira um item com UUID (check-in usa `check-in:<visita>`), payload
-   já serializado e prioridade. Ordem de envio por visita: check-in → fotos antes → fotos de
+7. **Fila**: cada gravação vira um item com UUID, payload
+   já serializado e prioridade. Ordem de envio por visita: fotos antes (e da entrada) → fotos de
    ruptura → fotos depois → conclusão; visitas na ordem em que começaram. O envio roda após
    cada gravação, ao abrir o app, ao voltar do segundo plano e pelo botão de sincronizar.
 8. **Reenvio e reconciliação**: o payload nunca muda, então o reenvio é idempotente

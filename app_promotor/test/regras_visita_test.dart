@@ -34,7 +34,7 @@ void main() {
     });
 
     test('bloqueia check-in repetido, visita encerrada e PDV sem coordenadas', () {
-      expect(RegrasVisita.validarCheckIn(visitaPadrao(), ExecucaoVisita(visitaId: '1', checkIn: checkInPadrao()), posicaoNoPdv()), contains('já foi feito'));
+      expect(RegrasVisita.validarCheckIn(visitaPadrao(), ExecucaoVisita(visitaId: '1', checkIn: checkInPadrao()), posicaoNoPdv()), contains('já foi aberta'));
       expect(RegrasVisita.validarCheckIn(visitaPadrao(status: 'realizada'), const ExecucaoVisita(visitaId: '1'), posicaoNoPdv()), contains('Realizada'));
       final semCoordenadas = visitaPadrao().copiarCom();
       expect(semCoordenadas.pdv.temCoordenadas, isTrue);
@@ -61,8 +61,17 @@ void main() {
   group('fotos', () {
     final comCheckIn = ExecucaoVisita(visitaId: '1', checkIn: checkInPadrao(gpsEm: t0));
 
-    test('exigem check-in', () {
-      expect(RegrasVisita.validarFoto(visitaPadrao(), const ExecucaoVisita(visitaId: '1'), TipoFoto.antes, posicaoNoPdv(gpsEm: t1)), contains('check-in'));
+    test('a foto de antes (ou da entrada) abre a visita; depois e ruptura exigem a visita aberta', () {
+      const semCheckIn = ExecucaoVisita(visitaId: '1');
+      expect(RegrasVisita.validarFoto(visitaPadrao(), semCheckIn, TipoFoto.antes, posicaoNoPdv(gpsEm: t1)), isNull);
+      expect(RegrasVisita.validarFoto(visitaPadrao(), semCheckIn, TipoFoto.impedimento, posicaoNoPdv(gpsEm: t1)), isNull);
+      for (final tipo in [TipoFoto.depois, TipoFoto.ruptura]) {
+        expect(RegrasVisita.validarFoto(visitaPadrao(), semCheckIn, tipo, posicaoNoPdv(gpsEm: t1)), contains('foto de antes da gôndola'));
+      }
+      // Abrir a visita pela foto vale as mesmas regras do check-in: raio, GPS simulado e situação.
+      expect(RegrasVisita.validarFoto(visitaPadrao(), semCheckIn, TipoFoto.antes, posicaoNoPdv(gpsEm: t1, lat: -29.178)), contains('m da loja'));
+      expect(RegrasVisita.validarFoto(visitaPadrao(), semCheckIn, TipoFoto.antes, posicaoNoPdv(gpsEm: t1, simulada: true)), contains('simulada'));
+      expect(RegrasVisita.validarFoto(visitaPadrao(status: 'realizada'), semCheckIn, TipoFoto.antes, posicaoNoPdv(gpsEm: t1)), contains('Realizada'));
       expect(RegrasVisita.validarFoto(visitaPadrao(), comCheckIn, TipoFoto.antes, posicaoNoPdv(gpsEm: t1)), isNull);
     });
 
@@ -126,7 +135,7 @@ void main() {
     });
 
     test('sem check-in ou já concluída não conclui; SKU repetido é recusado', () {
-      expect(RegrasVisita.validarConclusao(const ExecucaoVisita(visitaId: '1'), TipoConclusao.impedimento, itens: const [], observacao: 'x', finalizadaEm: t3), contains('check-in'));
+      expect(RegrasVisita.validarConclusao(const ExecucaoVisita(visitaId: '1'), TipoConclusao.impedimento, itens: const [], observacao: 'x', finalizadaEm: t3), contains('foto de antes'));
       final concluida = pronta.copiarCom(conclusao: ConclusaoLocal(uuid: 'c', tipo: TipoConclusao.normal, finalizadaEm: t3, observacao: '', itens: itens));
       expect(RegrasVisita.validarConclusao(concluida, TipoConclusao.normal, itens: itens, observacao: '', finalizadaEm: t3), contains('já foi concluída'));
       expect(
@@ -136,10 +145,10 @@ void main() {
     });
   });
 
-  test('etapa atual segue o fluxo check-in → foto antes → trabalho → concluída', () {
-    expect(RegrasVisita.etapa(const ExecucaoVisita(visitaId: '1')), EtapaVisita.checkIn);
+  test('etapa atual segue o fluxo foto antes (check-in) → trabalho → concluída', () {
+    expect(RegrasVisita.etapa(const ExecucaoVisita(visitaId: '1')), EtapaVisita.fotoAntes);
     final comCheckIn = ExecucaoVisita(visitaId: '1', checkIn: checkInPadrao(gpsEm: t0));
-    expect(RegrasVisita.etapa(comCheckIn), EtapaVisita.fotoAntes);
+    expect(RegrasVisita.etapa(comCheckIn), EtapaVisita.fotoAntes, reason: 'check-in antigo, ainda sem foto de antes');
     expect(RegrasVisita.etapa(comCheckIn.copiarCom(fotos: [fotoPadrao(TipoFoto.antes)])), EtapaVisita.trabalho);
     expect(RegrasVisita.etapa(comCheckIn.copiarCom(fotos: [fotoPadrao(TipoFoto.ruptura)])), EtapaVisita.trabalho);
     final concluida = comCheckIn.copiarCom(conclusao: ConclusaoLocal(uuid: 'c', tipo: TipoConclusao.impedimento, finalizadaEm: t3, observacao: 'x', itens: const []));

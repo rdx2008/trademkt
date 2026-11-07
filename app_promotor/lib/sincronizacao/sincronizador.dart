@@ -152,12 +152,24 @@ class Sincronizador {
           for (final entrada in item.payload.entries)
             if (entrada.key != 'caminho') entrada.key: entrada.value.toString(),
         };
-        await api.enviarFoto(item.visitaId, campos, bytes: bytes, nomeArquivo: '${item.chave}.jpg');
+        final resposta = await api.enviarFoto(item.visitaId, campos, bytes: bytes, nomeArquivo: '${item.chave}.jpg');
         await _confirmar(item);
-        await _atualizarExecucao(
-          item.visitaId,
-          (e) => e.copiarCom(fotos: e.fotos.map((f) => f.uuid == item.chave ? f.copiarCom(enviada: true) : f).toList()),
-        );
+        await _atualizarExecucao(item.visitaId, (e) {
+          final atualizada = e.copiarCom(
+            fotos: e.fotos.map((f) => f.uuid == item.chave ? f.copiarCom(enviada: true) : f).toList(),
+          );
+          // A foto de antes é o check-in: ao ser aceita, o servidor abriu a visita.
+          final foto = e.fotos.where((f) => f.uuid == item.chave).firstOrNull;
+          final checkIn = e.checkIn;
+          if (foto != null && checkIn != null && !checkIn.enviado && foto.gpsEm == checkIn.gpsEm) {
+            return atualizada.copiarCom(
+              checkIn: checkIn.copiarCom(enviado: true),
+              statusServidor: resposta.corpo['status'] as String? ?? atualizada.statusServidor,
+            );
+          }
+
+          return atualizada;
+        });
       case TipoItemFila.conclusao:
         final resposta = await api.concluir(item.visitaId, item.payload);
         await _confirmar(item);

@@ -44,7 +44,7 @@ void main() {
     });
     servidor.responder('GET /api/v1/roteiro', 200, roteiroJson(data: hoje));
     servidor.responder('POST /api/v1/visitas/1/check-in', 201, {'id': 1, 'status': 'em_andamento', 'check_in': {'lat': -29.168, 'lng': -51.179}});
-    servidor.responder('POST /api/v1/visitas/1/fotos', 201, {'foto': {'id': 1}});
+    servidor.responder('POST /api/v1/visitas/1/fotos', 201, {'foto': {'id': 1}, 'status': 'em_andamento', 'check_in': {'lat': -29.168, 'lng': -51.179}});
     servidor.responder('POST /api/v1/visitas/1/concluir', 201, {'visita': {'id': 1, 'status': 'realizada'}});
     servidor.responder('POST /api/v1/logout', 200, {'message': 'Sessão encerrada.'});
   });
@@ -85,24 +85,38 @@ void main() {
     expect(estado.aviso, contains('Sem conexão'));
   });
 
-  test('localização simulada bloqueia o check-in e nada entra na fila', () async {
+  test('localização simulada bloqueia a foto de antes (o check-in) e nada entra na fila', () async {
     await entrar();
     gps.posicao = posicaoNoPdv(simulada: true);
 
-    final erro = await estado.fazerCheckIn(estado.roteiro!.visitas.single);
+    final erro = await abrirVisita(estado, estado.roteiro!.visitas.single);
 
     expect(erro, contains('simulada'));
     expect(estado.execucao('1').temCheckIn, isFalse);
     expect(await estado.repositorio.contarPendentes(), 0);
-    expect(servidor.das('check-in'), isEmpty);
+    expect(servidor.das('fotos'), isEmpty);
   });
 
-  test('check-in fora do raio é recusado no aparelho antes de chegar ao servidor', () async {
+  test('foto de antes fora do raio é recusada no aparelho antes de chegar ao servidor', () async {
     await entrar();
     gps.posicao = posicaoNoPdv(lat: -29.178);
 
-    expect(await estado.fazerCheckIn(estado.roteiro!.visitas.single), contains('m do PDV'));
-    expect(servidor.das('check-in'), isEmpty);
+    expect(await abrirVisita(estado, estado.roteiro!.visitas.single), contains('m do PDV'));
+    expect(estado.execucao('1').temCheckIn, isFalse);
+    expect(servidor.das('fotos'), isEmpty);
+  });
+
+  test('depois e ruptura só depois da foto de antes, que abre a visita', () async {
+    await entrar();
+    final visita = estado.roteiro!.visitas.single;
+
+    for (final tipo in [TipoFoto.depois, TipoFoto.ruptura]) {
+      expect((await estado.prepararFoto(visita, tipo)).erro, contains('foto de antes da gôndola'));
+    }
+    expect(await abrirVisita(estado, visita), isNull);
+    expect(estado.execucao('1').temCheckIn, isTrue);
+    expect(estado.statusExibido(visita), 'em_andamento');
+    expect((await estado.prepararFoto(visita, TipoFoto.ruptura)).erro, isNull);
   });
 
   test('visita completa: check-in, fotos com marca d\'água, SKUs e conclusão sincronizados na ordem', () async {
@@ -112,14 +126,18 @@ void main() {
     final inicio = DateTime.now().subtract(const Duration(minutes: 10));
     gps.posicao = posicaoNoPdv(gpsEm: inicio);
 
-    expect(await estado.fazerCheckIn(visita), isNull);
-    await _aguardarFila(estado);
-    expect(estado.execucao('1').checkIn!.enviado, isTrue);
-
     gps.posicao = posicaoNoPdv(gpsEm: inicio.add(const Duration(minutes: 1)));
     final preparoAntes = await estado.prepararFoto(visita, TipoFoto.antes);
     expect(preparoAntes.erro, isNull);
     expect(await estado.registrarFoto(visita, TipoFoto.antes, jpegDeTeste(), preparoAntes.posicao!), isNull);
+
+    // A foto de antes é o check-in: hora e posição dela, sem botão nem requisição à parte.
+    final checkIn = estado.execucao('1').checkIn!;
+    expect(checkIn.gpsEm.millisecondsSinceEpoch ~/ 1000, inicio.add(const Duration(minutes: 1)).millisecondsSinceEpoch ~/ 1000);
+    expect(checkIn.lat, -29.168);
+    await _aguardarFila(estado);
+    expect(estado.execucao('1').checkIn!.enviado, isTrue);
+    expect(estado.statusExibido(visita), 'em_andamento');
 
     // Foto depois antes de existir foto antes não acontece; aqui a sequência é válida.
     await estado.salvarItens('1', const [ItemTrabalhado(skuId: 10, estoque: SituacaoEstoque.somenteGondola)]);
@@ -138,7 +156,8 @@ void main() {
     expect(estado.pendentes, 0);
 
     final envios = servidor.chamadas.where((c) => c.caminho.contains('visitas/1')).map((c) => c.caminho.split('/').last).toList();
-    expect(envios, ['check-in', 'fotos', 'fotos', 'concluir']);
+    expect(envios, ['fotos', 'fotos', 'concluir']);
+    expect(servidor.das('check-in'), isEmpty, reason: 'o app não tem mais check-in à parte');
     expect(servidor.das('concluir').single.json['itens'], [
       {'sku_id': 10, 'estoque': 'somente_gondola'},
     ]);
@@ -150,7 +169,13 @@ void main() {
     await entrar();
     servidor.responder('POST /api/v1/visitas/1/concluir', 201, {'visita': {'id': 1, 'status': 'em_atencao'}});
     final visita = estado.roteiro!.visitas.single;
-    await estado.fazerCheckIn(visita);
+
+    // Sem gôndola para fotografar, a foto da entrada da loja abre a visita.
+    expect(await estado.concluir(visita, TipoConclusao.impedimento, observacao: 'x'), contains('foto de antes'));
+    final preparo = await estado.prepararFoto(visita, TipoFoto.impedimento);
+    expect(preparo.erro, isNull);
+    expect(await estado.registrarFoto(visita, TipoFoto.impedimento, jpegDeTeste(), preparo.posicao!), isNull);
+    expect(estado.execucao('1').temCheckIn, isTrue);
 
     expect(await estado.concluir(visita, TipoConclusao.impedimento, observacao: ''), contains('Descreva'));
     expect(await estado.concluir(visita, TipoConclusao.impedimento, observacao: 'Loja fechada para inventário'), isNull);
@@ -168,7 +193,7 @@ void main() {
     final visita = estado.roteiro!.visitas.single;
     servidor.offline = true;
 
-    expect(await estado.fazerCheckIn(visita), isNull);
+    expect(await abrirVisita(estado, visita), isNull);
     final preparo = await estado.prepararFoto(visita, TipoFoto.ruptura);
     expect(await estado.registrarFoto(visita, TipoFoto.ruptura, jpegDeTeste(), preparo.posicao!), isNull);
     expect(await estado.concluir(visita, TipoConclusao.ruptura, itens: const [ItemTrabalhado(skuId: 11)]), isNull);
@@ -194,16 +219,16 @@ void main() {
   test('401 na sincronização pede login de novo sem perder a fila', () async {
     await entrar();
     final visita = estado.roteiro!.visitas.single;
-    servidor.responder('POST /api/v1/visitas/1/check-in', 401, {'message': 'Unauthenticated.'});
+    servidor.responder('POST /api/v1/visitas/1/fotos', 401, {'message': 'Unauthenticated.'});
 
-    await estado.fazerCheckIn(visita);
+    await abrirVisita(estado, visita);
     await _aguardarFila(estado);
 
     expect(estado.sessaoExpirada, isTrue);
     expect(estado.autenticado, isFalse);
     expect(estado.pendentes, 1);
 
-    servidor.responder('POST /api/v1/visitas/1/check-in', 201, {'id': 1, 'status': 'em_andamento', 'check_in': {}});
+    servidor.responder('POST /api/v1/visitas/1/fotos', 201, {'foto': {'id': 1}, 'status': 'em_andamento', 'check_in': {}});
     await estado.entrar(email: 'promotor@xyz.test', senha: 'senha1234');
     await _aguardarFila(estado);
 
