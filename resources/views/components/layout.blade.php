@@ -1,3 +1,7 @@
+@if (function_exists('tenancy') && tenancy()->initialized && ! in_array(request()->getHost(), config('tenancy.central_domains'), true))
+    {{-- Telas dos clientes usam o tema novo; o painel do super admin (central) mantém o visual próprio. --}}
+    <x-layout-cliente :titulo="$titulo ?? null" :marca="$marca ?? null" :visitante="$visitante ?? false">{{ $slot }}</x-layout-cliente>
+@else
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -6,16 +10,20 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $titulo ?? 'Trade' }} · {{ $marca ?? config('app.name') }}</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    @stack('head')
 </head>
-<body>
+<body @class(['com-navegacao' => isset($nav)])>
+    <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
     @isset($nav)
         <header class="topo">
-            <span class="marca">{{ $marca ?? config('app.name') }}</span>
-            <nav>{{ $nav }}</nav>
+            <div class="marca"><span class="marca-produto">TRADE <b>PROMO</b></span><span class="marca-cliente">{{ $marca ?? config('app.name') }}</span></div>
+            <button type="button" class="menu-alternar" aria-controls="menu-principal" aria-expanded="false" onclick="const aberto = this.getAttribute('aria-expanded') !== 'true'; this.setAttribute('aria-expanded', String(aberto)); document.getElementById('menu-principal').classList.toggle('aberto', aberto)">Menu <span aria-hidden="true">☰</span></button>
+            <nav id="menu-principal" aria-label="Navegação principal">{{ $nav }}</nav>
+            <div class="rodape-menu">Execução no ponto de venda<br><span>Trade marketing conectado.</span></div>
         </header>
     @endisset
 
-    <main>
+    <main id="conteudo" tabindex="-1">
         @if (session('status'))
             <div class="aviso ok">{{ session('status') }}</div>
         @endif
@@ -32,5 +40,8 @@
 
         {{ $slot }}
     </main>
+
+    @stack('scripts')
 </body>
 </html>
+@endif

@@ -10,3 +10,4 @@ storage/framework/views/*
 database/*.sqlite
 database/teste_cli_*
 tests
+database/dev_cli_*

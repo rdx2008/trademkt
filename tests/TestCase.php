@@ -3,9 +3,14 @@
 namespace Tests;
 
 use App\Enums\Perfil;
+use App\Models\Agencia;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Marca\Aparencia;
+use App\Services\Operacao\Equipe;
 use App\Services\ProvisionarCliente;
+use App\Services\Rede\Vinculos;
+use App\Support\Contexto;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
@@ -27,6 +32,9 @@ abstract class TestCase extends BaseTestCase
 
     protected function tearDown(): void
     {
+        Aparencia::esquecer();
+        Equipe::esquecer();
+        Contexto::limpar();
         if (tenancy()->initialized) {
             tenancy()->end();
         }
@@ -60,6 +68,34 @@ abstract class TestCase extends BaseTestCase
         ]);
 
         return $resultado['tenant'];
+    }
+
+    /**
+     * Vincula uma agência a uma indústria (como o super admin faz) e devolve a linha da
+     * agência no banco da indústria.
+     */
+    protected function vincular(Tenant $industria, Tenant $agencia, array $regioes = []): Agencia
+    {
+        app(Vinculos::class)->criar($industria, $agencia, $regioes);
+
+        return $industria->run(fn () => Agencia::where('agencia_tenant_id', $agencia->id)->sole());
+    }
+
+    /** Gera um CNPJ válido (só dígitos) a partir de um número base. */
+    protected static function cnpj(int $base): string
+    {
+        $numeros = str_pad((string) $base, 8, '0', STR_PAD_LEFT).'0001';
+
+        foreach ([[5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2], [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]] as $pesos) {
+            $soma = 0;
+            foreach ($pesos as $i => $peso) {
+                $soma += (int) $numeros[$i] * $peso;
+            }
+            $resto = $soma % 11;
+            $numeros .= $resto < 2 ? '0' : (string) (11 - $resto);
+        }
+
+        return $numeros;
     }
 
     /** Cria um usuário dentro do cliente (fora do contexto dele). */

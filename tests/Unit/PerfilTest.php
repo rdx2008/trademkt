@@ -20,8 +20,8 @@ class PerfilTest extends TestCase
 
     public function test_quem_gerencia_quem(): void
     {
-        $this->assertCount(7, Perfil::AdminInstalacao->podeGerenciar());
-        $this->assertSame([Perfil::Supervisor, Perfil::Promotor], Perfil::AdminAgencia->podeGerenciar());
+        $this->assertCount(6, Perfil::AdminInstalacao->podeGerenciar());
+        $this->assertSame([Perfil::Supervisor], Perfil::AdminAgencia->podeGerenciar());
         $this->assertSame([Perfil::Representante], Perfil::GerenteTrade->podeGerenciar());
         $this->assertSame([], Perfil::Promotor->podeGerenciar());
     }

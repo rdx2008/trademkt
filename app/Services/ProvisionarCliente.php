@@ -95,7 +95,7 @@ class ProvisionarCliente
     {
         $centrais = config('tenancy.central_domains');
 
-        return Validator::make($dados, [
+        $validados = Validator::make($dados, [
             'id' => ['required', 'regex:/^[a-z][a-z0-9_]{2,39}$/', Rule::unique('tenants', 'id')],
             'nome' => ['required', 'string', 'max:120'],
             'tipo' => ['required', Rule::enum(TipoInstalacao::class)],
@@ -117,6 +117,8 @@ class ProvisionarCliente
             'dominios.*.unique' => 'O domínio :input já está em uso.',
             'dominios.*.not_in' => 'O domínio :input é do painel central.',
         ])->validate();
+
+        return $validados;
     }
 
     private function criarPastas(Tenant $tenant): void

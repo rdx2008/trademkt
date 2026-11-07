@@ -56,12 +56,22 @@ Testes (SQLite, não precisam de MySQL):
 php artisan test
 ```
 
+### Testes automáticos no GitHub
+
+O workflow **Testes**, na aba **Actions**, executa a suíte unitária e funcional em cada push
+e pull request. Usa Linux, PHP 8.4 (como o Docker de produção), as versões do `composer.lock`
+e bancos SQLite de teste. Não precisa de MySQL, Redis nem credenciais de produção.
+
+O resultado inclui os testes de visibilidade da indústria e de separação entre as operações
+das agências. Confira a execução correspondente ao commit antes de incorporar a branch à `main`.
+
 ## Deploy no Coolify
 
 1. **Novo recurso → Docker Compose**, apontando para este repositório.
 2. **Variáveis de ambiente** (no Coolify): `APP_KEY` (gere com `php artisan key:generate --show`),
    `APP_URL`, `CENTRAL_DOMAINS`, `DB_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `SUPER_ADMIN_EMAIL`,
-   `SUPER_ADMIN_SENHA`. As demais têm padrão no `docker-compose.yml`.
+   `SUPER_ADMIN_SENHA`. Opcional: `GOOGLE_MAPS_API_KEY` (localiza o endereço do PDV; sem ela, o
+   pino é posicionado à mão no mapa). As demais têm padrão no `docker-compose.yml`.
 3. **Domínios do serviço `app`**: o domínio do painel central e os domínios de cada cliente,
    separados por vírgula, na porta 8080 (ex.: `https://painel.seudominio.com.br:8080,https://trade.gaboardi.com.br:8080`).
    O Coolify gera o SSL de cada um.

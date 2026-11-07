@@ -34,11 +34,7 @@
             </div>
         </div>
 
-        <div class="campo">
-            <label for="dominios">Domínios</label>
-            <textarea id="dominios" name="dominios" rows="2" required>{{ old('dominios') }}</textarea>
-            <div class="dica">Um por linha ou separados por vírgula. Ex.: trade.gaboardi.com.br</div>
-        </div>
+        @include('central.clientes.endereco-campos')
 
         <div class="linha">
             <div class="campo">
