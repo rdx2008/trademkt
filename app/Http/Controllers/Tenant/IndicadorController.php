@@ -24,13 +24,13 @@ class IndicadorController extends Controller
     {
         [$opcoes, $filtros] = $this->contexto($r, $s);
 
-        return view('tenant.indicadores.index', ['opcoes' => $opcoes, 'filtros' => $filtros, 'resumo' => $s->resumo($r->user(), $filtros), 'producao' => $s->producao($r->user(), $filtros)->limit(100)->get(), 'rupturas' => $s->rupturas($r->user(), $filtros)->limit(100)->get(), 'tempos' => $s->tempos($r->user(), $filtros)->limit(100)->get()]);
+        return view('tenant.indicadores.index', ['opcoes' => $opcoes, 'filtros' => $filtros, 'resumo' => $s->resumo($r->user(), $filtros), 'producao' => $s->producao($r->user(), $filtros)->take(100), 'rupturas' => $s->rupturas($r->user(), $filtros)->limit(100)->get(), 'tempos' => $s->tempos($r->user(), $filtros)->take(100)]);
     }
 
     public function galeria(Request $r, Indicadores $s)
     {
         [$opcoes, $filtros] = $this->contexto($r, $s);
-        $visitas = $s->visitas($r->user(), $filtros)->whereHas('fotos')->whereDate('data', '>=', $filtros['inicio'])->whereDate('data', '<=', $filtros['fim'])->with(['fotos', 'pdv', 'industria', 'roteiro.promotor'])->orderByDesc('data')->paginate(8)->withQueryString();
+        $visitas = $s->visitas($r->user(), $filtros)->whereHas('fotos')->whereDate('data', '>=', $filtros['inicio'])->whereDate('data', '<=', $filtros['fim'])->with(['fotos', 'pdv', 'industria', 'roteiro'])->orderByDesc('data')->paginate(8)->withQueryString();
 
         return view('tenant.indicadores.galeria', compact('opcoes', 'filtros', 'visitas'));
     }
@@ -52,19 +52,19 @@ class IndicadorController extends Controller
             $writer->addRow($linha(['Base cobertura', 'Visitas contratuais já geradas, por data prevista; produção por conclusão.']));
             $writer->addNewSheetAndMakeItCurrent()->setName('Visitas');
             $writer->addRow($linha(['ID', 'Dia previsto', 'PDV', 'Indústria', 'Agência', 'Promotor', 'Status', 'Conclusão', 'Tempo (min)', 'Observação']));
-            foreach ($s->visitas($r->user(), $f)->whereDate('data', '>=', $f['inicio'])->whereDate('data', '<=', $f['fim'])->with(['pdv', 'industria', 'agencia', 'roteiro.promotor'])->orderBy('id')->lazyById(100) as $v) {
-                $writer->addRow($linha([$v->id, $v->data->toDateString(), $v->pdv->nome, $v->industria->nome, $v->agencia->nome, $v->roteiro?->promotor?->nome, $v->status->label(), $v->concluida_em?->format('d/m/Y H:i:s'), $v->duracao_segundos === null ? null : round($v->duracao_segundos / 60, 1), $v->observacao]));
+            foreach ($s->visitas($r->user(), $f)->whereDate('data', '>=', $f['inicio'])->whereDate('data', '<=', $f['fim'])->with(['pdv', 'industria', 'agencia', 'roteiro'])->orderBy('id')->lazyById(100) as $v) {
+                $writer->addRow($linha([$v->id, $v->data->toDateString(), $v->pdv->nome, $v->industria->nome, $v->agencia->nome, $v->nomePromotor(), $v->status->label(), $v->concluida_em?->format('d/m/Y H:i:s'), $v->duracao_segundos === null ? null : round($v->duracao_segundos / 60, 1), $v->observacao]));
             }
             $writer->addNewSheetAndMakeItCurrent()->setName('Produção SKU por dia');
             $writer->addRow($linha(['Dia de conclusão', 'Promotor', 'SKUs trabalhados']));
-            foreach ($s->producao($r->user(), $f)->cursor() as $p) {
+            foreach ($s->producao($r->user(), $f) as $p) {
                 $writer->addRow($linha([$p->dia, $p->promotor, (int) $p->total]));
             }
             $writer->addNewSheetAndMakeItCurrent()->setName('SKUs por visita');
             $writer->addRow($linha(['Dia de conclusão', 'Visita', 'Promotor', 'PDV', 'Indústria', 'Código do SKU', 'Produto', 'Estoque']));
-            foreach (VisitaSku::whereIn('visita_id', $s->execucoes($r->user(), $f)->select('id'))->with(['sku', 'visita.pdv', 'visita.industria', 'visita.roteiro.promotor'])->lazyById(100) as $item) {
+            foreach (VisitaSku::whereIn('visita_id', $s->execucoes($r->user(), $f)->select('id'))->with(['sku', 'visita.pdv', 'visita.industria', 'visita.roteiro'])->lazyById(100) as $item) {
                 $v = $item->visita;
-                $writer->addRow($linha([$v->concluida_em->format('d/m/Y'), $v->id, $v->roteiro?->promotor?->nome, $v->pdv->nome, $v->industria->nome, $item->sku->codigo, $item->sku->descricao, ['tem_estoque' => 'Tem estoque', 'somente_gondola' => 'Estoque somente na gôndola', 'ruptura' => 'Ruptura'][$item->situacao_estoque]]));
+                $writer->addRow($linha([$v->concluida_em->format('d/m/Y'), $v->id, $v->nomePromotor(), $v->pdv->nome, $v->industria->nome, $item->sku->codigo, $item->sku->descricao, ['tem_estoque' => 'Tem estoque', 'somente_gondola' => 'Estoque somente na gôndola', 'ruptura' => 'Ruptura'][$item->situacao_estoque]]));
             }
             $writer->addNewSheetAndMakeItCurrent()->setName('Cobertura de contratos');
             $writer->addRow($linha(['Visita', 'Dia previsto no contrato', 'Dia agendado', 'PDV', 'Indústria', 'Agência', 'Situação']));
@@ -83,7 +83,7 @@ class IndicadorController extends Controller
             }
             $writer->addNewSheetAndMakeItCurrent()->setName('Tempo e impedimentos');
             $writer->addRow($linha(['PDV', 'Promotor', 'Conclusões', 'Impedimentos', 'Tempo médio realizado (min)']));
-            foreach ($s->tempos($r->user(), $f)->cursor() as $p) {
+            foreach ($s->tempos($r->user(), $f) as $p) {
                 $writer->addRow($linha([$p->pdv, $p->promotor, (int) $p->total, (int) $p->impedimentos, $p->minutos === null ? null : round($p->minutos, 1)]));
             }
             $writer->close();

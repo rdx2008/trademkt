@@ -12,7 +12,7 @@ class VisitaController extends Controller
 {
     private function visivel(Request $r, int $id)
     {
-        return app(ResumoOperacional::class)->visitas($r->user())->with(['fotos', 'itens.sku', 'pdv', 'industria', 'agencia', 'roteiro.promotor', 'demanda'])->findOrFail($id);
+        return app(ResumoOperacional::class)->visitas($r->user())->with(['fotos', 'itens.sku', 'pdv', 'industria', 'agencia', 'roteiro', 'demanda'])->findOrFail($id);
     }
 
     public function show(Request $r, int $visita)

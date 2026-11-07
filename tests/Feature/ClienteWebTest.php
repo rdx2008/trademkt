@@ -110,6 +110,6 @@ class ClienteWebTest extends TestCase
             'perfil' => 'promotor',
             'password' => 'senha1234',
             'password_confirmation' => 'senha1234',
-        ])->assertSessionHasErrors(['agencia_id', 'tipo_vinculo']);
+        ])->assertSessionHasErrors(['tipo_vinculo'])->assertSessionDoesntHaveErrors(['agencia_id']);
     }
 }

@@ -2,54 +2,56 @@
 
 namespace App\Services\Roteiros;
 
-use App\Enums\Perfil;
 use App\Models\Roteiro;
 use App\Models\User;
 use App\Models\Visita;
+use App\Services\Operacao\Equipe;
+use App\Support\Pessoa;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
  * Atribui (ou desatribui) uma visita a um promotor num dia e ajusta a ordem do roteiro.
+ * O promotor é da agência responsável pela visita (equipe lida pelo {@see Equipe}).
  */
 class Atribuicao
 {
+    public function __construct(private Equipe $equipe) {}
+
     /**
-     * @param  ?User  $promotor  null = volta para "sem promotor"
-     * @param  ?User  $responsavel  quem atribuiu (vira o supervisor do roteiro); null = automático
+     * @param  Pessoa|int|null  $promotor  id do promotor na agência da visita; null = volta para "sem promotor"
+     * @param  User|Pessoa|int|null  $responsavel  quem atribuiu (vira o supervisor do roteiro); null = automático
      * @param  list<int>|null  $ordem  ids das visitas da célula de destino, na ordem desejada
      *
      * @throws ValidationException
      */
-    public function mover(Visita $visita, ?User $promotor, CarbonInterface $data, ?User $responsavel = null, ?array $ordem = null): void
+    public function mover(Visita $visita, Pessoa|int|null $promotor, CarbonInterface $data, User|Pessoa|int|null $responsavel = null, ?array $ordem = null): void
     {
         if (! $visita->podeSerMovida()) {
             throw ValidationException::withMessages(['visita' => 'Só visitas previstas, de hoje em diante, podem ser movidas.']);
         }
-
         if ($data->copy()->startOfDay()->isBefore(today())) {
             throw ValidationException::withMessages(['data' => 'Não dá para mover uma visita para um dia que já passou.']);
         }
 
-        if ($promotor && ($promotor->perfil !== Perfil::Promotor || ! $promotor->ativo || $promotor->agencia_id !== $visita->agencia_id)) {
+        $promotorId = $promotor instanceof Pessoa ? $promotor->id : $promotor;
+        if ($promotorId !== null && ! $this->equipe->promotorAtivo($visita->agencia_id, $promotorId)) {
             throw ValidationException::withMessages(['promotor_id' => 'Escolha um promotor ativo da agência responsável pela visita.']);
         }
+        $responsavelId = $responsavel instanceof User || $responsavel instanceof Pessoa ? $responsavel->id : $responsavel;
 
-        DB::transaction(function () use ($visita, $promotor, $data, $responsavel, $ordem) {
+        DB::transaction(function () use ($visita, $promotorId, $data, $responsavelId, $ordem) {
             $roteiroAntigo = $visita->roteiro;
-
-            $roteiro = $promotor
-                ? (Roteiro::where('promotor_id', $promotor->id)->whereDate('data', $data->toDateString())->first()
-                    ?? Roteiro::create(['promotor_id' => $promotor->id, 'data' => $data->toDateString(), 'supervisor_id' => $responsavel?->id]))
+            $roteiro = $promotorId
+                ? (Roteiro::doPromotor($visita->agencia_id, $promotorId, $data->toDateString())->first()
+                    ?? Roteiro::create(['promotor_id' => $promotorId, 'agencia_id' => $visita->agencia_id, 'data' => $data->toDateString(), 'supervisor_id' => $responsavelId]))
                 : null;
-
-            if ($roteiro && $responsavel && $roteiro->supervisor_id !== $responsavel->id) {
-                $roteiro->update(['supervisor_id' => $responsavel->id]);
+            if ($roteiro && $responsavelId && $roteiro->supervisor_id !== $responsavelId) {
+                $roteiro->update(['supervisor_id' => $responsavelId]);
             }
 
             $mudouDeCelula = $roteiro?->id !== $visita->roteiro_id || ! $visita->data->isSameDay($data);
-
             $visita->roteiro_id = $roteiro?->id;
             $visita->data = $data->toDateString();
             if ($mudouDeCelula) {
@@ -90,14 +92,12 @@ class Atribuicao
     {
         $ids = $this->celula($visita)->pluck('id')->all();
         $ordem = array_values(array_unique(array_map('intval', $ordem)));
-
         if (array_diff($ordem, $ids) !== [] || ! in_array($visita->id, $ordem, true)) {
             throw ValidationException::withMessages(['ordem' => 'A ordem enviada não corresponde às visitas do dia.']);
         }
 
         // As que não vieram na lista ficam no fim, na ordem atual.
         $restantes = $this->celula($visita)->whereNotIn('id', $ordem)->orderBy('ordem')->orderBy('id')->pluck('id')->all();
-
         foreach ([...$ordem, ...$restantes] as $posicao => $id) {
             Visita::whereKey($id)->update(['ordem' => $posicao + 1]);
         }

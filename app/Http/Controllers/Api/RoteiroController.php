@@ -27,10 +27,10 @@ class RoteiroController extends Controller
         $data = isset($dados['data']) ? Carbon::parse($dados['data']) : today();
 
         $roteiro = Roteiro::query()
-            ->where('promotor_id', $promotor->id)
-            ->whereDate('data', $data->toDateString())
-            ->with(['visitas.pdv', 'visitas.industria', 'supervisor'])
+            ->doPromotor($promotor->agencia_id, $promotor->id, $data->toDateString())
+            ->with(['visitas.pdv', 'visitas.industria'])
             ->first();
+        $supervisor = $roteiro?->supervisor();
 
         $visitas = $roteiro?->visitas ?? collect();
 
@@ -61,7 +61,7 @@ class RoteiroController extends Controller
         return response()->json([
             'data' => $data->toDateString(),
             'roteiro_id' => $roteiro?->id,
-            'supervisor' => $roteiro?->supervisor ? ['id' => $roteiro->supervisor->id, 'nome' => $roteiro->supervisor->nome] : null,
+            'supervisor' => $supervisor ? ['id' => $supervisor->id, 'nome' => $supervisor->nome] : null,
             'visitas' => $visitas->values()->map(fn (Visita $v, int $i) => [
                 'id' => $v->id,
                 'ordem' => $i + 1,

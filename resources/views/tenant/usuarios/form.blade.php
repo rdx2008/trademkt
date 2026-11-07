@@ -33,7 +33,7 @@
                 </select>
             </div>
 
-            @if ($eu->perfil === \App\Enums\Perfil::AdminInstalacao)
+            @if ($eu->perfil === \App\Enums\Perfil::AdminInstalacao && ! $instalacaoAgencia)
                 <div class="campo">
                     <label for="industria_id">Indústria</label>
                     <select id="industria_id" name="industria_id">
@@ -44,6 +44,8 @@
                     </select>
                     <div class="dica">Obrigatório para gerente de trade e representante.</div>
                 </div>
+            @endif
+            @if ($eu->perfil === \App\Enums\Perfil::AdminInstalacao && ! $instalacaoAgencia && ! $instalacaoIndustria)
                 <div class="campo">
                     <label for="agencia_id">Agência</label>
                     <select id="agencia_id" name="agencia_id">
@@ -56,6 +58,7 @@
                 </div>
             @endif
 
+            @if (! $instalacaoIndustria)
             <div class="campo">
                 <label for="tipo_vinculo">Vínculo do promotor</label>
                 <select id="tipo_vinculo" name="tipo_vinculo">
@@ -66,6 +69,7 @@
                 </select>
                 <div class="dica">Só para promotor.</div>
             </div>
+            @endif
         </div>
 
         @if ($pdvs->isNotEmpty())

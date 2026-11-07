@@ -7,6 +7,7 @@ use App\Enums\TipoInstalacao;
 use App\Models\User;
 use App\Models\Visita;
 use App\Models\VisitaSku;
+use App\Services\Operacao\Equipe;
 use App\Services\Operacao\Indicadores;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -240,12 +241,15 @@ class PainelBi
             ->join('visitas', 'visitas.id', '=', 'visita_skus.visita_id')->join('roteiros', 'roteiros.id', '=', 'visitas.roteiro_id')
             ->selectRaw('roteiros.promotor_id as promotor_id, COUNT(*) as total')->groupBy('roteiros.promotor_id')->pluck('total', 'promotor_id');
 
+        $equipe = app(Equipe::class);
+
         return Visita::whereIn('visitas.id', $agenda)
-            ->join('roteiros', 'roteiros.id', '=', 'visitas.roteiro_id')->join('users', 'users.id', '=', 'roteiros.promotor_id')
-            ->selectRaw('users.id as id, users.nome as nome, '.$this->agregados())
-            ->groupBy('users.id', 'users.nome')->orderByDesc('realizadas')->orderBy('users.id')->limit(15)->get()
-            ->map(function ($l) use ($skus) {
+            ->join('roteiros', 'roteiros.id', '=', 'visitas.roteiro_id')
+            ->selectRaw('roteiros.promotor_id as id, visitas.agencia_id as agencia_id, '.$this->agregados())
+            ->groupBy('roteiros.promotor_id', 'visitas.agencia_id')->orderByDesc('realizadas')->orderBy('roteiros.promotor_id')->limit(15)->get()
+            ->map(function ($l) use ($skus, $equipe) {
                 $l = $this->completar($l);
+                $l->nome = $equipe->nome($l->agencia_id, $l->id) ?? 'Promotor '.$l->id;
                 $l->skus = (int) ($skus[$l->id] ?? 0);
 
                 return $l;

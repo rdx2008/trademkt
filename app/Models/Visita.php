@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Enums\OrigemVisita;
 use App\Enums\Perfil;
 use App\Enums\StatusVisita;
+use App\Support\Contexto;
+use App\Support\Pessoa;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -86,6 +88,26 @@ class Visita extends Model
         return $this->belongsTo(ContratoVisita::class, 'contrato_id');
     }
 
+    /** Promotor do roteiro (pessoa da agência), se atribuído. */
+    public function promotor(): ?Pessoa
+    {
+        return $this->roteiro?->promotor();
+    }
+
+    /**
+     * Nome do promotor para exibição. A indústria só vê o primeiro nome de quem é de uma
+     * agência vinculada: os dados do promotor ficam na agência.
+     */
+    public function nomePromotor(): ?string
+    {
+        $p = $this->promotor();
+        if (! $p) {
+            return null;
+        }
+
+        return Contexto::viaAgencia() || $this->agencia?->agencia_tenant_id === null ? $p->nome : $p->primeiroNome();
+    }
+
     /** Só visita prevista, de hoje em diante, pode mudar de promotor ou de dia. */
     public function podeSerMovida(): bool
     {
@@ -101,7 +123,7 @@ class Visita extends Model
             Perfil::AdminInstalacao => $query,
             Perfil::AdminAgencia, Perfil::Supervisor => $query->where('agencia_id', $usuario->agencia_id),
             Perfil::GerenteTrade, Perfil::Representante => $query->where('industria_id', $usuario->industria_id),
-            Perfil::Promotor => $query->whereHas('roteiro', fn (Builder $r) => $r->where('promotor_id', $usuario->id)),
+            Perfil::Promotor => $query->where('agencia_id', $usuario->agencia_id)->whereHas('roteiro', fn (Builder $r) => $r->where('promotor_id', $usuario->id)),
             default => $query->whereRaw('1 = 0'),
         };
     }

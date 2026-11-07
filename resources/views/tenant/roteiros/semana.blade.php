@@ -3,7 +3,7 @@
     $linhas = $promotores->map(fn ($p) => ['id' => $p->id, 'nome' => $p->nome, 'inativo' => ! $p->ativo]);
     $temSemPromotor = $podeEditar || $grade->keys()->contains(fn ($k) => str_starts_with($k, '0|'));
     if ($temSemPromotor) {
-        $linhas->prepend(['id' => 0, 'nome' => 'Sem promotor', 'inativo' => false]);
+        $linhas->prepend(['id' => '0', 'nome' => 'Sem promotor', 'inativo' => false]);
     }
     $nomeDia = [1 => 'Seg', 2 => 'Ter', 3 => 'Qua', 4 => 'Qui', 5 => 'Sex', 6 => 'Sáb', 7 => 'Dom'];
 @endphp
@@ -105,7 +105,7 @@
             </select>
             <select name="promotor">
                 @foreach ($linhas as $linha)
-                    <option value="{{ $linha['id'] }}" @selected($mapa['promotor'] === $linha['id'])>{{ $linha['nome'] }}</option>
+                    <option value="{{ $linha['id'] }}" @selected((string) $mapa['promotor'] === (string) $linha['id'])>{{ $linha['nome'] }}</option>
                 @endforeach
             </select>
             <button type="submit" class="botao secundario">Ver no mapa</button>
@@ -133,7 +133,7 @@
                     <select id="mover-promotor" name="promotor_id">
                         @foreach ($linhas as $linha)
                             @continue($linha['inativo'])
-                            <option value="{{ $linha['id'] ?: '' }}">{{ $linha['nome'] }}</option>
+                            <option value="{{ $linha['id'] === '0' ? '' : $linha['id'] }}">{{ $linha['nome'] }}</option>
                         @endforeach
                     </select>
                 </div>

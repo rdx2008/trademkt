@@ -51,6 +51,19 @@ class Contexto
         return self::instalacao()?->tipo === TipoInstalacao::Agencia;
     }
 
+    /**
+     * Rota da API do app para a operação em uso: na agência, a indústria vai na rota
+     * (`api.op.*`); na própria indústria, a rota simples (`api.*`).
+     */
+    public static function rotaApi(string $nome, array $parametros = []): string
+    {
+        if (self::viaAgencia()) {
+            return route('api.op.'.$nome, ['industria' => self::operacao()->codigo] + $parametros);
+        }
+
+        return route('api.'.$nome, $parametros);
+    }
+
     public static function abrirOperacao(Tenant $instalacao, Tenant $industria, Agencia $agenciaLocal): void
     {
         self::$instalacao = $instalacao;

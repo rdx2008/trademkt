@@ -3,10 +3,10 @@
 namespace App\Services\Roteiros;
 
 use App\Enums\OrigemVisita;
-use App\Enums\Perfil;
 use App\Enums\StatusVisita;
 use App\Models\ContratoVisita;
 use App\Models\Visita;
+use App\Services\Operacao\Equipe;
 use Carbon\CarbonInterface;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\DB;
  */
 class GeradorVisitas
 {
-    public function __construct(private Atribuicao $atribuicao) {}
+    public function __construct(private Atribuicao $atribuicao, private Equipe $equipe) {}
 
     /** @return array{criadas: int, removidas: int, atribuidas: int} */
     public function gerar(CarbonInterface $inicio, CarbonInterface $fim, ?int $agenciaId = null): array
@@ -108,19 +108,22 @@ class GeradorVisitas
     private function repetirPromotorDaSemanaAnterior(Visita $visita): bool
     {
         $anterior = Visita::query()
-            ->with('roteiro.promotor')
+            ->with('roteiro')
             ->where('contrato_id', $visita->contrato_id)
             ->whereDate('data_prevista', $visita->data_prevista->copy()->subWeek()->toDateString())
             ->whereNotNull('roteiro_id')
             ->first();
 
-        $promotor = $anterior?->roteiro?->promotor;
+        $roteiro = $anterior?->roteiro;
+        $promotor = $roteiro && $anterior->agencia_id === $visita->agencia_id
+            ? $this->equipe->promotorAtivo($visita->agencia_id, $roteiro->promotor_id)
+            : null;
 
-        if (! $promotor || ! $promotor->ativo || $promotor->perfil !== Perfil::Promotor || $promotor->agencia_id !== $visita->agencia_id) {
+        if (! $promotor) {
             return false;
         }
 
-        $this->atribuicao->mover($visita, $promotor, $visita->data, $anterior->roteiro->supervisor);
+        $this->atribuicao->mover($visita, $promotor, $visita->data, $roteiro->supervisor_id);
 
         return true;
     }

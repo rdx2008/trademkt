@@ -81,7 +81,7 @@ class ResumoOperacional
             foreach ($loja->contratos as $contrato) {
                 $base = $this->visitas($usuario)->where('pdv_id', $loja->id)->where('industria_id', $contrato->industria_id)->where('agencia_id', $contrato->agencia_id);
                 $contrato->setRelation('ultimaVisita', (clone $base)->where('status', 'realizada')->with('fotos')->orderByDesc('concluida_em')->orderByDesc('id')->first());
-                $contrato->setRelation('proximaVisita', (clone $base)->whereIn('status', ['previsto', 'em_andamento'])->whereDate('data', '>=', today())->with('roteiro.promotor')->orderBy('data')->orderBy('ordem')->first());
+                $contrato->setRelation('proximaVisita', (clone $base)->whereIn('status', ['previsto', 'em_andamento'])->whereDate('data', '>=', today())->with(['roteiro', 'agencia'])->orderBy('data')->orderBy('ordem')->first());
             }
         }
 
@@ -102,7 +102,7 @@ class ResumoOperacional
                 'Equipe visível' => $podeGerenciar ? User::visiveisPara($usuario)->where('ativo', true)->count() : null,
             ],
             'visitas' => (clone $dia)->when($status, fn ($q) => $q->where('status', $status))
-                ->with(['pdv', 'industria', 'agencia', 'roteiro.promotor'])
+                ->with(['pdv', 'industria', 'agencia', 'roteiro'])
                 ->orderBy('ordem')->orderBy('id')->paginate(12)->withQueryString(),
             'lojas' => $lojas,
         ];

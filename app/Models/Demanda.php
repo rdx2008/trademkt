@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Perfil;
+use App\Services\Operacao\Equipe;
 use Illuminate\Database\Eloquent\Model;
 
 class Demanda extends Model
@@ -36,9 +37,14 @@ class Demanda extends Model
         return $this->belongsTo(Agencia::class);
     }
 
-    public function solicitante()
+    /** Quem pediu: usuário desta instalação ou, com `solicitante_agencia_id`, pessoa da agência. */
+    public function nomeSolicitante(): ?string
     {
-        return $this->belongsTo(User::class, 'solicitante_id');
+        if ($this->solicitante_agencia_id) {
+            return app(Equipe::class)->nome($this->solicitante_agencia_id, $this->solicitante_id);
+        }
+
+        return User::find($this->solicitante_id)?->nome;
     }
 
     public function atrasada(): bool
@@ -54,7 +60,7 @@ class Demanda extends Model
             Perfil::GerenteTrade => $q->where('industria_id', $u->industria_id),
             Perfil::Representante => $q->where('industria_id', $u->industria_id)->whereIn('pdv_id', $u->carteiraPdvs()->select('pdvs.id')),
             Perfil::GerentePdv => $q->whereIn('pdv_id', $u->pdvsGerenciados()->select('pdvs.id')),
-            Perfil::Promotor => $q->whereHas('visita.roteiro', fn ($r) => $r->where('promotor_id', $u->id)),
+            Perfil::Promotor => $q->where('agencia_id', $u->agencia_id)->whereHas('visita.roteiro', fn ($r) => $r->where('promotor_id', $u->id)),
         };
     }
 }

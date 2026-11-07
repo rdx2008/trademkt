@@ -14,19 +14,29 @@ use App\Models\VisitaSku;
 use App\Services\Painel\ResumoOperacional;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class Indicadores
 {
+    public function __construct(private Equipe $equipe) {}
+
     public function opcoes(User $u): array
     {
         $escopo = app(ResumoOperacional::class);
         $v = $escopo->visitas($u);
         $c = $escopo->contratos($u);
         $pdvs = $escopo->pdvs($u)->get(['pdvs.id', 'pdvs.nome', 'pdvs.rede_id', 'pdvs.regiao_id']);
-        $roteiros = Roteiro::whereIn('id', (clone $v)->select('roteiro_id'))->get(['promotor_id', 'supervisor_id']);
+        // Promotores e supervisores são pessoas da agência: a opção leva "agência:id", porque o
+        // mesmo id pode existir em duas agências.
+        $roteiros = Roteiro::whereIn('id', (clone $v)->select('roteiro_id'))->get(['agencia_id', 'promotor_id', 'supervisor_id']);
+        $pessoas = fn (string $campo) => $roteiros
+            ->filter(fn ($r) => $r->$campo !== null)
+            ->map(fn ($r) => [(int) $r->agencia_id.':'.$r->$campo, $this->equipe->nome($r->agencia_id, $r->$campo)])
+            ->filter(fn ($p) => $p[1] !== null)
+            ->unique(0)->sortBy(1)->mapWithKeys(fn ($p) => [$p[0] => $p[1]]);
 
         return [
             'industria_id' => Industria::whereIn('id', (clone $v)->distinct()->pluck('industria_id')->merge((clone $c)->distinct()->pluck('industria_id'))->unique())->orderBy('nome')->pluck('nome', 'id'),
@@ -34,8 +44,8 @@ class Indicadores
             'pdv_id' => $pdvs->sortBy('nome')->pluck('nome', 'id'),
             'regiao_id' => Regiao::whereIn('id', $pdvs->pluck('regiao_id')->filter())->orderBy('nome')->pluck('nome', 'id'),
             'rede_id' => Rede::whereIn('id', $pdvs->pluck('rede_id')->filter())->orderBy('nome')->pluck('nome', 'id'),
-            'promotor_id' => User::whereIn('id', $roteiros->pluck('promotor_id')->filter())->orderBy('nome')->pluck('nome', 'id'),
-            'supervisor_id' => User::whereIn('id', $roteiros->pluck('supervisor_id')->filter())->orderBy('nome')->pluck('nome', 'id'),
+            'promotor_id' => $pessoas('promotor_id'),
+            'supervisor_id' => $pessoas('supervisor_id'),
         ];
     }
 
@@ -46,7 +56,7 @@ class Indicadores
         $entrada['fim'] = $r->input('fim') ?: today()->toDateString();
         $regras = ['inicio' => ['required', 'date_format:Y-m-d'], 'fim' => ['required', 'date_format:Y-m-d', 'after_or_equal:inicio']];
         foreach ($opcoes as $campo => $valores) {
-            $regras[$campo] = ['nullable', 'integer', Rule::in($valores->keys()->all())];
+            $regras[$campo] = ['nullable', in_array($campo, ['promotor_id', 'supervisor_id'], true) ? 'string' : 'integer', Rule::in($valores->keys()->all())];
         }
         $dados = Validator::make($entrada, $regras)->validate();
         if (Carbon::parse($dados['inicio'])->diffInDays(Carbon::parse($dados['fim'])) > 365) {
@@ -75,7 +85,8 @@ class Indicadores
         }
         foreach (['promotor_id', 'supervisor_id'] as $campo) {
             if (! empty($f[$campo])) {
-                $q->whereHas($demanda ? 'visita.roteiro' : 'roteiro', fn ($r) => $r->where($campo, $f[$campo]));
+                [$agencia, $id] = array_map('intval', explode(':', $f[$campo], 2));
+                $q->whereHas($demanda ? 'visita.roteiro' : 'roteiro', fn ($r) => $r->where($campo, $id)->where('agencia_id', $agencia ?: null));
             }
         }
 
@@ -92,12 +103,14 @@ class Indicadores
         return $this->visitas($u, $f)->whereDate('concluida_em', '>=', $f['inicio'])->whereDate('concluida_em', '<=', $f['fim']);
     }
 
-    public function producao(User $u, array $f)
+    /** Produção de SKUs por dia e promotor. @return Collection<int, object> */
+    public function producao(User $u, array $f): Collection
     {
-        return VisitaSku::whereIn('visita_id', $this->execucoes($u, $f)->where('status', 'realizada')->select('visitas.id'))
-            ->where('situacao_estoque', '!=', 'ruptura')->join('visitas', 'visitas.id', '=', 'visita_skus.visita_id')->join('roteiros', 'roteiros.id', '=', 'visitas.roteiro_id')->join('users', 'users.id', '=', 'roteiros.promotor_id')
-            ->selectRaw('DATE(visitas.concluida_em) as dia, users.id as promotor_id, users.nome as promotor, COUNT(*) as total')
-            ->groupByRaw('DATE(visitas.concluida_em), users.id, users.nome')->orderByDesc('dia')->orderBy('promotor');
+        return $this->comNomes(VisitaSku::whereIn('visita_id', $this->execucoes($u, $f)->where('status', 'realizada')->select('visitas.id'))
+            ->where('situacao_estoque', '!=', 'ruptura')->join('visitas', 'visitas.id', '=', 'visita_skus.visita_id')->join('roteiros', 'roteiros.id', '=', 'visitas.roteiro_id')
+            ->selectRaw('DATE(visitas.concluida_em) as dia, visitas.agencia_id as agencia_id, roteiros.promotor_id as promotor_id, COUNT(*) as total')
+            ->groupByRaw('DATE(visitas.concluida_em), visitas.agencia_id, roteiros.promotor_id')->orderByDesc('dia')->get())
+            ->sortBy([['dia', 'desc'], ['promotor', 'asc']])->values();
     }
 
     public function rupturas(User $u, array $f)
@@ -132,11 +145,19 @@ class Indicadores
         ];
     }
 
-    public function tempos(User $u, array $f)
+    /** Tempo e impedimentos por PDV e promotor. @return Collection<int, object> */
+    public function tempos(User $u, array $f): Collection
     {
-        return Visita::whereIn('visitas.id', $this->execucoes($u, $f)->select('visitas.id'))->join('pdvs', 'pdvs.id', '=', 'visitas.pdv_id')
-            ->join('roteiros', 'roteiros.id', '=', 'visitas.roteiro_id')->join('users', 'users.id', '=', 'roteiros.promotor_id')
-            ->selectRaw("pdvs.id as pdv_id, pdvs.nome as pdv, users.id as promotor_id, users.nome as promotor, COUNT(*) as total, SUM(CASE WHEN visitas.tipo_conclusao = 'impedimento' THEN 1 ELSE 0 END) as impedimentos, AVG(CASE WHEN visitas.status = 'realizada' THEN visitas.duracao_segundos ELSE NULL END) / 60 as minutos")
-            ->groupBy('pdvs.id', 'pdvs.nome', 'users.id', 'users.nome')->orderBy('pdv')->orderBy('promotor');
+        return $this->comNomes(Visita::whereIn('visitas.id', $this->execucoes($u, $f)->select('visitas.id'))->join('pdvs', 'pdvs.id', '=', 'visitas.pdv_id')
+            ->join('roteiros', 'roteiros.id', '=', 'visitas.roteiro_id')
+            ->selectRaw("pdvs.id as pdv_id, pdvs.nome as pdv, visitas.agencia_id as agencia_id, roteiros.promotor_id as promotor_id, COUNT(*) as total, SUM(CASE WHEN visitas.tipo_conclusao = 'impedimento' THEN 1 ELSE 0 END) as impedimentos, AVG(CASE WHEN visitas.status = 'realizada' THEN visitas.duracao_segundos ELSE NULL END) / 60 as minutos")
+            ->groupBy('pdvs.id', 'pdvs.nome', 'visitas.agencia_id', 'roteiros.promotor_id')->get())
+            ->sortBy([['pdv', 'asc'], ['promotor', 'asc']])->values();
+    }
+
+    /** Preenche `promotor` (nome) a partir de `agencia_id` + `promotor_id`. */
+    private function comNomes(Collection $linhas): Collection
+    {
+        return $linhas->each(fn ($l) => $l->promotor = $this->equipe->nome($l->agencia_id, $l->promotor_id) ?? 'Promotor '.$l->promotor_id);
     }
 }

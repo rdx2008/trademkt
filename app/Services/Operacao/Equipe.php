@@ -8,6 +8,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Pessoa;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Equipe de uma agência, lida de dentro da operação de uma indústria.
@@ -24,9 +25,15 @@ class Equipe
     /** @var array<int, Collection<int, Pessoa>> por id da agência local */
     private static array $cache = [];
 
+    /** Descarta a leitura em memória e fecha as conexões abertas com outras instalações. */
     public static function esquecer(): void
     {
         self::$cache = [];
+        foreach (array_keys(config('database.connections', [])) as $nome) {
+            if (str_starts_with($nome, 'instalacao_')) {
+                DB::purge($nome);
+            }
+        }
     }
 
     /** Toda a equipe (admin da agência, supervisores e promotores), ativos ou não. */
@@ -48,18 +55,24 @@ class Equipe
             ->sortBy('nome')->values();
     }
 
-    /** Quem gere a equipe (admin da agência e supervisores ativos): destinatários dos avisos. */
+    /** Quem gere a equipe (admins e supervisores ativos): destinatários dos avisos. */
     public function gestores(Agencia|int $agencia): Collection
     {
         return $this->de($agencia)
-            ->filter(fn (Pessoa $p) => $p->ativo && in_array($p->perfil, [Perfil::AdminAgencia, Perfil::Supervisor], true))
+            ->filter(fn (Pessoa $p) => $p->ativo && in_array($p->perfil, [Perfil::AdminInstalacao, Perfil::AdminAgencia, Perfil::Supervisor], true))
             ->values();
     }
 
     public function pessoa(Agencia|int|null $agencia, ?int $id): ?Pessoa
     {
-        if ($agencia === null || $id === null) {
+        if ($id === null) {
             return null;
+        }
+        if ($agencia === null) {
+            // Roteiro sem agência (dados anteriores ao vínculo): o id é de um usuário local.
+            $usuario = User::find($id);
+
+            return $usuario ? Pessoa::deUsuario($usuario, (int) $usuario->agencia_id) : null;
         }
 
         return $this->de($agencia)->first(fn (Pessoa $p) => $p->id === $id);
@@ -80,18 +93,21 @@ class Equipe
     /** @return Collection<int, Pessoa> */
     private function ler(Agencia $agencia): Collection
     {
-        $perfis = [Perfil::AdminAgencia->value, Perfil::Supervisor->value, Perfil::Promotor->value];
         $colunas = ['id', 'nome', 'perfil', 'ativo', 'tipo_vinculo', 'agencia_id'];
 
         if ($agencia->agencia_tenant_id === null) {
-            $usuarios = User::whereIn('perfil', $perfis)->where('agencia_id', $agencia->id)->get($colunas);
+            $usuarios = User::whereIn('perfil', [Perfil::AdminAgencia->value, Perfil::Supervisor->value, Perfil::Promotor->value])
+                ->where('agencia_id', $agencia->id)->get($colunas);
         } else {
             $origem = Tenant::find($agencia->agencia_tenant_id);
             if (! $origem) {
                 return collect();
             }
-            // Na instalação da agência todos os perfis de agência pertencem à própria agência.
-            $usuarios = User::on(self::conexao($origem))->whereIn('perfil', $perfis)->get($colunas);
+            // Na instalação da agência todo mundo é da própria agência; o admin da instalação é o
+            // admin da agência.
+            $usuarios = User::on(self::conexao($origem))
+                ->whereIn('perfil', [Perfil::AdminInstalacao->value, Perfil::AdminAgencia->value, Perfil::Supervisor->value, Perfil::Promotor->value])
+                ->get($colunas);
         }
 
         return $usuarios->map(fn (User $u) => Pessoa::deUsuario($u, $agencia->id))->values();

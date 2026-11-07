@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Enums\Perfil;
+use App\Enums\TipoInstalacao;
 use App\Enums\TipoVinculo;
 use App\Http\Controllers\Controller;
 use App\Models\Agencia;
@@ -10,6 +11,7 @@ use App\Models\ContratoVisita;
 use App\Models\Industria;
 use App\Models\Pdv;
 use App\Models\User;
+use App\Support\Contexto;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -95,6 +97,11 @@ class UsuarioController extends Controller
 
         $perfisPermitidos = array_map(fn (Perfil $p) => $p->value, $eu->perfil->podeGerenciar());
         $perfil = Perfil::tryFrom((string) $request->input('perfil'));
+        // Na instalação da agência todo mundo é da própria agência: o vínculo é automático.
+        $agenciaDaInstalacao = $this->agenciaDaInstalacao();
+        if ($agenciaDaInstalacao && $perfil?->exigeAgencia()) {
+            $request->merge(['agencia_id' => $agenciaDaInstalacao]);
+        }
 
         $dados = $request->validate([
             'nome' => ['required', 'string', 'max:120'],
@@ -147,6 +154,12 @@ class UsuarioController extends Controller
         }
 
         return $dados;
+    }
+
+    /** Id da agência dona da instalação (só na instalação de agência). */
+    private function agenciaDaInstalacao(): ?int
+    {
+        return Contexto::instalacaoEhAgencia() ? Agencia::where('ativo', true)->orderBy('id')->value('id') : null;
     }
 
     /**
@@ -203,6 +216,8 @@ class UsuarioController extends Controller
             'usuario' => $usuario,
             'eu' => $eu,
             'perfis' => $perfis,
+            'instalacaoAgencia' => Contexto::instalacaoEhAgencia(),
+            'instalacaoIndustria' => Contexto::instalacao()?->tipo === TipoInstalacao::Industria,
             'industrias' => Industria::where('ativo', true)->when($eu->agenciaVinculada(), fn ($q) => $q->whereIn('id', ContratoVisita::where('agencia_id', $eu->agencia_id)->select('industria_id')))->orderBy('nome')->pluck('nome', 'id'),
             'agencias' => Agencia::where('ativo', true)->when($eu->agenciaVinculada(), fn ($q) => $q->whereKey($eu->agencia_id))->orderBy('nome')->pluck('nome', 'id'),
             'vinculos' => TipoVinculo::cases(),

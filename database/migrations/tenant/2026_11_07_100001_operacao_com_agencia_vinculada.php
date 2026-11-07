@@ -31,9 +31,12 @@ return new class extends Migration
         Schema::table('roteiros', function (Blueprint $table) {
             $table->dropForeign(['promotor_id']);
             $table->dropForeign(['supervisor_id']);
+            $table->dropUnique(['promotor_id', 'data']);
         });
         Schema::table('roteiros', function (Blueprint $table) {
             $table->foreignId('agencia_id')->nullable()->after('promotor_id')->constrained('agencias')->nullOnDelete();
+            // O mesmo id de promotor pode existir em duas agências: o roteiro é por agência.
+            $table->unique(['agencia_id', 'promotor_id', 'data'], 'roteiro_unico');
         });
 
         Schema::table('demandas', function (Blueprint $table) {
@@ -63,7 +66,9 @@ return new class extends Migration
         });
         Schema::table('demandas', fn (Blueprint $table) => $table->dropColumn('solicitante_agencia_id'));
         Schema::table('roteiros', function (Blueprint $table) {
+            $table->dropUnique('roteiro_unico');
             $table->dropConstrainedForeignId('agencia_id');
+            $table->unique(['promotor_id', 'data']);
         });
         Schema::table('users', function (Blueprint $table) {
             $table->string('parceiro_origem_tenant')->nullable();

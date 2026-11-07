@@ -2,8 +2,12 @@
 
 namespace App\Providers;
 
+use App\Services\Operacao\Equipe;
+use App\Support\Contexto;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -26,5 +30,11 @@ class AppServiceProvider extends ServiceProvider
 
         // Descoberta de empresa pelo app: 20 por minuto por IP
         RateLimiter::for('empresa', fn (Request $request) => Limit::perMinute(20)->by($request->ip()));
+
+        // A equipe da agência e o contexto da operação valem por uma requisição.
+        Event::listen(RequestHandled::class, function () {
+            Equipe::esquecer();
+            Contexto::limpar();
+        });
     }
 }
