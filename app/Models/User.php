@@ -53,6 +53,7 @@ class User extends Authenticatable
             'perfil' => Perfil::class,
             'tipo_vinculo' => TipoVinculo::class,
             'ativo' => 'boolean',
+            'habilitacao_restrita' => 'boolean',
             'cpf' => 'encrypted',
             'ultimo_acesso_em' => 'datetime',
             'aceite_privacidade_em' => 'datetime',
@@ -92,9 +93,18 @@ class User extends Authenticatable
         return $this->hasMany(Convite::class, 'usuario_id');
     }
 
-    /** Ids das instalações de indústria para as quais o promotor está habilitado (vazio = todas). */
-    public function industriasHabilitadas(): array
+    /**
+     * Ids das instalações de indústria em que o promotor está habilitado. `null` = sem restrição
+     * (todas as atendidas); lista vazia = nenhuma (promotor novo, até o admin habilitar).
+     *
+     * @return list<string>|null
+     */
+    public function industriasHabilitadas(): ?array
     {
+        if (! $this->habilitacao_restrita) {
+            return null;
+        }
+
         return DB::table('promotor_industrias')->where('usuario_id', $this->id)->pluck('industria_id')->all();
     }
 

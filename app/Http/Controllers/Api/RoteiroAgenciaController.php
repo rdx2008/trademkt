@@ -30,7 +30,7 @@ class RoteiroAgenciaController extends Controller
         $supervisor = null;
         $habilitadas = $promotor->industriasHabilitadas();
         foreach ($operacao->industriasDe($agencia) as $industria) {
-            if ($habilitadas !== [] && ! in_array($industria->id, $habilitadas, true)) {
+            if ($habilitadas !== null && ! in_array($industria->id, $habilitadas, true)) {
                 continue;
             }
             if (! $operacao->abrir($agencia, $industria, $promotor)) {

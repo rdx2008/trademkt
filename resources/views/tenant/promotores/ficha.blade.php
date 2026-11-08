@@ -1,6 +1,7 @@
 <x-layout :titulo="$p->nome" :marca="tenant('nome')">
     <x-slot:nav>@include('tenant.nav')</x-slot:nav>
     @php($m = $operacional['metricas'])
+    @include('tenant.promotores._aviso-redistribuir')
     <div class="cabecalho">
         <div style="display:flex;align-items:center;gap:14px">
             @if ($p->foto)
@@ -73,6 +74,34 @@
     </div>
 
     <div class="cartao">
+        <h2>SKUs trabalhados por dia</h2>
+        <p class="dica">Só visitas realizadas; ruptura não conta como trabalhado. Serve para conferir o pagamento do freelancer (o pagamento em si não passa pelo sistema).</p>
+        <form method="GET" class="filtros" action="{{ route('promotores.ficha', $p->id) }}">
+            <input type="month" name="mes" value="{{ $mes }}">
+            <button type="submit" class="botao secundario">Ver mês</button>
+            <a class="botao secundario" href="{{ route('promotores.skus.csv', [$p->id, 'mes' => $mes]) }}">Baixar CSV</a>
+        </form>
+        <div class="tabela-rolagem">
+            <table>
+                <thead><tr><th>Dia</th><th>Visitas</th><th>SKUs diferentes</th><th>Itens</th></tr></thead>
+                <tbody>
+                    @forelse ($skusPorDia as $dia => $r)
+                        <tr>
+                            <td style="white-space:nowrap">{{ \Illuminate\Support\Carbon::parse($dia)->format('d/m/Y') }}</td>
+                            <td>{{ $r['visitas'] }}</td><td>{{ $r['skus'] }}</td><td>{{ $r['itens'] }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="4">Nenhum SKU trabalhado neste mês.</td></tr>
+                    @endforelse
+                    @if ($skusPorDia->isNotEmpty())
+                        <tr><td><strong>Total</strong></td><td><strong>{{ $skusPorDia->sum('visitas') }}</strong></td><td></td><td><strong>{{ $skusPorDia->sum('itens') }}</strong></td></tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="cartao">
         <h2>Histórico de visitas</h2>
         <div class="tabela-rolagem">
             <table>
@@ -96,21 +125,32 @@
 
     <div class="cartao">
         <h2>Indústrias em que atua</h2>
-        <p class="dica">Só nas marcadas ele recebe visitas e vê o roteiro no app. Nenhuma marcada = todas as indústrias que a agência atende.</p>
+        <p class="dica">Só nas marcadas ele recebe visitas e vê o roteiro no app. Todo promotor novo começa sem nenhuma: marque onde ele vai atuar.</p>
+        @if ($habilitadas !== null && $habilitadas === [] && $industrias->isNotEmpty())
+            <p><span class="selo alerta">Nenhuma indústria habilitada</span> Ele ainda não recebe visitas.</p>
+        @endif
         @if ($industrias->isEmpty())
             <p>A agência ainda não está vinculada a nenhuma indústria.</p>
         @elseif ($podeGerir)
             <form method="POST" action="{{ route('promotores.industrias', $p->id) }}">
                 @csrf @method('PUT')
                 <div class="campo">
+                    <label class="check"><input type="checkbox" name="todas" value="1" id="hab-todas" @checked($habilitadas === null)> Todas as indústrias atendidas pela agência</label>
                     @foreach ($industrias as $i)
-                        <label class="check"><input type="checkbox" name="industrias[]" value="{{ $i->id }}" @checked(in_array($i->id, $habilitadas, true))> {{ $i->nome ?? $i->id }}</label>
+                        <label class="check"><input type="checkbox" class="hab-uma" name="industrias[]" value="{{ $i->id }}" @checked(in_array($i->id, $habilitadas ?? [], true)) @disabled($habilitadas === null)> {{ $i->nome ?? $i->id }}</label>
                     @endforeach
                 </div>
+                <script>
+                    (function () {
+                        var todas = document.getElementById('hab-todas');
+                        function sincronizar() { document.querySelectorAll('.hab-uma').forEach(function (c) { c.disabled = todas.checked; if (todas.checked) { c.checked = false; } }); }
+                        todas.addEventListener('change', sincronizar);
+                    })();
+                </script>
                 <button type="submit" class="botao">Salvar</button>
             </form>
         @else
-            <p>{{ $habilitadas === [] ? 'Todas as indústrias atendidas.' : $industrias->whereIn('id', $habilitadas)->map(fn ($i) => $i->nome ?? $i->id)->implode(', ') }}</p>
+            <p>{{ $habilitadas === null ? 'Todas as indústrias atendidas.' : ($habilitadas === [] ? 'Nenhuma indústria habilitada.' : $industrias->whereIn('id', $habilitadas)->map(fn ($i) => $i->nome ?? $i->id)->implode(', ')) }}</p>
         @endif
     </div>
 
@@ -170,16 +210,34 @@
         <p class="dica">Registro interno da agência. A indústria e os supermercados não veem.</p>
         <div class="tabela-rolagem">
             <table>
-                <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th></tr></thead>
+                <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th></th></tr></thead>
                 <tbody>
                     @forelse ($ocorrencias as $o)
                         <tr>
                             <td style="white-space:nowrap">{{ $o->data->format('d/m/Y') }}</td>
                             <td>{{ $o->rotulo() }}</td>
                             <td style="white-space:pre-line">{{ $o->descricao }}</td>
+                            <td>
+                                @if ($podeGerir)
+                                    <details>
+                                        <summary>Editar</summary>
+                                        <form method="POST" action="{{ route('promotores.ocorrencia.editar', [$p->id, $o->id]) }}">
+                                            @csrf @method('PUT')
+                                            <select name="tipo">@foreach ($tiposOcorrencia as $valor => $rotulo)<option value="{{ $valor }}" @selected($o->tipo === $valor)>{{ $rotulo }}</option>@endforeach</select>
+                                            <input type="date" name="data" value="{{ $o->data->toDateString() }}" required>
+                                            <textarea name="descricao" rows="3" maxlength="2000" required>{{ $o->descricao }}</textarea>
+                                            <button type="submit" class="botao">Salvar</button>
+                                        </form>
+                                    </details>
+                                    <form method="POST" action="{{ route('promotores.ocorrencia.remover', [$p->id, $o->id]) }}">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="botao secundario" onclick="return confirm('Remover esta ocorrência?')">Remover</button>
+                                    </form>
+                                @endif
+                            </td>
                         </tr>
                     @empty
-                        <tr><td colspan="3">Nenhuma ocorrência registrada.</td></tr>
+                        <tr><td colspan="4">Nenhuma ocorrência registrada.</td></tr>
                     @endforelse
                 </tbody>
             </table>

@@ -126,9 +126,16 @@ Tela própria em **Equipe → Promotores** (só instalação de agência); o pro
 - Ficha (`/promotores/{id}`): agenda dos 7 dias e histórico de 30 dias somando as indústrias atendidas
   (lidas do banco de cada indústria, `FichaOperacional`), métricas, afastamentos, ocorrências internas,
   aparelhos conectados (com desconectar) e histórico de alterações.
-- Habilitação por indústria (`promotor_industrias`, na agência): sem linhas = todas as atendidas. Restringe
-  atribuição (`Equipe::promotorAtivo`), listas de promotores e o roteiro do app. Afastamento também
-  barra a atribuição no período; a repetição semanal automática pula quem está afastado.
+- Habilitação por indústria (`promotor_industrias` + `users.habilitacao_restrita`, na agência): promotor novo
+  nasce restrito e sem nenhuma indústria, e o admin marca onde ele atua (ou "todas"). Os cadastrados antes
+  seguem em "todas". Restringe atribuição (`Equipe::promotorAtivo`), listas e o roteiro do app. Afastamento
+  também barra a atribuição no período; a repetição semanal automática pula quem está afastado.
+- Redistribuição (`Redistribuicao`): ao afastar ou desativar com visitas já atribuídas, a ficha oferece a prévia
+  e passa as visitas previstas para colegas ativos, habilitados e livres (primeiro a cidade base do PDV, depois
+  quem tem menos visitas no dia). Sem substituto, a visita fica como está. Admin e supervisor podem aplicar.
+- Lista de promotores: visitas de hoje (total e iniciadas), último aparelho, alerta "ainda não abriu o app hoje"
+  e "sem indústria habilitada". Ficha: relatório de SKUs trabalhados por dia (mês) com CSV, para conferir o
+  pagamento do freelancer (ruptura não conta); ocorrências podem ser editadas e removidas pelo admin.
 - Cidade base: nas telas de atribuição o promotor aparece com a cidade e, na decisão de demanda, quem é da
   cidade do PDV vem primeiro.
 - Crachá digital: `/promotores/{id}/cracha` (imprimir, QR) e página pública `/verificar/{codigo}` (código de

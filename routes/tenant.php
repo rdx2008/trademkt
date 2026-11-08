@@ -109,10 +109,15 @@ Route::middleware([
             Route::patch('/promotores/{promotor}/ativo', [PromotorController::class, 'ativo'])->whereNumber('promotor')->name('promotores.ativo');
             Route::post('/promotores/{promotor}/convite', [PromotorController::class, 'convite'])->whereNumber('promotor')->name('promotores.convite');
             Route::get('/promotores/{promotor}', [FichaPromotorController::class, 'show'])->whereNumber('promotor')->name('promotores.ficha');
+            Route::get('/promotores/{promotor}/redistribuir', [FichaPromotorController::class, 'redistribuir'])->whereNumber('promotor')->name('promotores.redistribuir');
+            Route::post('/promotores/{promotor}/redistribuir', [FichaPromotorController::class, 'aplicarRedistribuicao'])->whereNumber('promotor')->name('promotores.redistribuir.aplicar');
             Route::get('/promotores/{promotor}/cracha', [CrachaController::class, 'mostrar'])->whereNumber('promotor')->name('promotores.cracha');
             Route::put('/promotores/{promotor}/industrias', [FichaPromotorController::class, 'habilitar'])->whereNumber('promotor')->name('promotores.industrias');
             Route::post('/promotores/{promotor}/afastamentos', [FichaPromotorController::class, 'afastar'])->whereNumber('promotor')->name('promotores.afastar');
             Route::delete('/promotores/{promotor}/afastamentos/{afastamento}', [FichaPromotorController::class, 'encerrarAfastamento'])->whereNumber(['promotor', 'afastamento'])->name('promotores.afastamento.remover');
+            Route::get('/promotores/{promotor}/skus.csv', [FichaPromotorController::class, 'skusCsv'])->whereNumber('promotor')->name('promotores.skus.csv');
+            Route::put('/promotores/{promotor}/ocorrencias/{ocorrencia}', [FichaPromotorController::class, 'editarOcorrencia'])->whereNumber(['promotor', 'ocorrencia'])->name('promotores.ocorrencia.editar');
+            Route::delete('/promotores/{promotor}/ocorrencias/{ocorrencia}', [FichaPromotorController::class, 'removerOcorrencia'])->whereNumber(['promotor', 'ocorrencia'])->name('promotores.ocorrencia.remover');
             Route::post('/promotores/{promotor}/ocorrencias', [FichaPromotorController::class, 'ocorrencia'])->whereNumber('promotor')->name('promotores.ocorrencia');
             Route::delete('/promotores/{promotor}/aparelhos/{token}', [FichaPromotorController::class, 'revogarAparelho'])->whereNumber(['promotor', 'token'])->name('promotores.aparelho.revogar');
             Route::get('/promotores/{promotor}/foto', [PromotorController::class, 'foto'])->whereNumber('promotor')->name('promotores.foto');

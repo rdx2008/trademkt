@@ -113,7 +113,7 @@ class Equipe
     /** @return Collection<int, Pessoa> */
     private function ler(Agencia $agencia): Collection
     {
-        $colunas = ['id', 'nome', 'perfil', 'ativo', 'tipo_vinculo', 'agencia_id', 'cidade_base', 'uf_base'];
+        $colunas = ['id', 'nome', 'perfil', 'ativo', 'tipo_vinculo', 'agencia_id', 'cidade_base', 'uf_base', 'habilitacao_restrita'];
 
         if ($agencia->agencia_tenant_id === null) {
             $usuarios = User::whereIn('perfil', [Perfil::AdminAgencia->value, Perfil::Supervisor->value, Perfil::Promotor->value])
@@ -135,7 +135,7 @@ class Equipe
             return $usuarios->map(fn (User $u) => Pessoa::deUsuario(
                 $u,
                 $agencia->id,
-                ($habilitacoes[$u->id] ?? collect())->pluck('industria_id')->all(),
+                $u->habilitacao_restrita ? ($habilitacoes[$u->id] ?? collect())->pluck('industria_id')->all() : null,
                 ($afastamentos[$u->id] ?? collect())->map(fn ($a) => [substr((string) $a->inicio, 0, 10), substr((string) $a->fim, 0, 10)])->all(),
             ))->values();
         }

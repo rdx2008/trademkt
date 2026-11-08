@@ -10,13 +10,17 @@ use App\Models\Afastamento;
 use App\Models\User;
 use App\Rules\Cpf;
 use App\Services\Promotores\Cadastro;
+use App\Services\Promotores\FichaOperacional;
 use App\Services\Promotores\ImportacaoPromotores;
+use App\Services\Promotores\Redistribuicao;
 use App\Support\Estados;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Laravel\Sanctum\PersonalAccessToken;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Writer\XLSX\Writer;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -79,6 +83,11 @@ class PromotorController extends Controller
             'filtros' => $filtros,
             'podeGerir' => $eu->podeGerirPromotores(),
             'afastados' => Afastamento::em(now()->toDateString())->pluck('tipo', 'usuario_id'),
+            'hoje' => app(FichaOperacional::class)->resumoDeHoje(tenant(), $promotores->pluck('id')->all()),
+            'aparelhos' => PersonalAccessToken::whereIn('tokenable_id', $promotores->pluck('id'))->where('tokenable_type', (new User)->getMorphClass())
+                ->orderBy('last_used_at')->get(['tokenable_id', 'name', 'last_used_at'])->keyBy('tokenable_id'),
+            'semIndustria' => $promotores->filter(fn (User $u) => $u->habilitacao_restrita)->pluck('id')
+                ->diff(DB::table('promotor_industrias')->whereIn('usuario_id', $promotores->pluck('id'))->pluck('usuario_id'))->flip(),
             'vinculos' => TipoVinculo::cases(),
         ]);
     }
@@ -130,7 +139,17 @@ class PromotorController extends Controller
         $ativar = $request->boolean('ativo');
         $this->cadastro->alternarAtivo($usuario, $ativar, $eu);
 
-        return redirect()->route('promotores.edit', $usuario)->with('status', $ativar ? 'Promotor reativado.' : 'Promotor desativado. O app dele foi desconectado.');
+        $resposta = redirect()->route('promotores.edit', $usuario)->with('status', $ativar ? 'Promotor reativado.' : 'Promotor desativado. O app dele foi desconectado.');
+        if (! $ativar) {
+            $inicio = today()->toDateString();
+            $fim = today()->addDays(60)->toDateString();
+            $pendentes = count(app(Redistribuicao::class)->executar(tenant(), $usuario, $inicio, $fim, $eu));
+            if ($pendentes > 0) {
+                $resposta->with('redistribuir', ['n' => $pendentes, 'url' => route('promotores.redistribuir', ['promotor' => $usuario->id, 'inicio' => $inicio, 'fim' => $fim])]);
+            }
+        }
+
+        return $resposta;
     }
 
     public function convite(Request $request, int $promotor): RedirectResponse

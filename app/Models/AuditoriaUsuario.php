@@ -33,9 +33,12 @@ class AuditoriaUsuario extends Model
         'cpf_visualizado' => 'CPF consultado',
         'importado' => 'Cadastrado por planilha',
         'habilitacao_alterada' => 'Habilitação por indústria alterada',
+        'visitas_redistribuidas' => 'Visitas passadas para colegas',
         'afastamento_registrado' => 'Afastamento registrado',
         'afastamento_removido' => 'Afastamento removido',
         'ocorrencia_registrada' => 'Ocorrência registrada',
+        'ocorrencia_editada' => 'Ocorrência editada',
+        'ocorrencia_removida' => 'Ocorrência removida',
         'aparelho_desconectado' => 'Aparelho desconectado',
     ];
 

@@ -40,6 +40,8 @@
                     <th>Cidade base</th>
                     <th>CPF</th>
                     <th>Situação</th>
+                    <th>Hoje</th>
+                    <th>Aparelho</th>
                     <th>Último acesso ao app</th>
                     <th></th>
                 </tr>
@@ -72,11 +74,26 @@
                                 <span class="selo ok">Ativo</span>
                             @endif
                         </td>
+                        @php($h = $hoje[$p->id] ?? null)
+                        <td>
+                            @if ($h)
+                                {{ $h['total'] }} visita(s) · {{ $h['iniciadas'] }} iniciada(s)
+                                @if ($p->ativo && $h['iniciadas'] === 0 && (! $p->ultimo_acesso_em || ! $p->ultimo_acesso_em->isToday()))
+                                    <div><span class="selo alerta">Ainda não abriu o app hoje</span></div>
+                                @endif
+                            @else
+                                —
+                            @endif
+                            @if ($p->ativo && $semIndustria->has($p->id))
+                                <div><span class="selo alerta">Sem indústria habilitada</span></div>
+                            @endif
+                        </td>
+                        <td>{{ $aparelhos[$p->id]->name ?? '—' }}</td>
                         <td>{{ $p->ultimo_acesso_em?->format('d/m/Y H:i') ?? '—' }}</td>
                         <td style="white-space:nowrap"><a href="{{ route('promotores.ficha', $p->id) }}">Ficha</a>@if ($podeGerir) · <a href="{{ route('promotores.edit', $p->id) }}">Editar</a>@endif</td>
                     </tr>
                 @empty
-                    <tr><td colspan="8">Nenhum promotor encontrado.@if ($podeGerir) <a href="{{ route('promotores.create') }}">Cadastrar o primeiro</a>.@endif</td></tr>
+                    <tr><td colspan="10">Nenhum promotor encontrado.@if ($podeGerir) <a href="{{ route('promotores.create') }}">Cadastrar o primeiro</a>.@endif</td></tr>
                 @endforelse
             </tbody>
         </table>

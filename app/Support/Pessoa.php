@@ -36,11 +36,11 @@ final class Pessoa
     {
         return new self(
             $usuario->id, $agenciaId, $usuario->nome, $usuario->perfil, $usuario->ativo, $usuario->tipo_vinculo,
-            $usuario->cidade_base, $usuario->uf_base, $industrias ?: null, $afastamentos,
+            $usuario->cidade_base, $usuario->uf_base, $industrias, $afastamentos,
         );
     }
 
-    /** Habilitado para a indústria (id da instalação)? Sem restrição cadastrada vale para todas. */
+    /** Habilitado para a indústria (id da instalação)? Sem restrição vale para todas; lista vazia, para nenhuma. */
     public function habilitadoPara(?string $industriaId): bool
     {
         return $this->industrias === null || $industriaId === null || in_array($industriaId, $this->industrias, true);

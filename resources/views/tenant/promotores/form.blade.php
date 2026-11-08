@@ -6,6 +6,8 @@
         <a class="botao secundario" href="{{ route('promotores.index') }}">Voltar à lista</a>
     </div>
 
+    @include('tenant.promotores._aviso-redistribuir')
+
     @if (session('convite_url'))
         <div class="cartao" id="cartao-convite">
             <h2>Convite de primeiro acesso</h2>

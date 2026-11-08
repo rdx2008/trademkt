@@ -38,6 +38,7 @@ class Cadastro
                 'agencia_id' => $this->agenciaId(),
                 'password' => Str::random(48), // sem senha própria até aceitar o convite
                 'ativo' => true,
+                'habilitacao_restrita' => true,
             ])->save();
 
             if ($foto) {
