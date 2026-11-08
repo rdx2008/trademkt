@@ -66,7 +66,7 @@ class ExecucaoVisitaController extends Controller
                 } else {
                     abort_unless($v->check_in && $v->status === StatusVisita::EmAndamento, 409, 'Tire primeiro a foto de antes da gôndola: ela abre a visita.');
                     if ($gps->lt(Carbon::parse($v->check_in['gps_em'])) || $gps->gt(now()->addMinutes(5))) {
-                        throw ValidationException::withMessages(['gps_em' => 'A foto deve ser posterior ao check-in e não pode estar no futuro.']);
+                        throw ValidationException::withMessages(['gps_em' => 'A foto deve ser posterior à primeira foto da visita e não pode estar no futuro.']);
                     }
                 }
                 $antes = $v->fotos()->where('tipo', 'antes')->get();
@@ -150,7 +150,7 @@ class ExecucaoVisitaController extends Controller
             }
             $inicio = Carbon::parse($v->check_in['gps_em']);
             if ($fim->lt($inicio) || $fim->gt(now()->addMinutes(5)) || $fotos->contains(fn ($f) => $fim->lt(Carbon::parse($f->metadados['gps_em'])))) {
-                throw ValidationException::withMessages(['finalizada_em' => 'Horário incompatível com o check-in ou as fotos.']);
+                throw ValidationException::withMessages(['finalizada_em' => 'Horário incompatível com as fotos da visita.']);
             }
             $v->forceFill(['tipo_conclusao' => $dados['tipo'], 'finalizacao_uuid' => $dados['uuid'], 'finalizacao_hash' => $hash, 'concluida_em' => $fim, 'recebida_em' => now(), 'observacao' => $payload['observacao'], 'duracao_segundos' => (int) $inicio->diffInSeconds($fim), 'status' => $dados['tipo'] === 'impedimento' ? StatusVisita::EmAtencao : StatusVisita::Realizada])->save();
             $v->itens()->createMany($itens->map(fn ($i) => ['sku_id' => $i['sku_id'], 'situacao_estoque' => $i['estoque']])->all());

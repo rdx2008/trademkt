@@ -115,7 +115,7 @@ class RegrasVisita {
       return 'A foto precisa ser tirada dentro do raio de ${pdv.raioM} m do PDV.';
     }
     if (p.gpsEm.isBefore(e.checkIn!.gpsEm)) {
-      return 'A hora do GPS da foto é anterior ao check-in. Aguarde o GPS atualizar.';
+      return 'A hora do GPS da foto é anterior à da primeira foto. Aguarde o GPS atualizar.';
     }
     switch (tipo) {
       case TipoFoto.antes:
@@ -180,7 +180,7 @@ class RegrasVisita {
     }
     final ultimo = e.ultimoHorario;
     if (ultimo != null && finalizadaEm.isBefore(ultimo)) {
-      return 'O horário de conclusão é anterior ao check-in ou às fotos.';
+      return 'O horário de conclusão é anterior à hora das fotos.';
     }
 
     return null;

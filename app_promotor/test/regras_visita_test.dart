@@ -94,8 +94,8 @@ void main() {
       expect(RegrasVisita.validarFoto(visitaPadrao(), comCheckIn, TipoFoto.ruptura, posicaoNoPdv(gpsEm: t1, simulada: true)), contains('simulada'));
     });
 
-    test('hora do GPS anterior ao check-in é recusada', () {
-      expect(RegrasVisita.validarFoto(visitaPadrao(), comCheckIn, TipoFoto.antes, posicaoNoPdv(gpsEm: t0.subtract(const Duration(minutes: 1)))), contains('anterior ao check-in'));
+    test('hora do GPS anterior à primeira foto é recusada', () {
+      expect(RegrasVisita.validarFoto(visitaPadrao(), comCheckIn, TipoFoto.antes, posicaoNoPdv(gpsEm: t0.subtract(const Duration(minutes: 1)))), contains('anterior à da primeira foto'));
     });
   });
 

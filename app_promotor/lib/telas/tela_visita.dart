@@ -196,20 +196,20 @@ class _TelaVisitaState extends State<TelaVisita> {
               const SizedBox(height: 12),
               _Passo(
                 numero: 1,
-                titulo: 'Foto antes da gôndola (abre a visita)',
+                titulo: 'Foto antes da gôndola',
                 feito: e.temFotoAntes,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (e.temCheckIn)
                       _Linha(
-                        'Visita aberta às ${formatarDataHoraBr(e.checkIn!.gpsEm)} · ${e.checkIn!.distanciaM.round()} m do PDV',
+                        'Foto registrada às ${formatarDataHoraBr(e.checkIn!.gpsEm)} · ${e.checkIn!.distanciaM.round()} m do PDV',
                         enviado: e.checkIn!.enviado,
                       )
                     else
                       Text(
-                        'A foto é o seu check-in: guarda a hora e o local. Raio permitido: ${visita.pdv.raioM} m. '
-                        'O GPS é lido só ao tirar as fotos.',
+                        'Tire a foto dentro do raio de ${visita.pdv.raioM} m do PDV. '
+                        'A localização e a hora da foto ficam salvas. O GPS é lido só ao tirar as fotos.',
                       ),
                     const SizedBox(height: 8),
                     _Fotos(
@@ -575,7 +575,7 @@ class _Envios extends StatelessWidget {
   }
 
   String _rotuloItem(ItemFila item) => switch (item.tipo) {
-        TipoItemFila.checkIn => 'Check-in',
+        TipoItemFila.checkIn => 'Local e hora da visita',
         TipoItemFila.foto => 'Foto ${item.payload['tipo']}',
         TipoItemFila.conclusao => 'Conclusão (${item.payload['tipo']})',
       };
