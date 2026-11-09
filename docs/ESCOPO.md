@@ -104,23 +104,21 @@ indústria → representante comercial → gerente de trade → supervisor.
    produção SKU/dia por promotor.
 
 **Fora do escopo:** acordos e verbas de trade, incentivo ao revendedor, comunicação e treinamento,
-integrações com ERP e sell-out, reconhecimento de imagem por IA.
+integrações com ERP e sell-out, reconhecimento de imagem por IA, importador de catálogo com IA
+(OpenAI) e notificações por e-mail e push (estes dois últimos retirados pelo dono em 08/11/2026).
 
 ### Importador de catálogo
 
-Lê o catálogo de cada indústria sem padrão fixo: a API da OpenAI lê cada página (texto e imagem) e
-devolve os produtos em campos padronizados.
+Lê o catálogo de cada indústria por **planilha (CSV/XLSX) ou PDF com texto selecionável, por regras e
+sem IA** (ver `docs/FASE-2.md`, item 2.3a). Decisão do dono em 08/11/2026: a versão com a API da OpenAI
+foi retirada do escopo; o que está implementado resolve (catálogo da Gaboardi carregado sem problemas).
 
-1. A indústria ou o admin envia o PDF, XML ou planilha.
-2. A IA extrai por produto: nome, código, categoria, foto e cada embalagem (unidade, reembalagem,
+1. A indústria ou o admin envia a planilha ou o PDF.
+2. O sistema extrai por produto: nome, código, categoria e cada embalagem (unidade, reembalagem,
    caixa master) com quantidade e GTIN.
-3. O sistema valida os GTINs (quantidade de dígitos e dígito verificador) e aponta duplicados.
-4. Tela de revisão em tabela, com itens suspeitos em amarelo, para corrigir antes de gravar.
+3. Valida os GTINs (quantidade de dígitos e dígito verificador) e aponta duplicados.
+4. Tela de revisão em tabela, com itens suspeitos em amarelo, antes de gravar.
 5. Reimportar atualiza pelo código do produto, sem duplicar.
-
-**Atualização de 01/11/2026:** a importação por planilha (CSV/XLSX) e por PDF com texto
-selecionável, lida por regras e sem IA, já está implementada (ver `docs/FASE-2.md`, item 2.3a).
-O uso da IA fica como complemento para layouts que as regras não reconhecem.
 
 Observado no catálogo da Gaboardi: layout em colunas embaralha a extração simples de texto; há
 produtos com dois códigos (Alumgrill em caixas de 25 e de 12) e variantes marcadas por símbolos na
@@ -242,24 +240,37 @@ Galeria de fotos: antes e depois lado a lado por visita, filtro por PDV e data.
 
 ## Custos externos
 
-GPS, câmera, cálculo de raio, push (Firebase Cloud Messaging) e e-mail (SMTP): sem custo.
-Mapa no painel com Leaflet; geocoding do Google só no cadastro do PDV, com cache.
-Pagos: Google Play (US$ 25 uma vez), OpenAI por uso no importador, Apple (US$ 99/ano, só na fase 8).
+GPS, câmera e cálculo de raio: sem custo.
+Mapa no painel com Leaflet; geocoding do Google (ou OpenStreetMap) só no cadastro do PDV, com cache.
+Pagos: Google Play (US$ 25 uma vez) e Apple (US$ 99/ano, só se o app iOS for feito).
 
 ## Fases
 
 | Fase | Entrega | Estimativa |
 | --- | --- | --- |
 | 1. Base e infraestrutura | Core Laravel, provisionamento, domínios, perfis, login, painel central | **Concluída** |
-| 2. Cadastros e roteiros | PDVs, importador de catálogo (OpenAI), contratos de visita, roteiros | 4 semanas |
+| 2. Cadastros e roteiros | PDVs, importador de catálogo (planilha e PDF), contratos de visita, roteiros | 4 semanas |
 | 3. App do promotor (Android) | Flutter offline: login por código, roteiro do dia, check-in, fotos, SKUs, estoque, sync | 5 semanas |
-| 4. Demandas e alertas | Painel do supermercado, ruptura, pedido de visita, atribuição pela agência, impedimento, não executadas, push e e-mail | 2 semanas |
+| 4. Demandas e alertas | Painel do supermercado, ruptura, pedido de visita, atribuição pela agência, impedimento, não executadas (alertas dentro do painel) | 2 semanas |
 | 5. Indicadores | Dashboards, produção SKU/dia, galeria antes/depois, Excel | 2 semanas |
 | 6. Piloto | Instalação Gaboardi, carga do catálogo, testes em campo, ajustes | 3 semanas |
 | 7. Materiais de PDV | Estoque, envio e comprovação de instalação | 2 semanas |
 | 8. App iOS | Mesmo código Flutter para iPhone e testes | 2 semanas |
 
 Publicação nas lojas: definir depois.
+
+## Ideias guardadas (depois do piloto)
+
+Decisão do dono em 08/11/2026: ficam guardadas, sem prazo, para depois que o piloto da Gaboardi mostrar a necessidade.
+
+- **Materiais de PDV (fase 7):** a indústria cadastra o estoque de material de merchandising (display, cartaz,
+  wobbler, ponta de gôndola); a agência envia ao promotor; o promotor comprova a instalação com foto do tipo
+  `material` (já prevista em `visita_fotos`); a indústria vê o que foi instalado, onde e quando. Tabelas
+  `materiais` e `material_movimentos`. Nada implementado. Estimativa do escopo original: 2 semanas.
+- **App iOS (fase 8):** o código Flutter é o mesmo, mas compilar exige um Mac com Xcode (ou um serviço de build
+  na nuvem como o Codemagic), conta de desenvolvedor Apple (US$ 99/ano), ajustes nativos (permissões de câmera e
+  localização) e teste em iPhone real. Só vale se houver promotor com iPhone. Não dá para compilar a partir do
+  Windows.
 
 ### Etapa futura (fora das fases): rede de freelancers
 

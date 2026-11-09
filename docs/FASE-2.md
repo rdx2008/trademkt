@@ -26,27 +26,15 @@ instalação de agência só vê PDVs com contrato da sua indústria.
 
 **Aceite:** código único por indústria; GTIN com dígito errado é marcado, não bloqueado.
 
-## 2.3 Importador de catálogo (OpenAI)
+## 2.3 Importador de catálogo com IA (retirado do escopo)
 
-- Upload de PDF, XML ou planilha (até 60 MB) → job na fila.
-- PDF: converter cada página em imagem + texto e enviar à API da OpenAI (modelo com visão), pedindo
-  saída em JSON estrito com schema fixo (produtos → embalagens). Chave em `OPENAI_API_KEY`.
-- XML e planilha: tentar mapeamento direto primeiro; usar IA só se o layout não for reconhecido.
-- Tabela `importacoes_catalogo` (status, arquivo, página atual, erros, custo estimado) e
-  `importacao_itens` (dados extraídos, alertas, decisão).
-- Tela de revisão: tabela editável, itens com alerta em amarelo (GTIN inválido, duplicado, campo
-  faltando, produto já existente com dados diferentes). Botão "gravar selecionados".
-- Reimportação atualiza pelo código do produto, sem duplicar.
-- Testes com a API mockada (sem chamar a OpenAI nos testes).
-
-**Aceite:** importar o catálogo da Gaboardi e revisar sem editar o banco na mão; nada é gravado em
-`skus` antes da confirmação.
-
+Retirado pelo dono em 08/11/2026: a importação por planilha e PDF com texto, por regras e sem IA (2.3a
+abaixo), resolveu o catálogo da Gaboardi. Não há mais previsão de usar a API da OpenAI no importador.
 ### 2.3a Importação sem IA (implementada)
 
-Decisão do dono em 01/11/2026: enquanto não há créditos da OpenAI, o catálogo entra por planilha
-(CSV/XLSX) ou por PDF com texto selecionável, lido por regras. A importação com IA continua
-prevista acima para layouts que as regras não entendem. Telas em **Catálogo → Importar produtos**
+Decisão do dono em 01/11/2026 (confirmada em 08/11/2026): o catálogo entra por planilha
+(CSV/XLSX) ou por PDF com texto selecionável, lido por regras. A importação com IA foi
+retirada do escopo. Telas em **Catálogo → Importar produtos**
 (admin da instalação escolhe a indústria; gerente de trade importa só na própria marca).
 
 - Fluxo igual ao de PDVs: envio → revisão → «Gravar selecionados». A análise fica em arquivo

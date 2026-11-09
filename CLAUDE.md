@@ -49,8 +49,8 @@ Só o promotor usa o app; os demais usam o painel web (responsivo).
 - Visita agendada não executada: vermelho no admin + notificação.
 - Gerente do supermercado: vê marcas, agências e promotores da loja; botões "Avisar ruptura" e "Pedir visita".
 - Freelancer: só relatório de SKUs trabalhados por dia. Pagamento não passa pelo sistema.
-- Importador de catálogo: planilha e PDF com texto, por regras e sem IA (implementado); OpenAI para
-  qualquer layout fica como complemento. Tela de revisão, validação de GTIN. Produto tem várias embalagens (unidade, reembalagem, caixa master), cada uma com GTIN.
+- Importador de catálogo: planilha e PDF com texto, por regras e sem IA (implementado; a versão com OpenAI foi
+  retirada do escopo em 08/11/2026). Tela de revisão, validação de GTIN. Produto tem várias embalagens (unidade, reembalagem, caixa master), cada uma com GTIN.
 - Política de privacidade e termo de uso: texto padrão editável por instalação.
 - Etapa futura (fora das fases): rede de freelancers estilo "Uber" (demanda para todos,
   primeiro que aceita executa, valor fixo). Identidade do promotor fica no painel central
@@ -59,9 +59,9 @@ Só o promotor usa o app; os demais usam o painel web (responsivo).
 ## Fases
 
 1. Base e infraestrutura — concluída.
-2. Cadastros e roteiros — implementados; importação de catálogo por planilha e PDF sem IA feita; versão com OpenAI (2.3) pendente.
+2. Cadastros e roteiros — implementados; importação de catálogo por planilha e PDF sem IA feita (versão com OpenAI retirada do escopo).
 3. Execução — backend 3.1–3.3 e app Flutter Android (3.4) implementados; teste em aparelho real pendente.
-4. Demandas e alertas — web e alertas internos implementados; e-mail e push pendentes.
+4. Demandas e alertas — web e alertas internos implementados (e-mail e push retirados do escopo).
 5. Indicadores — painel, produção, galeria privada e Excel implementados.
 6. Piloto Gaboardi — pendente.
 7. Materiais de PDV — pendente.
@@ -255,7 +255,7 @@ Referência: `docs/FASE-4.md`.
 - `operacao:encerrar-dia` roda a cada dez minutos nas instalações ativas e recupera
   dias anteriores. Marca visitas previstas sem check-in como não executadas e alerta
   demandas vencidas. Execuções repetidas não duplicam os avisos.
-- Canais entregues: caixa de alertas dentro do painel. E-mail, SMS e push não implementados.
+- Canais entregues: caixa de alertas dentro do painel. E-mail, SMS e push fora do escopo (decisão de 08/11/2026).
 
 ### Indicadores, galeria e Excel
 
@@ -297,13 +297,12 @@ Referência: `docs/FASE-5.md`.
    testar em aparelho real (câmera, GPS, mock location), configurar assinatura de release e
    publicar o APK para o piloto. No Coolify: rebuild e conferir as migrações `vinculos` (central)
    e `operacao_com_agencia_vinculada` (clientes); criar a instalação da agência e o vínculo.
-2. Notificações por e-mail e push; hoje os alertas são internos ao painel.
-3. Importador de catálogo com OpenAI (2.3), adiado por falta de créditos informada pelo
-   dono; hoje há importação por planilha e PDF sem IA. Ao retomar, rodar na fila e revisar
-   `retry_after` do Redis (90 s). Upload de 60 MB exige rebuild do container (php.ini e nginx).
-4. Piloto Gaboardi: carga de catálogo/dados, testes em campo e ajustes da operação.
-5. Materiais de PDV e app iOS. Rede aberta de freelancers e sincronização global de
-   identidades/equipes continuam futuras, sem implementação nesta entrega.
+2. Piloto Gaboardi: catálogo já carregado (08/11/2026); faltam testes em campo e ajustes da operação.
+3. Guardado para depois do piloto, sem prazo (detalhes em `docs/ESCOPO.md`, "Ideias guardadas"): materiais de
+   PDV (estoque, envio ao promotor e comprovação por foto) e app iOS (exige Mac/Xcode ou build na nuvem e conta
+   Apple de US$ 99/ano; não compila a partir do Windows). Rede aberta de freelancers e sincronização global de
+   identidades/equipes continuam futuras.
+4. Retirados do escopo em 08/11/2026: importador de catálogo com IA (OpenAI) e notificações por e-mail e push.
 
 ## Comandos
 
