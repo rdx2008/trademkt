@@ -5,21 +5,34 @@ use App\Http\Controllers\Central\ClienteController;
 use App\Http\Controllers\Central\DashboardController;
 use App\Http\Controllers\Central\DominioController;
 use App\Http\Controllers\Central\MarcaClienteController;
+use App\Http\Controllers\Central\SiteInstitucionalController;
 use App\Http\Controllers\Central\VinculoController;
+use App\Http\Controllers\InstitucionalController;
 use Illuminate\Support\Facades\Route;
 
 /*
  * Painel central do fornecedor (só nos domínios em CENTRAL_DOMAINS).
  */
 
-Route::redirect('/', '/visao-geral');
+Route::get('/', [InstitucionalController::class, 'index'])->name('institucional.home');
+Route::get('/privacidade', [InstitucionalController::class, 'privacidade'])->name('institucional.privacidade');
+Route::get('/institucional/arquivos/{arquivo}', [InstitucionalController::class, 'arquivo'])->name('institucional.arquivo');
+Route::post('/demonstracao', [InstitucionalController::class, 'contato'])->middleware('throttle:5,10')->name('institucional.contato');
 
 Route::middleware('guest:admin')->group(function () {
-    Route::get('/entrar', [AuthController::class, 'create'])->name('central.login');
-    Route::post('/entrar', [AuthController::class, 'store'])->middleware('throttle:login');
+    Route::get('/'.config('institucional.acesso'), [AuthController::class, 'create'])->name('central.login');
+    Route::post('/'.config('institucional.acesso'), [AuthController::class, 'store'])->middleware('throttle:login');
 });
 
 Route::middleware('auth:admin')->group(function () {
+    Route::prefix(config('institucional.acesso').'/site')->name('central.site.')->controller(SiteInstitucionalController::class)->group(function () {
+        Route::get('/', 'edit')->name('edit');
+        Route::put('/', 'update')->name('update');
+        Route::get('/previa', 'previa')->name('previa');
+        Route::get('/contatos', 'contatos')->name('contatos');
+        Route::patch('/contatos/{contato}', 'situacao')->name('situacao');
+        Route::delete('/contatos/{contato}', 'excluirContato')->name('excluir-contato');
+    });
     Route::get('/vinculos', [VinculoController::class, 'index'])->name('central.vinculos.index');
     Route::post('/vinculos', [VinculoController::class, 'store'])->name('central.vinculos.store');
     Route::get('/vinculos/{vinculo}/editar', [VinculoController::class, 'edit'])->whereNumber('vinculo')->name('central.vinculos.edit');

@@ -277,3 +277,8 @@ Decisão do dono em 08/11/2026: ficam guardadas, sem prazo, para depois que o pi
 Demanda vai para todos os promotores disponíveis na região; o primeiro que aceita executa, por
 valor fixo. O promotor vê só o relatório do total a receber; quem paga é a agência, fora do
 sistema. Preparação: identidade única do promotor no painel central (`users.promotor_global_id`).
+
+
+## Site institucional (10/11/2026)
+
+Página pública no domínio central, integrada ao Laravel, com layout responsivo em Bootstrap e edição pelo super admin: conteúdo estruturado, imagens, SEO, ordenação e visibilidade de seções, rascunho, prévia autenticada e publicação. Pedidos de demonstração ficam no banco central com situação de atendimento e exclusão. A página não expõe link de login; o caminho central é configurado em INSTITUCIONAL_ACESSO. Os domínios dos clientes mantêm seu fluxo atual. Materiais de PDV fica oculto na página enquanto pendente.

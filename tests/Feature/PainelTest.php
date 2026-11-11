@@ -168,7 +168,7 @@ class PainelTest extends TestCase
 
     public function test_super_admin_tem_resumo_central_protegido(): void
     {
-        $this->get('http://central.test/visao-geral')->assertRedirect('http://central.test/entrar');
+        $this->get('http://central.test/visao-geral')->assertRedirect('http://central.test/'.config('institucional.acesso'));
         $admin = Admin::create(['nome' => 'Rodolfo', 'email' => 'admin@central.test', 'password' => 'senha1234']);
         $resposta = $this->actingAs($admin, 'admin')->get('http://central.test/visao-geral')
             ->assertOk()->assertSee('Visão geral da plataforma')->assertViewHas('total', 1)->assertViewHas('ativos', 1)
