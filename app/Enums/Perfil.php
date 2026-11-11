@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Support\Contexto;
+
 /**
  * Perfis de usuário dentro de uma instalação (cliente).
  * O super admin do fornecedor fica no banco central (App\Models\Admin).
@@ -57,25 +59,43 @@ enum Perfil: string
     }
 
     /**
-     * Perfis que este perfil pode cadastrar/editar.
+     * Perfis que existem numa instalação: a indústria tem a sua gestão, o comercial e as lojas;
+     * a agência tem a sua gestão e os promotores. Promotor nunca pertence à indústria.
      *
      * @return list<self>
      */
-    public function podeGerenciar(): array
+    public static function daInstalacao(?TipoInstalacao $tipo): array
     {
+        return match ($tipo) {
+            TipoInstalacao::Industria => [self::AdminInstalacao, self::GerenteTrade, self::Representante, self::GerentePdv],
+            TipoInstalacao::Agencia => [self::AdminInstalacao, self::AdminAgencia, self::Supervisor, self::Promotor],
+            default => self::cases(),
+        };
+    }
+
+    /**
+     * Perfis que este perfil pode cadastrar/editar na instalação atual.
+     *
+     * @return list<self>
+     */
+    public function podeGerenciar(?TipoInstalacao $tipo = null): array
+    {
+        $tipo ??= Contexto::instalacao()?->tipo;
+
+        // Promotor tem tela própria (Promotores), com CPF, foto e convite: não entra por Usuários.
         return match ($this) {
-            self::AdminInstalacao => self::cases(),
-            self::AdminAgencia => [self::Supervisor, self::Promotor],
+            self::AdminInstalacao => array_values(array_filter(self::daInstalacao($tipo), fn (self $p) => $p !== self::Promotor)),
+            self::AdminAgencia => [self::Supervisor],
             self::GerenteTrade => [self::Representante],
             default => [],
         };
     }
 
-    /** @return array<string, string> valor => rótulo */
-    public static function opcoes(): array
+    /** @return array<string, string> valor => rótulo, só dos perfis da instalação */
+    public static function opcoes(?TipoInstalacao $tipo = null): array
     {
         $opcoes = [];
-        foreach (self::cases() as $perfil) {
+        foreach (self::daInstalacao($tipo ?? Contexto::instalacao()?->tipo) as $perfil) {
             $opcoes[$perfil->value] = $perfil->label();
         }
 

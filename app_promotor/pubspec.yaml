@@ -1,0 +1,33 @@
+name: app_promotor
+description: "App Android do promotor (Trade Promo): roteiro, check-in, fotos e sincronização offline."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.7
+
+dependencies:
+  camera: ^0.12.2
+  device_info_plus: ^13.3.0
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_secure_storage: ^11.2.0
+  geolocator: ^14.1.2
+  http: ^1.6.0
+  image: ^4.12.0
+  path: ^1.9.1
+  path_provider: ^2.1.6
+  qr_flutter: ^4.1.0
+  sqflite: ^2.4.5
+  uuid: ^4.6.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  sqflite_common_ffi: ^2.4.5
+
+flutter:
+  uses-material-design: true

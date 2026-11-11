@@ -21,6 +21,20 @@ class Tenant extends BaseTenant implements TenantWithDatabase
 {
     use HasDatabase, HasDomains;
 
+    /**
+     * O id é o slug informado no provisionamento (sem gerador de id). Sem isto o
+     * pacote trata a chave como autoincremento e sobrescreve o id após o insert.
+     */
+    public function getIncrementing(): bool
+    {
+        return false;
+    }
+
+    public function getKeyType(): string
+    {
+        return 'string';
+    }
+
     protected $casts = [
         'tipo' => TipoInstalacao::class,
         'ativo' => 'boolean',
@@ -37,9 +51,25 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         ];
     }
 
+    /** Marca própria (cor, logo e nome) liberada? Ligada por padrão; o fornecedor pode desligar. */
+    public function whiteLabelAtivo(): bool
+    {
+        return $this->white_label === null ? true : (bool) $this->white_label;
+    }
+
+    /** Mostra "Desenvolvido por Trade Promo" no rodapé? Desligado por padrão. */
+    public function mostrarCreditos(): bool
+    {
+        return (bool) $this->mostrar_creditos;
+    }
+
     /** Domínio principal (o primeiro cadastrado). */
     public function dominioPrincipal(): ?string
     {
+        if ($this->dominio_principal && $this->domains()->where('domain', $this->dominio_principal)->exists()) {
+            return $this->dominio_principal;
+        }
+
         return $this->domains()->orderBy('id')->value('domain');
     }
 

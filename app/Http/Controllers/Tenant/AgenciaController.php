@@ -4,52 +4,23 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agencia;
-use Illuminate\Http\RedirectResponse;
+use App\Models\Vinculo;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
+/**
+ * Agências que atendem a instalação: só consulta. O vínculo entre indústria e agência é feito
+ * pelo painel central; a equipe de promotores é cadastrada pela própria agência.
+ */
 class AgenciaController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $vinculos = Vinculo::where('industria_tenant_id', tenant('id'))->get()->keyBy('agencia_tenant_id');
+
         return view('tenant.agencias.index', [
-            'agencias' => Agencia::withCount('usuarios')->orderBy('nome')->get(),
+            'agencias' => Agencia::visiveisPara($request->user())->orderBy('nome')->get()
+                ->each(fn (Agencia $a) => $a->setAttribute('vinculo', $a->agencia_tenant_id ? $vinculos->get($a->agencia_tenant_id) : null)),
         ]);
-    }
-
-    public function create(): View
-    {
-        return view('tenant.agencias.form', ['agencia' => new Agencia(['ativo' => true])]);
-    }
-
-    public function store(Request $request): RedirectResponse
-    {
-        Agencia::create($this->validar($request));
-
-        return redirect()->route('agencias.index')->with('status', 'Agência cadastrada.');
-    }
-
-    public function edit(Agencia $agencia): View
-    {
-        return view('tenant.agencias.form', ['agencia' => $agencia]);
-    }
-
-    public function update(Request $request, Agencia $agencia): RedirectResponse
-    {
-        $agencia->update($this->validar($request, $agencia));
-
-        return redirect()->route('agencias.index')->with('status', 'Agência atualizada.');
-    }
-
-    private function validar(Request $request, ?Agencia $agencia = null): array
-    {
-        $dados = $request->validate([
-            'nome' => ['required', 'string', 'max:120'],
-            'cnpj' => ['nullable', 'string', 'max:18', Rule::unique('agencias', 'cnpj')->ignore($agencia?->id)],
-        ]);
-        $dados['ativo'] = $request->boolean('ativo');
-
-        return $dados;
     }
 }

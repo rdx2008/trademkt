@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'fotos_disk' => env('FOTOS_DISK', 'local'),
+    'dominio_clientes' => env('TRADE_DOMINIO_CLIENTES', 'trade.mastervps.online'),
     // Tipos de instalação vendidos
     'tipos_instalacao' => [
         'agencia' => 'Agência',
@@ -12,6 +14,26 @@ return [
 
     // Versão da API consumida pelo app do promotor
     'api_versao' => '1',
+
+    // Geocoding do endereço do PDV (só no cadastro, com cache)
+    'geocoding' => [
+        'google_key' => env('GOOGLE_MAPS_API_KEY'),
+        // Sem chave do Google, usa o OpenStreetMap (gratuito, sem cadastro).
+        'osm' => env('GEOCODING_OSM', true),
+        'cache_dias' => 90,
+    ],
+
+    // Importação de PDVs por planilha
+    'importacao_pdvs' => [
+        'max_kb' => 10240,
+        'max_linhas' => 5000,
+    ],
+
+    // Importação do catálogo de SKUs (planilha ou PDF)
+    'importacao_skus' => [
+        'max_kb' => 61440,
+        'max_linhas' => 5000,
+    ],
 
     // Super admin criado pelo "php artisan db:seed" (banco central)
     'super_admin' => [

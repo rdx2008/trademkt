@@ -1,4 +1,5 @@
 <x-layout titulo="Entrar" marca="Painel central">
+    @push('head')<meta name="robots" content="noindex,nofollow">@endpush
     <div class="entrar">
         <h1>Painel central</h1>
         <form method="POST" action="{{ route('central.login') }}" class="cartao">

@@ -1,0 +1,207 @@
+{
+  "marca": "Trade Promo",
+  "cor": "#222fb9",
+  "botao": "Solicitar demonstração",
+  "botao_url": "#contato",
+  "botao_secundario": "Conhecer a plataforma",
+  "email": "",
+  "telefone": "",
+  "whatsapp": "",
+  "instagram": "",
+  "linkedin": "",
+  "seo_titulo": "Trade Promo | Gestão da execução no PDV",
+  "seo_descricao": "Conecte o campo à gestão: roteiros, execução offline no Android, evidências de visitas e indicadores para indústrias e agências.",
+  "rodape": "Plataforma de gestão da execução de trade marketing no PDV.",
+  "dados_legais": "",
+  "privacidade": "Usamos os dados enviados neste formulário (nome, e-mail, empresa, perfil e mensagem) para responder ao seu pedido de demonstração e conduzir o atendimento comercial.\n\nO acesso aos contatos é restrito à equipe responsável pelo atendimento. Você pode solicitar informações sobre o tratamento, correção ou exclusão dos seus dados pelo canal de contato informado neste site.\n\nEste site utiliza cookies de sessão para funcionamento do formulário e proteção da aplicação. Não há ferramentas de publicidade ou rastreamento de audiência nesta página.",
+  "imagens": [],
+  "secoes": {
+    "hero": {
+      "titulo": "Sua operação de trade, conectada do campo à gestão.",
+      "texto": "Planeje visitas, acompanhe a execução no PDV e reúna evidências em uma única plataforma.",
+      "ordem": 10,
+      "visivel": true,
+      "itens": []
+    },
+    "publicos": {
+      "titulo": "Uma plataforma. Toda a operação.",
+      "texto": "",
+      "ordem": 20,
+      "visivel": true,
+      "itens": [
+        {
+          "titulo": "Indústrias",
+          "texto": "Ganhe visibilidade da execução da sua marca no PDV e acompanhe as agências prestadoras.",
+          "icone": "industria",
+          "visivel": true
+        },
+        {
+          "titulo": "Agências",
+          "texto": "Organize a operação das equipes, acompanhe as visitas e centralize as evidências.",
+          "icone": "equipe",
+          "visivel": true
+        },
+        {
+          "titulo": "Supermercados",
+          "texto": "Consulte as marcas atendidas na sua loja, solicite visitas e informe rupturas.",
+          "icone": "loja",
+          "visivel": true
+        }
+      ]
+    },
+    "etapas": {
+      "titulo": "Do planejamento à evidência.",
+      "texto": "",
+      "ordem": 30,
+      "visivel": true,
+      "itens": [
+        {
+          "titulo": "Planeje",
+          "texto": "Defina roteiros, pontos de venda e frequência de atendimento.",
+          "icone": "roteiro",
+          "visivel": true
+        },
+        {
+          "titulo": "Execute",
+          "texto": "A equipe em campo realiza as visitas com o app Android.",
+          "icone": "celular",
+          "visivel": true
+        },
+        {
+          "titulo": "Registre",
+          "texto": "Reúna fotos antes e depois, SKUs trabalhados e ocorrências.",
+          "icone": "camera",
+          "visivel": true
+        },
+        {
+          "titulo": "Acompanhe",
+          "texto": "Visualize a execução no painel web e acompanhe a operação.",
+          "icone": "grafico",
+          "visivel": true
+        }
+      ]
+    },
+    "recursos": {
+      "titulo": "Tudo o que sua equipe precisa no PDV.",
+      "texto": "",
+      "ordem": 40,
+      "visivel": true,
+      "itens": [
+        {
+          "titulo": "Roteiros e visitas",
+          "texto": "Organize a operação em campo com roteiros e agenda de visitas.",
+          "icone": "pin",
+          "visivel": true
+        },
+        {
+          "titulo": "Check-in por GPS",
+          "texto": "Registre a presença no PDV com validação de localização.",
+          "icone": "alvo",
+          "visivel": true
+        },
+        {
+          "titulo": "Fotos antes e depois",
+          "texto": "Consulte as evidências das visitas realizadas no ponto de venda.",
+          "icone": "camera",
+          "visivel": true
+        },
+        {
+          "titulo": "Rupturas e impedimentos",
+          "texto": "Registre faltas de produtos e impedimentos de atendimento.",
+          "icone": "alerta",
+          "visivel": true
+        },
+        {
+          "titulo": "Materiais de PDV",
+          "texto": "Controle materiais e a comprovação de instalação por foto.",
+          "icone": "caixa",
+          "visivel": false
+        },
+        {
+          "titulo": "Indicadores e Excel",
+          "texto": "Acompanhe a execução no painel web e exporte os dados em Excel.",
+          "icone": "grafico",
+          "visivel": true
+        }
+      ]
+    },
+    "offline": {
+      "titulo": "No campo, mesmo sem conexão.",
+      "texto": "Registre a visita offline e sincronize quando a conexão voltar.",
+      "ordem": 50,
+      "visivel": true,
+      "itens": []
+    },
+    "indicadores": {
+      "titulo": "Mais clareza para decidir.",
+      "texto": "Acompanhe a execução em um painel web com informações para apoiar a gestão de trade.",
+      "ordem": 60,
+      "visivel": true,
+      "itens": [
+        {
+          "titulo": "Cobertura",
+          "texto": "Cumprimento das visitas previstas.",
+          "icone": "pin",
+          "visivel": true
+        },
+        {
+          "titulo": "Produtividade",
+          "texto": "Visitas e SKUs trabalhados por promotor.",
+          "icone": "grafico",
+          "visivel": true
+        },
+        {
+          "titulo": "Rupturas",
+          "texto": "Produtos e PDVs com registros de falta.",
+          "icone": "alerta",
+          "visivel": true
+        },
+        {
+          "titulo": "Evidências",
+          "texto": "Fotos antes e depois de cada visita.",
+          "icone": "camera",
+          "visivel": true
+        }
+      ]
+    },
+    "faq": {
+      "titulo": "Perguntas frequentes",
+      "texto": "",
+      "ordem": 70,
+      "visivel": true,
+      "itens": [
+        {
+          "titulo": "Para quem é a plataforma?",
+          "texto": "Para indústrias e agências que precisam organizar e acompanhar a execução de promotores nos pontos de venda. Gerentes de supermercado participam pelo acesso disponibilizado na operação.",
+          "icone": "equipe",
+          "visivel": true
+        },
+        {
+          "titulo": "O app funciona offline?",
+          "texto": "Sim. O app Android permite registrar a execução sem conexão e sincronizar os registros posteriormente, quando a conexão voltar.",
+          "icone": "offline",
+          "visivel": true
+        },
+        {
+          "titulo": "Quem acessa cada informação?",
+          "texto": "O sistema utiliza perfis e permissões para limitar o acesso conforme a função e a operação de cada usuário.",
+          "icone": "alvo",
+          "visivel": true
+        },
+        {
+          "titulo": "Como conhecer a solução?",
+          "texto": "Preencha o formulário para solicitar uma apresentação voltada à sua operação.",
+          "icone": "celular",
+          "visivel": true
+        }
+      ]
+    },
+    "contato": {
+      "titulo": "Vamos conhecer sua operação?",
+      "texto": "Preencha o formulário e solicite uma demonstração da Trade Promo.",
+      "ordem": 80,
+      "visivel": true,
+      "itens": []
+    }
+  }
+}

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Central;
 use App\Enums\TipoInstalacao;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
+use App\Services\DominiosCliente;
 use App\Services\ProvisionarCliente;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,9 +27,9 @@ class ClienteController extends Controller
         ]);
     }
 
-    public function store(Request $request, ProvisionarCliente $provisionar): RedirectResponse
+    public function store(Request $request, ProvisionarCliente $provisionar, DominiosCliente $enderecos): RedirectResponse
     {
-        $dominios = preg_split('/[\s,]+/', (string) $request->input('dominios'), -1, PREG_SPLIT_NO_EMPTY);
+        $dominios = $enderecos->resolver($request->only(['tipo_endereco', 'subdominio', 'dominios']));
 
         $resultado = $provisionar->executar([
             'id' => (string) $request->input('id'),

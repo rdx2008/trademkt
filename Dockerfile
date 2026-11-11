@@ -3,8 +3,10 @@ FROM php:8.4-fpm-alpine
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# GD reprocessa fotos e grava a marca d'água da execução. O primeiro build dessa camada
+# pode demorar mais. Redis continua via predis (PHP puro), sem extensão nativa.
 RUN apk add --no-cache nginx supervisor su-exec \
-    && install-php-extensions pdo_mysql redis intl gd zip opcache pcntl bcmath exif
+    && install-php-extensions pdo_mysql zip pcntl gd
 
 WORKDIR /var/www/html
 

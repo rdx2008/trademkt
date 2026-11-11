@@ -47,7 +47,7 @@ php artisan cliente:criar gaboardi --nome="Gaboardi" --tipo=industria \
 php artisan serve
 ```
 
-Painel central em `http://localhost:8000`, cliente em `http://gaboardi.localhost:8000`
+Página institucional em `http://localhost:8000`, acesso central em `http://localhost:8000/conexao-7f4c92`, cliente em `http://gaboardi.localhost:8000`
 (`*.localhost` já aponta para a máquina na maioria dos navegadores).
 
 Testes (SQLite, não precisam de MySQL):
@@ -56,12 +56,22 @@ Testes (SQLite, não precisam de MySQL):
 php artisan test
 ```
 
+### Testes automáticos no GitHub
+
+O workflow **Testes**, na aba **Actions**, executa a suíte unitária e funcional em cada push
+e pull request. Usa Linux, PHP 8.4 (como o Docker de produção), as versões do `composer.lock`
+e bancos SQLite de teste. Não precisa de MySQL, Redis nem credenciais de produção.
+
+O resultado inclui os testes de visibilidade da indústria e de separação entre as operações
+das agências. Confira a execução correspondente ao commit antes de incorporar a branch à `main`.
+
 ## Deploy no Coolify
 
 1. **Novo recurso → Docker Compose**, apontando para este repositório.
 2. **Variáveis de ambiente** (no Coolify): `APP_KEY` (gere com `php artisan key:generate --show`),
    `APP_URL`, `CENTRAL_DOMAINS`, `DB_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `SUPER_ADMIN_EMAIL`,
-   `SUPER_ADMIN_SENHA`. As demais têm padrão no `docker-compose.yml`.
+   `SUPER_ADMIN_SENHA`. Opcional: `GOOGLE_MAPS_API_KEY` (localiza o endereço do PDV; sem ela, o
+   pino é posicionado à mão no mapa). As demais têm padrão no `docker-compose.yml`.
 3. **Domínios do serviço `app`**: o domínio do painel central e os domínios de cada cliente,
    separados por vírgula, na porta 8080 (ex.: `https://painel.seudominio.com.br:8080,https://trade.gaboardi.com.br:8080`).
    O Coolify gera o SSL de cada um.
@@ -111,3 +121,12 @@ Só o perfil **promotor** entra pelo app. Um token por aparelho; desativar o usu
 
 O `composer.lock` não está no repositório: gere com `composer install` e faça commit dele
 para fixar as versões usadas no build.
+
+
+## Site institucional
+
+A página pública do domínio central faz parte do sistema. Após atualizar, execute `php artisan migrate --force` (o deploy Docker já executa as migrações). Entre em `/conexao-7f4c92` e abra **Site institucional** no menu central. O antigo `/entrar` deixa de existir apenas no domínio central; os clientes mantêm seus acessos. Configure `INSTITUCIONAL_ACESSO` para alterar o caminho, sem barra inicial. Limpe/recrie o cache de configuração e rotas se utilizado no ambiente.
+
+O editor permite salvar rascunho, abrir prévia autenticada e publicar, editar identidade/textos/SEO/privacidade, ordenar e ocultar seções, adicionar/remover cartões e perguntas e enviar imagens PNG/JPG/WebP. Imagens ficam no volume persistente de `storage`, fora dos arquivos privados dos clientes. As ilustrações padrão não contêm dados reais. Materiais de PDV começa oculto.
+
+Pedidos de demonstração ficam no banco central, com situação de atendimento e opção de exclusão. Não há disparo automático de e-mail. Complete dados comerciais e política de privacidade antes de publicar. Não há nova senha: é usado o superadministrador já existente.
