@@ -3,7 +3,7 @@
     <div class="cabecalho">
         <div>
             <h1>Configurações de {{ $cliente->nome }}</h1>
-            <p class="rotulo">Marca própria, créditos no rodapé e fuso horário da empresa.</p>
+            <p class="rotulo">CNPJ, marca própria, créditos no rodapé e fuso horário da empresa.</p>
         </div>
         <a class="botao secundario" href="{{ route('central.clientes.index') }}">Voltar</a>
     </div>
@@ -17,6 +17,12 @@
         <div class="campo">
             <label class="check"><input type="checkbox" name="mostrar_creditos" value="1" @checked($cliente->mostrarCreditos())> Mostrar "Desenvolvido por Trade Promo" no rodapé e no menu</label>
             <div class="dica">Desligado por padrão: o cliente vê só a própria marca.</div>
+        </div>
+        <div class="campo">
+            <label for="cnpj">CNPJ</label>
+            <input type="text" id="cnpj" name="cnpj" value="{{ old('cnpj', $cliente->cnpjFormatado()) }}" maxlength="18" placeholder="00.000.000/0000-00">
+            <div class="dica">Identifica a empresa na rede (pedidos de vínculo e indústria gerida). Único por tipo de empresa.</div>
+            @error('cnpj')<div class="erro">{{ $message }}</div>@enderror
         </div>
         <div class="campo">
             <label for="fuso">Fuso horário</label>

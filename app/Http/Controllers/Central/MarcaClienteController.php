@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Central;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
+use App\Rules\Cnpj;
 use App\Support\Fuso;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,7 +25,12 @@ class MarcaClienteController extends Controller
 
     public function update(Request $request, Tenant $cliente): RedirectResponse
     {
-        $dados = $request->validate(['fuso' => ['nullable', Rule::in(array_keys(Fuso::OPCOES))]]);
+        $request->merge(['cnpj' => Cnpj::limpar($request->input('cnpj')) ?: null]);
+        $dados = $request->validate([
+            'fuso' => ['nullable', Rule::in(array_keys(Fuso::OPCOES))],
+            'cnpj' => ['nullable', new Cnpj, Rule::unique('tenants', 'cnpj')->where('tipo', $cliente->tipo->value)->ignore($cliente->id)],
+        ], ['cnpj.unique' => 'Já existe uma empresa deste tipo com este CNPJ no sistema.']);
+        $cliente->cnpj = $dados['cnpj'] ?? null;
         $cliente->white_label = $request->boolean('white_label');
         if (! empty($dados['fuso'])) {
             $cliente->fuso = $dados['fuso'];

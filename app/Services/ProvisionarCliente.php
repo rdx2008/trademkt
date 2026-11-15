@@ -8,6 +8,7 @@ use App\Models\Agencia;
 use App\Models\Industria;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Rules\Cnpj;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -36,6 +37,7 @@ class ProvisionarCliente
             (array) ($dados['dominios'] ?? [])
         ))));
 
+        $dados['cnpj'] = Cnpj::limpar($dados['cnpj'] ?? null) ?: null;
         $validados = $this->validar($dados);
 
         $senha = ($validados['admin_senha'] ?? null) ?: Str::password(12, symbols: false);
@@ -47,6 +49,11 @@ class ProvisionarCliente
             'tipo' => $validados['tipo'],
             'codigo' => $validados['codigo'],
             'ativo' => true,
+            'cnpj' => $validados['cnpj'] ?? null,
+            'modo' => $dados['modo'] ?? 'propria',
+            'dono_tenant_id' => $dados['dono_tenant_id'] ?? null,
+            'origem' => $dados['origem'] ?? 'super_admin',
+            'criado_por_tenant_id' => $dados['criado_por_tenant_id'] ?? null,
         ]);
 
         try {
@@ -110,7 +117,9 @@ class ProvisionarCliente
             'admin_nome' => ['required', 'string', 'max:120'],
             'admin_email' => ['required', 'email'],
             'admin_senha' => ['nullable', 'string', 'min:8'],
+            'cnpj' => ['nullable', new Cnpj, Rule::unique('tenants', 'cnpj')->where('tipo', $dados['tipo'] ?? null)],
         ], [
+            'cnpj.unique' => 'Já existe uma empresa deste tipo com este CNPJ no sistema.',
             'id.regex' => 'O identificador deve começar com letra e ter só letras minúsculas, números e _ (3 a 40).',
             'codigo.regex' => 'O código deve ter só letras minúsculas, números, _ ou - (3 a 40).',
             'dominios.*.regex' => 'Domínio inválido: :input',

@@ -37,6 +37,7 @@ class ClienteController extends Controller
             'nome' => (string) $request->input('nome'),
             'tipo' => (string) $request->input('tipo'),
             'codigo' => $request->input('codigo'),
+            'cnpj' => $request->input('cnpj'),
             'dominios' => $dominios,
             'admin_nome' => (string) $request->input('admin_nome'),
             'admin_email' => (string) $request->input('admin_email'),

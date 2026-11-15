@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\ModoEmpresa;
 use App\Enums\TipoInstalacao;
+use App\Rules\Cnpj;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
@@ -38,6 +41,12 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     protected $casts = [
         'tipo' => TipoInstalacao::class,
         'ativo' => 'boolean',
+        'modo' => ModoEmpresa::class,
+    ];
+
+    protected $attributes = [
+        'modo' => 'propria',
+        'origem' => 'super_admin',
     ];
 
     public static function getCustomColumns(): array
@@ -48,7 +57,28 @@ class Tenant extends BaseTenant implements TenantWithDatabase
             'tipo',
             'codigo',
             'ativo',
+            'cnpj',
+            'modo',
+            'dono_tenant_id',
+            'origem',
+            'criado_por_tenant_id',
         ];
+    }
+
+    /** Empresa dona deste cadastro (indústria da agência interna, agência da indústria gerida). */
+    public function dono(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'dono_tenant_id');
+    }
+
+    public function cnpjFormatado(): ?string
+    {
+        if (! $this->cnpj) {
+            return null;
+        }
+        $c = Cnpj::limpar($this->cnpj);
+
+        return substr($c, 0, 2).'.'.substr($c, 2, 3).'.'.substr($c, 5, 3).'/'.substr($c, 8, 4).'-'.substr($c, 12, 2);
     }
 
     /** Marca própria (cor, logo e nome) liberada? Ligada por padrão; o fornecedor pode desligar. */

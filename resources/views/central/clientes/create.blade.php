@@ -20,6 +20,12 @@
                 </select>
             </div>
             <div class="campo">
+                <label for="cnpj">CNPJ</label>
+                <input type="text" id="cnpj" name="cnpj" value="{{ old('cnpj') }}" maxlength="18" placeholder="00.000.000/0000-00">
+                <div class="dica">Identifica a empresa na rede: não pode haver duas do mesmo tipo com o mesmo CNPJ.</div>
+                @error('cnpj')<div class="erro">{{ $message }}</div>@enderror
+            </div>
+            <div class="campo">
                 <label for="fuso">Fuso horário</label>
                 <select id="fuso" name="fuso">
                     @foreach (\App\Support\Fuso::OPCOES as $valor => $rotulo)

@@ -27,7 +27,30 @@ class Vinculo extends Model
 
     protected function casts(): array
     {
-        return ['regioes' => 'array', 'ativo' => 'boolean'];
+        return ['regioes' => 'array', 'ativo' => 'boolean', 'permissoes' => 'array', 'decidido_em' => 'datetime'];
+    }
+
+    public const PENDENTE = 'pendente';
+
+    public const ATIVO = 'ativo';
+
+    public const RECUSADO = 'recusado';
+
+    public const ENCERRADO = 'encerrado';
+
+    public const RELACOES = ['prospect' => 'Prospect', 'cliente' => 'Cliente', 'encerrado' => 'Encerrado'];
+
+    /** Permissões da agência dentro da indústria, com o padrão de cada uma (fase 9). */
+    public const PERMISSOES = ['agencia_mantem_catalogo' => true];
+
+    public function permite(string $permissao): bool
+    {
+        return (bool) (($this->permissoes ?? [])[$permissao] ?? self::PERMISSOES[$permissao] ?? false);
+    }
+
+    public function agenciaMantemCatalogo(): bool
+    {
+        return $this->permite('agencia_mantem_catalogo');
     }
 
     public function industria(): BelongsTo

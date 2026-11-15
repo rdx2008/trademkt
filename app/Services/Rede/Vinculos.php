@@ -41,6 +41,10 @@ class Vinculos
                 'agencia_tenant_id' => $agencia->id,
                 'regioes' => $regioes,
                 'ativo' => true,
+                'status' => Vinculo::ATIVO,
+                'origem' => 'super_admin',
+                'relacao' => 'cliente',
+                'decidido_em' => now(),
             ]);
             $this->sincronizarAgenciaLocal($vinculo);
 
@@ -53,6 +57,7 @@ class Vinculos
     {
         $vinculo->regioes = Regioes::normalizar($regioes);
         $vinculo->ativo = $ativo;
+        $vinculo->status = $ativo ? Vinculo::ATIVO : Vinculo::ENCERRADO;
         $vinculo->save();
         $this->sincronizarAgenciaLocal($vinculo);
     }
