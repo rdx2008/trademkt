@@ -31,6 +31,7 @@ use App\Http\Controllers\Tenant\PromotorController;
 use App\Http\Controllers\Tenant\RedeAgenciaController;
 use App\Http\Controllers\Tenant\RedeController;
 use App\Http\Controllers\Tenant\RegiaoController;
+use App\Http\Controllers\Tenant\ResultadoColetaController;
 use App\Http\Controllers\Tenant\RoteiroController;
 use App\Http\Controllers\Tenant\SkuController;
 use App\Http\Controllers\Tenant\UsuarioController;
@@ -90,6 +91,11 @@ Route::middleware([
         Route::get('/alertas', [AlertaController::class, 'index'])->name('alertas.index');
         Route::patch('/alertas/{alerta}/lida', [AlertaController::class, 'ler'])->whereNumber('alerta')->name('alertas.ler');
         Route::get('/indicadores', [IndicadorController::class, 'index'])->name('indicadores.index');
+        // Resultados das coletas (fase 10): cada perfil vê as visitas que já pode ver.
+        Route::middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante')->group(function () {
+            Route::get('/coletas/resultados', [ResultadoColetaController::class, 'index'])->name('coletas.resultados');
+            Route::get('/coletas/resultados.csv', [ResultadoColetaController::class, 'csv'])->name('coletas.resultados.csv');
+        });
         Route::get('/indicadores/galeria', [IndicadorController::class, 'galeria'])->name('indicadores.galeria');
         Route::get('/indicadores/excel', [IndicadorController::class, 'exportar'])->name('indicadores.exportar');
         Route::get('/bi', [BiController::class, 'index'])->middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade')->name('bi.index');

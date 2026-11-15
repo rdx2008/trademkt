@@ -18,7 +18,7 @@ class Formulario
      * Definição enviada pelo painel -> lista normalizada de campos.
      *
      * @param  mixed  $entrada  lista de campos (rotulo, tipo, obrigatorio, por_sku, opcoes)
-     * @return list<array{chave: string, rotulo: string, tipo: string, obrigatorio: bool, por_sku: bool, opcoes: list<string>}>
+     * @return list<array{chave: string, rotulo: string, tipo: string, obrigatorio: bool, por_sku: bool, opcoes: list<string>, papel: ?string}>
      *
      * @throws ValidationException
      */
@@ -62,6 +62,7 @@ class Formulario
                 'obrigatorio' => filter_var($c['obrigatorio'] ?? false, FILTER_VALIDATE_BOOLEAN),
                 'por_sku' => filter_var($c['por_sku'] ?? false, FILTER_VALIDATE_BOOLEAN) && $tipo !== 'foto',
                 'opcoes' => $opcoes,
+                'papel' => isset(ModeloColeta::PAPEIS[(string) ($c['papel'] ?? '')]) ? (string) $c['papel'] : null,
             ];
         }
 

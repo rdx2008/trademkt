@@ -9,6 +9,7 @@ use App\Models\ModeloColeta;
 use App\Models\Sku;
 use App\Models\Visita;
 use App\Services\Coletas\Formulario;
+use App\Services\Operacao\AlertasOperacao;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -60,7 +61,30 @@ class ColetaController extends Controller
                 'respondida_em' => Carbon::parse($dados['respondida_em'])->setTimezone(config('app.timezone')), 'recebida_em' => now(),
             ]);
 
+            $this->alertarValidade($v, $modelo, $dados['versao'], $limpas, $skuId);
+
             return response()->json(['id' => $resposta->id, 'repetida' => false], 201);
         });
+    }
+
+    /** Validade dentro da janela do modelo: avisa a gestão (um alerta por visita). */
+    private function alertarValidade(Visita $v, ModeloColeta $modelo, int $versao, array $respostas, ?int $skuId): void
+    {
+        $chave = $modelo->chaveDoPapel('validade', $versao);
+        if (! $modelo->alerta_dias || ! $chave || empty($respostas[$chave])) {
+            return;
+        }
+        $validade = Carbon::parse($respostas[$chave])->startOfDay();
+        $limite = today()->addDays($modelo->alerta_dias);
+        if ($validade->gt($limite)) {
+            return;
+        }
+        $produto = $skuId ? Sku::find($skuId) : null;
+        app(AlertasOperacao::class)->emitir(
+            'validade_proxima',
+            $v->fresh(['roteiro', 'pdv']),
+            'Produto perto do vencimento',
+            ($v->pdv->nome ?? 'Loja').' · '.($produto ? $produto->codigo.' '.$produto->descricao.' · ' : '').'vence em '.$validade->format('d/m/Y').($validade->lt(today()) ? ' (já vencido)' : '').'.',
+        );
     }
 }

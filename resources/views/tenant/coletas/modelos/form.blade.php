@@ -56,6 +56,9 @@
                         <label>Opções (uma por linha)</label>
                         <textarea name="campos[{{ $i }}][opcoes]" rows="3">{{ is_array($c['opcoes'] ?? null) ? implode("\n", $c['opcoes']) : ($c['opcoes'] ?? '') }}</textarea>
                     </div>
+                    <div class="campo"><label>Papel nos relatórios (opcional)</label>
+                        <select name="campos[{{ $i }}][papel]"><option value="">Nenhum</option>@foreach ($papeis as $v => $r)<option value="{{ $v }}" @selected(($c['papel'] ?? '') === $v)>{{ $r }}</option>@endforeach</select>
+                    </div>
                     <label class="check"><input type="checkbox" name="campos[{{ $i }}][obrigatorio]" value="1" @checked(! empty($c['obrigatorio']))> Obrigatório</label>
                     <label class="check"><input type="checkbox" name="campos[{{ $i }}][por_sku]" value="1" @checked(! empty($c['por_sku']))> Por produto (uma resposta para cada SKU)</label>
                     <button type="button" class="link-botao remover-campo">Remover campo</button>
@@ -64,6 +67,11 @@
         </div>
         <button type="button" class="botao secundario" id="novo-campo">+ Adicionar campo</button>
 
+        <div class="campo" style="margin-top:16px">
+            <label for="alerta_dias">Alertar quando um produto vencer em até (dias)</label>
+            <input id="alerta_dias" type="number" name="alerta_dias" min="1" max="365" value="{{ old('alerta_dias', $modelo->alerta_dias) }}" placeholder="Sem alerta">
+            <div class="dica">Vale para modelos com um campo de papel "Data de validade". O alerta vai para a gestão da indústria, o representante da loja e a agência.</div>
+        </div>
         <div class="campo" style="margin-top:16px">
             <label class="check"><input type="checkbox" name="ativo" value="1" @checked(old('ativo', $modelo->ativo))> Ativo (o promotor recebe este modelo nas visitas)</label>
         </div>
@@ -75,6 +83,8 @@
             (function () {
                 var cont = document.getElementById('campos');
                 var tipos = @json($tiposCampo);
+                var papeis = @json($papeis);
+                function opcoesPapel() { return '<option value="">Nenhum</option>' + Object.keys(papeis).map(function (k) { return '<option value="' + k + '">' + papeis[k] + '</option>'; }).join(''); }
                 function opcoesTipo() { return Object.keys(tipos).map(function (k) { return '<option value="' + k + '">' + tipos[k] + '</option>'; }).join(''); }
                 var proximo = cont.querySelectorAll('.campo-modelo').length;
                 function ligar(bloco) {
@@ -90,6 +100,7 @@
                     d.innerHTML = '<div class="linha"><div class="campo"><label>Pergunta</label><input name="campos[' + i + '][rotulo]" maxlength="120"></div>' +
                         '<div class="campo"><label>Tipo de resposta</label><select name="campos[' + i + '][tipo]" class="tipo-campo">' + opcoesTipo() + '</select></div></div>' +
                         '<div class="campo opcoes" style="display:none"><label>Opções (uma por linha)</label><textarea name="campos[' + i + '][opcoes]" rows="3"></textarea></div>' +
+                        '<div class="campo"><label>Papel nos relatórios (opcional)</label><select name="campos[' + i + '][papel]">' + opcoesPapel() + '</select></div>' +
                         '<label class="check"><input type="checkbox" name="campos[' + i + '][obrigatorio]" value="1"> Obrigatório</label> ' +
                         '<label class="check"><input type="checkbox" name="campos[' + i + '][por_sku]" value="1"> Por produto (uma resposta para cada SKU)</label> ' +
                         '<button type="button" class="link-botao remover-campo">Remover campo</button>';

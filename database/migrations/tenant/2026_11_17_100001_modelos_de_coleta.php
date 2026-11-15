@@ -23,6 +23,8 @@ return new class extends Migration
             $table->json('campos');
             // Escopo opcional: restringe a redes de supermercados (ids). Vazio = todas as lojas da indústria.
             $table->json('redes')->nullable();
+            // Validade: avisa quando algum produto respondido vence em até N dias (nulo = sem alerta).
+            $table->unsignedSmallInteger('alerta_dias')->nullable();
             $table->boolean('ativo')->default(true);
             $table->timestamps();
             $table->index(['industria_id', 'ativo']);

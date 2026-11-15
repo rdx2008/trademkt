@@ -112,12 +112,14 @@ class ModeloColetaController extends Controller
             'nome' => ['required', 'string', 'max:120'],
             'tipo' => ['required', Rule::in(array_keys(ModeloColeta::TIPOS))],
             'campos' => ['required', 'array'],
+            'alerta_dias' => ['nullable', 'integer', 'between:1,365'],
             'redes' => ['nullable', 'array'],
             'redes.*' => ['integer', Rule::exists('redes', 'id')],
         ], ['industria_id.in' => 'Indústria inválida.']);
         $dados['campos'] = Formulario::normalizarCampos($request->input('campos'));
         $dados['redes'] = array_values(array_map('intval', $dados['redes'] ?? [])) ?: null;
         $dados['ativo'] = $request->boolean('ativo');
+        $dados['alerta_dias'] = $dados['alerta_dias'] ?? null;
 
         return $dados;
     }
@@ -131,6 +133,7 @@ class ModeloColetaController extends Controller
             'redes' => Rede::orderBy('nome')->pluck('nome', 'id'),
             'tiposModelo' => ModeloColeta::TIPOS,
             'tiposCampo' => ModeloColeta::TIPOS_CAMPO,
+            'papeis' => ModeloColeta::PAPEIS,
         ];
     }
 }

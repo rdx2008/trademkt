@@ -53,6 +53,7 @@ class MenuLateral
 
             self::topico('Resultados', 'flaticon-381-controls-3', [
                 self::item($eu->perfil === Perfil::Promotor ? 'Minha produção' : 'Indicadores e fotos', 'indicadores.index', ['indicadores.*'], true),
+                self::item('Resultados das coletas', 'coletas.resultados', ['coletas.resultados*'], $eu->temPerfil(Perfil::AdminInstalacao, Perfil::AdminAgencia, Perfil::Supervisor, Perfil::GerenteTrade, Perfil::Representante)),
                 self::item(PainelBi::visao($eu) === 'industria' ? 'BI da indústria' : 'BI da agência', 'bi.index', ['bi.*'], $eu->podeVerBi()),
             ]),
 

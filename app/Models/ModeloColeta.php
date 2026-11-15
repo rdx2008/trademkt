@@ -38,6 +38,21 @@ class ModeloColeta extends Model
         'data' => 'Data',
     ];
 
+    /** Papel do campo nos relatórios (o que a resposta significa), independente do nome da pergunta. */
+    public const PAPEIS = [
+        'preco_proprio' => 'Preço do nosso produto',
+        'preco_promocional' => 'Preço promocional do nosso produto',
+        'preco_concorrente' => 'Preço do concorrente',
+        'validade' => 'Data de validade',
+        'lote' => 'Lote',
+        'quantidade_vencimento' => 'Quantidade com esta validade',
+        'estoque_gondola' => 'Estoque na gôndola',
+        'estoque_loja' => 'Estoque na loja',
+        'estoque_deposito' => 'Estoque no depósito',
+        'frentes_marca' => 'Frentes da nossa marca (share)',
+        'frentes_concorrentes' => 'Frentes de concorrentes (share)',
+    ];
+
     protected function casts(): array
     {
         return ['campos' => 'array', 'redes' => 'array', 'ativo' => 'boolean', 'versao' => 'integer'];
@@ -72,6 +87,14 @@ class ModeloColeta extends Model
     public function respostas(): HasMany
     {
         return $this->hasMany(ColetaResposta::class, 'modelo_id');
+    }
+
+    /** Chave do campo que tem o papel, na versão dada (a atual por padrão). */
+    public function chaveDoPapel(string $papel, ?int $versao = null): ?string
+    {
+        $campos = $versao === null ? $this->campos : $this->camposDaVersao($versao);
+
+        return collect($campos)->firstWhere('papel', $papel)['chave'] ?? null;
     }
 
     /** O modelo é "por SKU" quando algum campo é respondido para cada produto. */
