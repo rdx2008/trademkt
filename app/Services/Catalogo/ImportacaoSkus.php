@@ -9,6 +9,7 @@ use App\Models\Sku;
 use App\Models\SkuEmbalagem;
 use App\Models\User;
 use App\Rules\Gtin;
+use App\Support\Contexto;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -146,6 +147,8 @@ class ImportacaoSkus
 
         Storage::disk('local')->put(self::PASTA."/{$id}.json", json_encode([
             'usuario_id' => $usuario->id,
+            // ids de usuário de bancos diferentes podem coincidir: a revisão é da pessoa e da agência
+            'agencia_id' => Contexto::agenciaLocal()?->id,
             'industria_id' => $industriaId,
             'fonte' => $fonte,
             'arquivo' => $nomeArquivo,
@@ -165,7 +168,7 @@ class ImportacaoSkus
 
         $revisao = json_decode(Storage::disk('local')->get(self::PASTA."/{$id}.json"), true);
 
-        return ($revisao['usuario_id'] ?? null) === $usuario->id ? $revisao : null;
+        return ($revisao['usuario_id'] ?? null) === $usuario->id && ($revisao['agencia_id'] ?? null) === Contexto::agenciaLocal()?->id ? $revisao : null;
     }
 
     public function descartarRevisao(string $id): void
@@ -177,7 +180,7 @@ class ImportacaoSkus
     public function industriasDoUsuario(User $usuario)
     {
         return Industria::where('ativo', true)
-            ->when(! $usuario->temPerfil(Perfil::AdminInstalacao), fn ($q) => $q->whereKey($usuario->industria_id ?? 0))
+            ->when(! $usuario->temPerfil(Perfil::AdminInstalacao) && ! (Contexto::agenciaMantemCatalogo() && $usuario->perfil === Perfil::AdminAgencia), fn ($q) => $q->whereKey($usuario->industria_id ?? 0))
             ->orderBy('nome')
             ->pluck('nome', 'id');
     }

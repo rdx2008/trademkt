@@ -76,7 +76,7 @@ class PainelAgenciaTest extends TestCase
     public function test_admin_da_agencia_abre_a_operacao_das_industrias_vinculadas_e_troca_entre_elas(): void
     {
         $this->actingAs($this->adminSul)->get(self::SUL.'/painel')->assertOk()
-            ->assertSee('Indústria atendida')->assertSee('seletor-operacao', false)->assertSee('Acme')->assertDontSee('Importar produtos')
+            ->assertSee('Indústria atendida')->assertSee('seletor-operacao', false)->assertSee('Acme')->assertSee('Importar produtos') // catálogo liberado à agência por padrão (fase 9)
             ->assertSee('Mercado Acme')->assertDontSee('Super Centro') // primeira indústria por nome
             ->assertSee('Sul'); // a marca é a da agência
 
@@ -90,7 +90,7 @@ class PainelAgenciaTest extends TestCase
         // Cadastros da indústria não são da agência.
         $this->get(self::SUL.'/pdvs/create')->assertForbidden();
         $this->get(self::SUL.'/industrias')->assertForbidden();
-        $this->get(self::SUL.'/skus/importar')->assertForbidden();
+        $this->get(self::SUL.'/skus/importar')->assertOk(); // a importação de catálogo vale para a agência por padrão (fase 9)
         $this->post(self::SUL.'/operacao/outra')->assertNotFound();
 
         // A equipe continua na própria agência.

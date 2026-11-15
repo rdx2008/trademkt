@@ -140,7 +140,8 @@ Route::middleware([
         // instalação e o gerente de trade (só a própria marca), conferido no controller.
         // Importação em lote (planilha ou PDF): admin da instalação e gerente de trade da marca.
         // Declarada antes do resource para que "importar" não seja lido como um SKU.
-        Route::middleware('perfil:admin_instalacao,gerente_trade')->group(function () {
+        // A agência vinculada também importa, dentro da operação da indústria, quando o vínculo permite (fase 9).
+        Route::middleware('perfil:admin_instalacao,gerente_trade,admin_agencia')->group(function () {
             Route::get('/skus/importar', [ImportacaoSkuController::class, 'create'])->name('skus.importar');
             Route::get('/skus/importar/modelo', [ImportacaoSkuController::class, 'modelo'])->name('skus.importar.modelo');
             Route::post('/skus/importar', [ImportacaoSkuController::class, 'store'])->name('skus.importar.enviar');

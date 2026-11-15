@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Enums\Perfil;
 use App\Http\Controllers\Controller;
 use App\Services\Catalogo\ImportacaoSkus;
 use App\Services\Catalogo\LeitorPdfCatalogo;
 use App\Services\Catalogo\LeitorPlanilhaSkus;
+use App\Support\Contexto;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -29,6 +32,8 @@ class ImportacaoSkuController extends Controller
 
     public function create(Request $request): View
     {
+        $this->autorizar($request);
+
         return view('tenant.skus.importar', [
             'industrias' => $this->importacao->industriasDoUsuario($request->user()),
         ]);
@@ -36,6 +41,7 @@ class ImportacaoSkuController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $this->autorizar($request);
         $industrias = $this->importacao->industriasDoUsuario($request->user());
 
         // O gerente de trade só importa na própria marca.
@@ -80,6 +86,7 @@ class ImportacaoSkuController extends Controller
 
     public function show(Request $request, string $importacao): View
     {
+        $this->autorizar($request);
         $revisao = $this->revisao($request, $importacao);
         $itens = collect($revisao['itens']);
 
@@ -96,6 +103,7 @@ class ImportacaoSkuController extends Controller
 
     public function update(Request $request, string $importacao): RedirectResponse
     {
+        $this->autorizar($request);
         $revisao = $this->revisao($request, $importacao);
 
         $request->validate([
@@ -112,6 +120,13 @@ class ImportacaoSkuController extends Controller
         ));
 
         $resultado = $this->importacao->gravar($revisao['industria_id'], $selecionados);
+        DB::table('importacoes_catalogo')->insert([
+            'industria_id' => $revisao['industria_id'], 'agencia_id' => Contexto::agenciaLocal()?->id,
+            'usuario_id' => $request->user()->id, 'usuario_nome' => $request->user()->nome,
+            'fonte' => $revisao['fonte'], 'arquivo' => mb_substr((string) $revisao['arquivo'], 0, 200),
+            'criados' => $resultado['criados'], 'atualizados' => $resultado['atualizados'], 'ignorados' => $resultado['ignorados'],
+            'created_at' => now(),
+        ]);
         $this->importacao->descartarRevisao($importacao);
 
         $mensagem = "Importação concluída: {$resultado['criados']} SKU(s) criado(s), {$resultado['atualizados']} atualizado(s).";
@@ -127,6 +142,7 @@ class ImportacaoSkuController extends Controller
 
     public function destroy(Request $request, string $importacao): RedirectResponse
     {
+        $this->autorizar($request);
         $this->revisao($request, $importacao);
         $this->importacao->descartarRevisao($importacao);
 
@@ -136,6 +152,7 @@ class ImportacaoSkuController extends Controller
     /** Planilha de exemplo com as colunas aceitas. */
     public function modelo(): BinaryFileResponse
     {
+        $this->autorizar(request());
         $caminho = tempnam(sys_get_temp_dir(), 'modelo-skus').'.xlsx';
 
         $escritor = new Writer;
@@ -165,5 +182,13 @@ class ImportacaoSkuController extends Controller
         abort_unless($this->importacao->industriasDoUsuario($request->user())->has($revisao['industria_id']), 403);
 
         return $revisao;
+    }
+
+    /** A agência só importa dentro da operação de uma indústria que permite (vínculo ou indústria gerida). */
+    private function autorizar(Request $request): void
+    {
+        if ($request->user()->perfil === Perfil::AdminAgencia) {
+            abort_unless(Contexto::agenciaMantemCatalogo(), 403, 'Esta indústria não liberou o catálogo para a agência.');
+        }
     }
 }

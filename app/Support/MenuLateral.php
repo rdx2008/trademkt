@@ -31,7 +31,8 @@ class MenuLateral
         $agencia = $instalacao?->tipo === TipoInstalacao::Agencia;
         $gestao = $eu->temPerfil(Perfil::AdminInstalacao, Perfil::AdminAgencia);
         $acompanha = $eu->temPerfil(Perfil::AdminInstalacao, Perfil::AdminAgencia, Perfil::Supervisor, Perfil::GerenteTrade, Perfil::Representante);
-        $catalogoEditavel = ! $agencia && $eu->temPerfil(Perfil::AdminInstalacao, Perfil::GerenteTrade);
+        $catalogoEditavel = (! $agencia && $eu->temPerfil(Perfil::AdminInstalacao, Perfil::GerenteTrade))
+            || ($eu->perfil === Perfil::AdminAgencia && Contexto::agenciaMantemCatalogo());
         $cadastraOperacao = $gestao && ! $agencia;
 
         $inicio = match ($eu->perfil) {

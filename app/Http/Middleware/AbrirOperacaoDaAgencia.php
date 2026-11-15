@@ -20,7 +20,7 @@ class AbrirOperacaoDaAgencia
     private const LOCAIS = ['login', 'logout', 'usuarios.*', 'promotores.*', 'convite.*', 'cracha.*', 'vinculadas.*', 'configuracoes.*', 'marca.*', 'operacao.*', 'api.login', 'api.logout', 'api.me', 'api.roteiro'];
 
     /** O que a agência pode abrir dentro da indústria. O resto é cadastro da indústria. */
-    private const PERMITIDAS = ['dashboard', 'roteiros.*', 'visitas.mover', 'visitas.show', 'visitas.fotos', 'demandas.*', 'alertas.*', 'indicadores.*', 'bi.*', 'contratos.index', 'contratos.edit', 'contratos.update', 'pdvs.index', 'skus.index', 'skus.foto', 'regioes.index', 'redes.index', 'api.*'];
+    private const PERMITIDAS = ['dashboard', 'roteiros.*', 'visitas.mover', 'visitas.show', 'visitas.fotos', 'demandas.*', 'alertas.*', 'indicadores.*', 'bi.*', 'contratos.index', 'contratos.edit', 'contratos.update', 'pdvs.index', 'skus.index', 'skus.foto', 'skus.importar', 'skus.importar.*', 'regioes.index', 'redes.index', 'api.*'];
 
     public function __construct(private Operacao $operacao) {}
 

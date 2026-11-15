@@ -2,9 +2,11 @@
 
 namespace App\Support;
 
+use App\Enums\ModoEmpresa;
 use App\Enums\TipoInstalacao;
 use App\Models\Agencia;
 use App\Models\Tenant;
+use App\Models\Vinculo;
 
 /**
  * Em que instalação o usuário entrou e em qual operação ele está trabalhando.
@@ -45,6 +47,30 @@ class Contexto
         return self::$operacao !== null;
     }
 
+    private static ?bool $catalogoPelaAgencia = null;
+
+    /**
+     * A agência (dentro da operação de uma indústria) pode importar e manter o catálogo? Sim na
+     * indústria gerida por ela; na independente, conforme a permissão do vínculo (padrão: sim).
+     */
+    public static function agenciaMantemCatalogo(): bool
+    {
+        if (self::$operacao === null || self::$instalacao === null) {
+            return false;
+        }
+
+        return self::$catalogoPelaAgencia ??= (function () {
+            $industria = self::$operacao;
+            if ($industria->modo === ModoEmpresa::Gerida && $industria->dono_tenant_id === self::$instalacao->id) {
+                return true;
+            }
+            $vinculo = Vinculo::where('industria_tenant_id', $industria->id)
+                ->where('agencia_tenant_id', self::$instalacao->id)->where('status', Vinculo::ATIVO)->first();
+
+            return (bool) $vinculo?->agenciaMantemCatalogo();
+        })();
+    }
+
     /** A instalação de entrada é uma agência (com ou sem operação aberta). */
     public static function instalacaoEhAgencia(): bool
     {
@@ -66,6 +92,7 @@ class Contexto
 
     public static function abrirOperacao(Tenant $instalacao, Tenant $industria, Agencia $agenciaLocal): void
     {
+        self::$catalogoPelaAgencia = null;
         self::$instalacao = $instalacao;
         self::$operacao = $industria;
         self::$agenciaLocal = $agenciaLocal;
@@ -73,6 +100,7 @@ class Contexto
 
     public static function limpar(): void
     {
+        self::$catalogoPelaAgencia = null;
         self::$instalacao = null;
         self::$operacao = null;
         self::$agenciaLocal = null;
