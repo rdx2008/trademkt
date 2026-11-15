@@ -18,6 +18,7 @@ use App\Http\Controllers\Tenant\CrachaController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\DemandaController;
 use App\Http\Controllers\Tenant\EmpresasVinculadasController;
+use App\Http\Controllers\Tenant\ExportacaoController;
 use App\Http\Controllers\Tenant\FichaPromotorController;
 use App\Http\Controllers\Tenant\ImportacaoPdvController;
 use App\Http\Controllers\Tenant\ImportacaoSkuController;
@@ -91,6 +92,13 @@ Route::middleware([
         Route::get('/alertas', [AlertaController::class, 'index'])->name('alertas.index');
         Route::patch('/alertas/{alerta}/lida', [AlertaController::class, 'ler'])->whereNumber('alerta')->name('alertas.ler');
         Route::get('/indicadores', [IndicadorController::class, 'index'])->name('indicadores.index');
+        // Fila de downloads (fase 10): exportações grandes em segundo plano, só do dono.
+        Route::middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante')->group(function () {
+            Route::get('/exportacoes', [ExportacaoController::class, 'index'])->name('exportacoes.index');
+            Route::post('/exportacoes', [ExportacaoController::class, 'store'])->name('exportacoes.store');
+            Route::get('/exportacoes/{exportacao}/baixar', [ExportacaoController::class, 'baixar'])->whereNumber('exportacao')->name('exportacoes.baixar');
+            Route::delete('/exportacoes/{exportacao}', [ExportacaoController::class, 'destroy'])->whereNumber('exportacao')->name('exportacoes.destroy');
+        });
         // Resultados das coletas (fase 10): cada perfil vê as visitas que já pode ver.
         Route::middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante')->group(function () {
             Route::get('/coletas/resultados', [ResultadoColetaController::class, 'index'])->name('coletas.resultados');

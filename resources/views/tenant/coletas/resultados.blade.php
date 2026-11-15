@@ -5,7 +5,16 @@
             <h1>Resultados das coletas</h1>
             <p class="texto-apoio">O que os promotores coletaram nas lojas: preço, validade, estoque e share. Os relatórios usam os campos que têm "papel" definido no modelo.</p>
         </div>
-        <a class="botao secundario" href="{{ route('coletas.resultados.csv', array_merge($filtros, ['tipo' => $tipo])) }}">Baixar CSV</a>
+        <div class="acoes">
+            <a class="botao secundario" href="{{ route('coletas.resultados.csv', array_merge($filtros, ['tipo' => $tipo])) }}">Baixar CSV</a>
+            <form method="POST" action="{{ route('exportacoes.store') }}">
+                @csrf
+                <input type="hidden" name="tipo" value="coletas">
+                <input type="hidden" name="relatorio" value="{{ $tipo }}">
+                @foreach ($filtros as $k => $val)@if (is_scalar($val) && $val !== '')<input type="hidden" name="{{ $k }}" value="{{ $val }}">@endif @endforeach
+                <button type="submit" class="botao secundario">Gerar em segundo plano</button>
+            </form>
+        </div>
     </div>
 
     <div class="acoes" style="margin-bottom:12px">
