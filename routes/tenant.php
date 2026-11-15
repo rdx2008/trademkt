@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\AuthController as ApiAuthController;
 use App\Http\Controllers\Api\CheckInController;
+use App\Http\Controllers\Api\ColetaController;
 use App\Http\Controllers\Api\ExecucaoVisitaController;
 use App\Http\Controllers\Api\RoteiroController as ApiRoteiroController;
 use App\Http\Controllers\Tenant\AgenciaController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\Tenant\ImportacaoSkuController;
 use App\Http\Controllers\Tenant\IndicadorController;
 use App\Http\Controllers\Tenant\IndustriaController;
 use App\Http\Controllers\Tenant\MarcaController;
+use App\Http\Controllers\Tenant\ModeloColetaController;
 use App\Http\Controllers\Tenant\OperacaoController;
 use App\Http\Controllers\Tenant\PdvController;
 use App\Http\Controllers\Tenant\PromotorController;
@@ -205,6 +207,15 @@ Route::middleware([
         Route::get('/agencias', [AgenciaController::class, 'index'])
             ->middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante')
             ->name('agencias.index');
+        // Modelos de coleta (fase 10): admin da instalação e gerente de trade (e a agência gestora).
+        Route::middleware('perfil:admin_instalacao,gerente_trade')->group(function () {
+            Route::get('/coletas/modelos', [ModeloColetaController::class, 'index'])->name('coletas.modelos.index');
+            Route::get('/coletas/modelos/novo', [ModeloColetaController::class, 'create'])->name('coletas.modelos.create');
+            Route::post('/coletas/modelos', [ModeloColetaController::class, 'store'])->name('coletas.modelos.store');
+            Route::get('/coletas/modelos/{modelo}/editar', [ModeloColetaController::class, 'edit'])->whereNumber('modelo')->name('coletas.modelos.edit');
+            Route::put('/coletas/modelos/{modelo}', [ModeloColetaController::class, 'update'])->whereNumber('modelo')->name('coletas.modelos.update');
+            Route::patch('/coletas/modelos/{modelo}/ativo', [ModeloColetaController::class, 'ativo'])->whereNumber('modelo')->name('coletas.modelos.ativo');
+        });
         // Empresas vinculadas: pedidos de vínculo por CNPJ, aceite e recusa (fase 9).
         Route::middleware('perfil:admin_instalacao,admin_agencia')->group(function () {
             Route::get('/empresas-vinculadas', [EmpresasVinculadasController::class, 'index'])->name('vinculadas.index');
@@ -251,6 +262,7 @@ Route::middleware([
             Route::get('/visitas/{visita}', [VisitaController::class, 'apiShow'])->whereNumber('visita')->name('visitas.show');
             Route::post('/visitas/{visita}/fotos', [ExecucaoVisitaController::class, 'foto'])->whereNumber('visita')->name('visitas.enviar-foto');
             Route::get('/visitas/{visita}/fotos/{foto}', [VisitaController::class, 'foto'])->whereNumber(['visita', 'foto'])->name('visitas.fotos');
+            Route::post('/visitas/{visita}/coletas', [ColetaController::class, 'store'])->whereNumber('visita')->name('visitas.coletas');
             Route::post('/visitas/{visita}/concluir', [ExecucaoVisitaController::class, 'concluir'])->whereNumber('visita')->name('visitas.concluir');
             Route::post('/visitas/{visita}/check-in', CheckInController::class)->whereNumber('visita')->name('visitas.check-in');
             Route::get('/skus/{sku}/foto', [ApiRoteiroController::class, 'fotoSku'])->name('skus.foto');

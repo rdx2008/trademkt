@@ -62,6 +62,7 @@ class MenuLateral
                 self::item('Importar produtos', 'skus.importar', ['skus.importar*'], $catalogoEditavel),
                 self::item('Agências', 'agencias.index', ['agencias.*'], $acompanha && ! $agencia),
                 self::item('Indústrias', 'industrias.index', ['industrias.*'], $eu->perfil === Perfil::AdminInstalacao && ! $agencia),
+                self::item('Modelos de coleta', 'coletas.modelos.index', ['coletas.modelos.*'], $eu->temPerfil(Perfil::AdminInstalacao, Perfil::GerenteTrade) && (! $agencia || Contexto::agenciaGestora())),
                 self::item('Regiões', 'regioes.index', ['regioes.*'], $gestao),
                 self::item('Redes de supermercados', 'redes.index', ['redes.*'], $gestao),
             ]),

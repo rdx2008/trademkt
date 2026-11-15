@@ -2,6 +2,7 @@
 
 namespace App\Services\Roteiros;
 
+use App\Models\ModeloColeta;
 use App\Models\Roteiro;
 use App\Models\Sku;
 use App\Models\User;
@@ -33,6 +34,9 @@ class RoteiroDoApp
             'id' => $industria->id,
             'industria' => $codigo,
             'nome' => $industria->nome,
+            // Modelos de coleta ativos (fase 10); o app filtra pela rede do PDV (`redes` vazio = todas).
+            'modelos' => ModeloColeta::where('industria_id', $industria->id)->where('ativo', true)->orderBy('nome')->get()
+                ->map(fn (ModeloColeta $m) => ['id' => $m->id, 'nome' => $m->nome, 'tipo' => $m->tipo, 'versao' => $m->versao, 'redes' => $m->redes ?? [], 'campos' => $m->campos])->all(),
             'skus' => Sku::query()
                 ->where('industria_id', $industria->id)
                 ->where('ativo', true)
@@ -72,6 +76,7 @@ class RoteiroDoApp
                     'lat' => $v->pdv->lat,
                     'lng' => $v->pdv->lng,
                     'raio_m' => $v->pdv->raio_m,
+                    'rede_id' => $v->pdv->rede_id,
                 ],
             ])->all(),
             'industrias' => $industrias,

@@ -63,6 +63,11 @@ class Visita extends Model
         return $this->hasMany(VisitaSku::class);
     }
 
+    public function coletas()
+    {
+        return $this->hasMany(ColetaResposta::class)->orderBy('id');
+    }
+
     public function demanda()
     {
         return $this->hasOne(Demanda::class);
