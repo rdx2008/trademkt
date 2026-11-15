@@ -256,6 +256,7 @@ Pagos: Google Play (US$ 25 uma vez) e Apple (US$ 99/ano, só se o app iOS for fe
 | 6. Piloto | Instalação Gaboardi, carga do catálogo, testes em campo, ajustes | 3 semanas |
 | 7. Materiais de PDV | Estoque, envio e comprovação de instalação | 2 semanas |
 | 8. App iOS | Mesmo código Flutter para iPhone e testes | 2 semanas |
+| 10. Coletas configuráveis e visão nacional | Motor de modelos de coleta, pesquisa de preço, validade, levantamento de estoque, share, checklists, avaliação de fotos, fila de downloads; fuso por empresa, planos, lojas de aplicativos, LGPD e escala | ver `docs/FASE-10.md` |
 | 9. Rede de empresas | Agência interna da indústria, agência externa e indústria cadastradas pelo próprio cliente, indústria gerida pela agência, assumir cadastro, agência importa catálogo | ver `docs/FASE-9.md` |
 
 Publicação nas lojas: definir depois.
@@ -270,6 +271,17 @@ começo; indústria gerida pela agência que a indústria pode assumir depois; a
 de agência de verdade, vinculada à indústria dona, o que mantém a separação trabalhista. Detalhes, modelo, itens
 e critérios de aceite em `docs/FASE-9.md`. Nada implementado ainda.
 
+## Visão nacional e coletas (decisão de 15/11/2026)
+
+O produto será vendido a agências e indústrias do país todo, não só à Gaboardi. Pelas telas de sistemas
+concorrentes enviadas pelos clientes (ShelfSpy, TradePro Promoter e outro), o mercado espera, além do que já
+temos: **pesquisa de preço, validade (produtos a vencer e alerta), levantamento de estoque, pesquisa de share,
+perguntas e checklists configuráveis, avaliação e tag de foto, fila de downloads, relatórios com filtros ricos,
+book de fotos, documentos e central de atendimento**. O dono considera todos importantes. A solução é um
+**motor de modelos de coleta** configurável com módulos prontos por cima, mais itens transversais: **fuso
+horário por empresa** (hoje o fuso é único), planos e cobrança, publicação nas lojas e decisão sobre iOS, LGPD em
+escala e escala de infraestrutura. Detalhes, ordem e critérios em `docs/FASE-10.md`. Nada implementado ainda.
+
 ## Ideias guardadas (depois do piloto)
 
 Decisão do dono em 08/11/2026: ficam guardadas, sem prazo, para depois que o piloto da Gaboardi mostrar a necessidade.
@@ -278,7 +290,7 @@ Decisão do dono em 08/11/2026: ficam guardadas, sem prazo, para depois que o pi
   wobbler, ponta de gôndola); a agência envia ao promotor; o promotor comprova a instalação com foto do tipo
   `material` (já prevista em `visita_fotos`); a indústria vê o que foi instalado, onde e quando. Tabelas
   `materiais` e `material_movimentos`. Nada implementado. Estimativa do escopo original: 2 semanas.
-- **App iOS (fase 8):** o código Flutter é o mesmo, mas compilar exige um Mac com Xcode (ou um serviço de build
+- **App iOS (fase 8):** *(com a visão nacional de 15/11/2026, reavaliar a prioridade; ver `docs/FASE-10.md`, item N.3)* o código Flutter é o mesmo, mas compilar exige um Mac com Xcode (ou um serviço de build
   na nuvem como o Codemagic), conta de desenvolvedor Apple (US$ 99/ano), ajustes nativos (permissões de câmera e
   localização) e teste em iPhone real. Só vale se houver promotor com iPhone. Não dá para compilar a partir do
   Windows.
