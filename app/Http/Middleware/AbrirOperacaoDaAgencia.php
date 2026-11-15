@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\ModoEmpresa;
 use App\Enums\TipoInstalacao;
 use App\Services\Rede\Operacao;
 use Closure;
@@ -52,7 +53,9 @@ class AbrirOperacaoDaAgencia
             return $next($request);
         }
 
-        abort_unless($request->routeIs(...self::PERMITIDAS), 403, 'Este cadastro é administrado pela indústria.');
+        // Na indústria gerida por ela, a agência é a gestora do cadastro (fase 9).
+        $gestora = $industria->modo === ModoEmpresa::Gerida && $industria->dono_tenant_id === $agencia->id;
+        abort_unless($gestora || $request->routeIs(...self::PERMITIDAS), 403, 'Este cadastro é administrado pela indústria.');
 
         abort_unless($this->operacao->abrir($agencia, $industria, $eu), 403, 'O acesso da agência a esta indústria não está mais autorizado.');
         if ($request->hasSession()) {

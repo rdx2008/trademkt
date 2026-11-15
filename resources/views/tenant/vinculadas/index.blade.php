@@ -35,6 +35,42 @@
         </div>
     @endif
 
+    @if (session('convite_industria'))
+        <div class="cartao">
+            <h2>Link de primeiro acesso da indústria</h2>
+            <p class="dica">Envie para {{ session('convite_industria')['nome'] }}. Ele cria a senha e entra como admin da indústria. Vale por 7 dias, uso único, e não aparece de novo.</p>
+            <div class="campo"><input type="text" value="{{ session('convite_industria')['url'] }}" readonly onfocus="this.select()"></div>
+        </div>
+    @endif
+
+    @unless ($souIndustria)
+        <form method="POST" action="{{ route('vinculadas.industria') }}" class="cartao">
+            @csrf
+            <h2>Cadastrar indústria que ainda não usa o sistema</h2>
+            <p class="dica">A agência monta e opera o cadastro dela (PDVs, catálogo, contratos e visitas). Quando a indústria quiser, a agência entrega o cadastro e ela passa a ser independente, com tudo o que já foi feito.</p>
+            <div class="linha">
+                <div class="campo">
+                    <label for="ind-nome">Nome da indústria</label>
+                    <input id="ind-nome" name="nome" value="{{ old('nome') }}" maxlength="120" required>
+                    @error('nome')<div class="erro">{{ $message }}</div>@enderror
+                </div>
+                <div class="campo">
+                    <label for="ind-cnpj">CNPJ da indústria</label>
+                    <input id="ind-cnpj" name="cnpj" value="{{ old('cnpj') }}" maxlength="18" required placeholder="00.000.000/0000-00">
+                    @error('cnpj')<div class="erro">{{ $message }}</div>@enderror
+                </div>
+                <div class="campo">
+                    <label for="ind-relacao">Relação</label>
+                    <select id="ind-relacao" name="relacao">
+                        <option value="cliente">Cliente (já atendemos)</option>
+                        <option value="prospect">Prospect (sem visitas por enquanto)</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="botao">Cadastrar indústria</button>
+        </form>
+    @endunless
+
     <form method="POST" action="{{ route('vinculadas.pedir') }}" class="cartao">
         @csrf
         <h2>{{ $souIndustria ? 'Pedir vínculo a uma agência que já usa o sistema' : 'Pedir vínculo a uma indústria que já usa o sistema' }}</h2>
@@ -74,7 +110,7 @@
 
     <div class="tabela-rolagem">
         <table>
-            <thead><tr><th>{{ $souIndustria ? 'Agência' : 'Indústria' }}</th><th>Situação</th>@unless ($souIndustria)<th>Relação</th>@endunless<th>Desde</th></tr></thead>
+            <thead><tr><th>{{ $souIndustria ? 'Agência' : 'Indústria' }}</th><th>Situação</th><th>{{ $souIndustria ? 'Catálogo' : 'Relação' }}</th><th>Desde</th>@unless ($souIndustria)<th></th>@endunless</tr></thead>
             <tbody>
                 @forelse ($vinculos as $v)
                     <tr>
@@ -86,8 +122,40 @@
                                 @default<span class="selo off">Encerrado</span>
                             @endswitch
                         </td>
-                        @unless ($souIndustria)<td>{{ \App\Models\Vinculo::RELACOES[$v->relacao] ?? '—' }}</td>@endunless
+                        <td>
+                            @if ($souIndustria)
+                                @if ($v->status === \App\Models\Vinculo::ATIVO)
+                                    <form method="POST" action="{{ route('vinculadas.permissoes', $v->id) }}">
+                                        @csrf @method('PATCH')
+                                        <label class="check"><input type="checkbox" name="agencia_mantem_catalogo" value="1" @checked($v->agenciaMantemCatalogo()) onchange="this.form.submit()"> Agência mantém o catálogo</label>
+                                    </form>
+                                @else — @endif
+                            @else
+                                <form method="POST" action="{{ route('vinculadas.relacao', $v->id) }}">
+                                    @csrf @method('PATCH')
+                                    <select name="relacao" onchange="this.form.submit()" aria-label="Relação com {{ $v->industria->nome }}">
+                                        @foreach (\App\Models\Vinculo::RELACOES as $valor => $rotulo)<option value="{{ $valor }}" @selected($v->relacao === $valor)>{{ $rotulo }}</option>@endforeach
+                                    </select>
+                                </form>
+                                @if ($v->industria->modo === \App\Enums\ModoEmpresa::Gerida && $v->industria->dono_tenant_id === tenant('id'))<div class="rotulo">Gerida pela agência</div>@endif
+                            @endif
+                        </td>
                         <td>{{ ($v->decidido_em ?? $v->created_at)?->format('d/m/Y') }}</td>
+                        @unless ($souIndustria)
+                            <td>
+                                @if ($v->industria->modo === \App\Enums\ModoEmpresa::Gerida && $v->industria->dono_tenant_id === tenant('id'))
+                                    <details>
+                                        <summary>Entregar à indústria</summary>
+                                        <form method="POST" action="{{ route('vinculadas.entregar', $v->id) }}">
+                                            @csrf
+                                            <input name="admin_nome" placeholder="Responsável na indústria" maxlength="120" required>
+                                            <input name="admin_email" type="email" placeholder="E-mail do responsável" maxlength="190" required>
+                                            <button type="submit" class="botao secundario" onclick="return confirm('Entregar o cadastro? A indústria passa a ser independente e a agência continua vinculada.')">Entregar</button>
+                                        </form>
+                                    </details>
+                                @endif
+                            </td>
+                        @endunless
                     </tr>
                 @empty
                     <tr><td colspan="4">Nenhum vínculo ainda.</td></tr>

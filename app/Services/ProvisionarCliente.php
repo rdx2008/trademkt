@@ -38,6 +38,12 @@ class ProvisionarCliente
         ))));
 
         $dados['cnpj'] = Cnpj::limpar($dados['cnpj'] ?? null) ?: null;
+        if ($dados['cnpj'] !== null) {
+            $gerida = Tenant::where('tipo', $dados['tipo'] ?? null)->where('cnpj', $dados['cnpj'])->where('modo', 'gerida')->first();
+            if ($gerida) {
+                throw ValidationException::withMessages(['cnpj' => 'Esta indústria já está no sistema, gerida pela agência '.($gerida->dono?->nome ?? $gerida->dono_tenant_id).'. Peça à agência para entregar o cadastro à indústria.']);
+            }
+        }
         $validados = $this->validar($dados);
 
         $senha = ($validados['admin_senha'] ?? null) ?: Str::password(12, symbols: false);

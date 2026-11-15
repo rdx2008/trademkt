@@ -49,6 +49,14 @@ class Contexto
 
     private static ?bool $catalogoPelaAgencia = null;
 
+    /** A agência está na operação de uma indústria gerida por ela (fase 9): age como gestora do cadastro. */
+    public static function agenciaGestora(): bool
+    {
+        return self::$operacao !== null && self::$instalacao !== null
+            && self::$operacao->modo === ModoEmpresa::Gerida
+            && self::$operacao->dono_tenant_id === self::$instalacao->id;
+    }
+
     /**
      * A agência (dentro da operação de uma indústria) pode importar e manter o catálogo? Sim na
      * indústria gerida por ela; na independente, conforme a permissão do vínculo (padrão: sim).

@@ -4,7 +4,9 @@ namespace App\Services\Roteiros;
 
 use App\Enums\OrigemVisita;
 use App\Enums\StatusVisita;
+use App\Models\Agencia;
 use App\Models\ContratoVisita;
+use App\Models\Vinculo;
 use App\Models\Visita;
 use App\Services\Operacao\Equipe;
 use Carbon\CarbonInterface;
@@ -39,6 +41,8 @@ class GeradorVisitas
         $contratos = ContratoVisita::query()
             ->ativos()
             ->when($agenciaId, fn ($q) => $q->where('agencia_id', $agenciaId))
+            // Agência com relação de prospect com esta indústria ainda não executa visitas (fase 9).
+            ->whereNotIn('agencia_id', $this->agenciasProspect())
             ->whereDate('inicio', '<=', $fim->toDateString())
             ->where(fn ($q) => $q->whereNull('fim')->orWhereDate('fim', '>=', $inicio->toDateString()))
             ->whereHas('pdv', fn ($q) => $q->where('ativo', true))
@@ -126,5 +130,17 @@ class GeradorVisitas
         $this->atribuicao->mover($visita, $promotor, $visita->data, $roteiro->supervisor_id);
 
         return true;
+    }
+
+    /** @return list<int> linhas locais das agências que só têm relação de prospect com esta indústria */
+    private function agenciasProspect(): array
+    {
+        $industria = tenant('id');
+        if (! $industria) {
+            return [];
+        }
+        $prospects = Vinculo::where('industria_tenant_id', $industria)->where('relacao', 'prospect')->pluck('agencia_tenant_id');
+
+        return $prospects->isEmpty() ? [] : Agencia::whereIn('agencia_tenant_id', $prospects)->pluck('id')->all();
     }
 }

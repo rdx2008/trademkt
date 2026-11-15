@@ -154,7 +154,12 @@ class User extends Authenticatable
 
     public function temPerfil(Perfil ...$perfis): bool
     {
-        return in_array($this->perfil, $perfis, true);
+        if (in_array($this->perfil, $perfis, true)) {
+            return true;
+        }
+
+        // Na indústria gerida por ela, o admin da agência administra o cadastro (fase 9).
+        return $this->perfil === Perfil::AdminAgencia && in_array(Perfil::AdminInstalacao, $perfis, true) && Contexto::agenciaGestora();
     }
 
     /** BI (análise de resultados): gestão da instalação, agência e marca; promotor, representante e supermercado não. */

@@ -31,12 +31,19 @@ class Autocadastro
 
     /**
      * @param  array{nome?: string, cnpj?: string, admin_nome?: string, admin_email?: string}  $dados
-     * @return array{tenant: Tenant, convite: string}
+     * @return array{tenant: Tenant, convite: ?string} sem convite na indústria gerida
      *
      * @throws ValidationException
      */
     public function criar(Tenant $criador, TipoInstalacao $tipo, ModoEmpresa $modo, array $dados): array
     {
+        $semAdmin = $modo === ModoEmpresa::Gerida;
+        if ($semAdmin) {
+            // A agência opera pela própria instalação; o admin da indústria nasce inativo e só ganha
+            // nome, e-mail e acesso quando a agência entregar o cadastro à indústria.
+            $dados['admin_nome'] = 'Administrador (aguardando a indústria)';
+            $dados['admin_email'] = 'pendente@'.Str::lower(Str::random(12)).'.invalid';
+        }
         $dados = Validator::make($dados, [
             'nome' => ['required', 'string', 'max:120'],
             'cnpj' => ['required', new Cnpj],
@@ -66,6 +73,11 @@ class Autocadastro
             $novo->save();
         }
         $email = Str::lower($dados['admin_email']);
+        if ($semAdmin) {
+            $novo->run(fn () => User::where('email', $email)->update(['ativo' => false]));
+
+            return ['tenant' => $novo, 'convite' => null];
+        }
         $convite = $novo->run(fn () => $this->cadastro->gerarConvite(
             User::where('email', $email)->sole(), null, false, $novo->url(),
         ));

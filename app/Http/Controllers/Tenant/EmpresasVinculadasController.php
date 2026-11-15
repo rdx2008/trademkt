@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Enums\ModoEmpresa;
 use App\Enums\Perfil;
 use App\Enums\TipoInstalacao;
 use App\Http\Controllers\Controller;
 use App\Models\Vinculo;
+use App\Services\Rede\Autocadastro;
+use App\Services\Rede\EntregaDeCadastro;
 use App\Services\Rede\Vinculos;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -85,6 +88,54 @@ class EmpresasVinculadasController extends Controller
         $this->vinculos->recusar($registro);
 
         return redirect()->route('vinculadas.index')->with('status', 'Pedido recusado.');
+    }
+
+    /** A agência cadastra uma indústria que ainda não usa o sistema e passa a operá-la (indústria gerida). */
+    public function criarIndustria(Request $request, Autocadastro $autocadastro): RedirectResponse
+    {
+        $this->exigirGestor($request);
+        abort_unless(tenant()->tipo === TipoInstalacao::Agencia, 403);
+        $dados = $request->validate(['relacao' => ['required', Rule::in(['prospect', 'cliente'])]]);
+        $criada = $autocadastro->criar(tenant(), TipoInstalacao::Industria, ModoEmpresa::Gerida, $request->only(['nome', 'cnpj']));
+        $vinculo = $this->vinculos->criar($criada['tenant'], tenant(), null, 'agencia');
+        $vinculo->update(['relacao' => $dados['relacao']]);
+
+        return redirect()->route('vinculadas.index')->with('status', 'Indústria "'.$criada['tenant']->nome.'" cadastrada. Escolha-a no seletor do topo para cadastrar PDVs, catálogo e contratos.');
+    }
+
+    /** A agência muda a relação comercial (prospect, cliente, encerrado) com uma indústria. */
+    public function relacao(Request $request, int $vinculo): RedirectResponse
+    {
+        $this->exigirGestor($request);
+        abort_unless(tenant()->tipo === TipoInstalacao::Agencia, 403);
+        $registro = $this->doMeu($vinculo);
+        $dados = $request->validate(['relacao' => ['required', Rule::in(array_keys(Vinculo::RELACOES))]]);
+        $registro->update(['relacao' => $dados['relacao']]);
+
+        return redirect()->route('vinculadas.index')->with('status', 'Relação com '.$registro->industria->nome.' atualizada.');
+    }
+
+    /** A indústria permite ou não que a agência mantenha o catálogo dela. */
+    public function permissoes(Request $request, int $vinculo): RedirectResponse
+    {
+        $this->exigirGestor($request);
+        abort_unless(tenant()->tipo === TipoInstalacao::Industria, 403);
+        $registro = $this->doMeu($vinculo);
+        $registro->update(['permissoes' => ['agencia_mantem_catalogo' => $request->boolean('agencia_mantem_catalogo')] + ($registro->permissoes ?? [])]);
+
+        return redirect()->route('vinculadas.index')->with('status', 'Permissões de '.$registro->agencia->nome.' atualizadas.');
+    }
+
+    /** A agência gestora entrega o cadastro à indústria, que passa a ser independente. */
+    public function entregar(Request $request, int $vinculo, EntregaDeCadastro $entrega): RedirectResponse
+    {
+        $this->exigirGestor($request);
+        $registro = $this->doMeu($vinculo);
+        $link = $entrega->entregar($registro->industria, tenant(), (string) $request->input('admin_nome'), (string) $request->input('admin_email'));
+
+        return redirect()->route('vinculadas.index')
+            ->with('status', $registro->industria->nome.' agora é independente. A agência continua vinculada.')
+            ->with('convite_industria', ['nome' => $request->input('admin_nome'), 'url' => $link]);
     }
 
     public function cancelar(Request $request, int $vinculo): RedirectResponse
