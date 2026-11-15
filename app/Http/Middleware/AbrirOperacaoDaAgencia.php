@@ -18,7 +18,7 @@ use Illuminate\Http\Request;
 class AbrirOperacaoDaAgencia
 {
     /** Rotas que ficam no banco da agência. */
-    private const LOCAIS = ['login', 'logout', 'usuarios.*', 'promotores.*', 'convite.*', 'cracha.*', 'vinculadas.*', 'configuracoes.*', 'marca.*', 'operacao.*', 'api.login', 'api.logout', 'api.me', 'api.roteiro'];
+    private const LOCAIS = ['login', 'logout', 'usuarios.*', 'promotores.*', 'convite.*', 'cracha.*', 'atendimento.*', 'vinculadas.*', 'configuracoes.*', 'marca.*', 'operacao.*', 'api.login', 'api.logout', 'api.me', 'api.roteiro'];
 
     /** O que a agência pode abrir dentro da indústria. O resto é cadastro da indústria. */
     private const PERMITIDAS = ['dashboard', 'roteiros.*', 'visitas.mover', 'visitas.show', 'visitas.fotos', 'visitas.fotos.avaliar', 'demandas.*', 'alertas.*', 'indicadores.*', 'bi.*', 'coletas.resultados', 'coletas.resultados.csv', 'exportacoes.*', 'documentos.index', 'documentos.baixar', 'contratos.index', 'contratos.edit', 'contratos.update', 'pdvs.index', 'skus.index', 'skus.foto', 'skus.importar', 'skus.importar.*', 'regioes.index', 'redes.index', 'api.*'];

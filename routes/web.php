@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Central\AuthController;
+use App\Http\Controllers\Central\ChamadoController;
 use App\Http\Controllers\Central\ClienteController;
 use App\Http\Controllers\Central\DashboardController;
 use App\Http\Controllers\Central\DominioController;
@@ -33,6 +34,9 @@ Route::middleware('auth:admin')->group(function () {
         Route::patch('/contatos/{contato}', 'situacao')->name('situacao');
         Route::delete('/contatos/{contato}', 'excluirContato')->name('excluir-contato');
     });
+    Route::get('/chamados', [ChamadoController::class, 'index'])->name('central.chamados.index');
+    Route::get('/chamados/{chamado}', [ChamadoController::class, 'show'])->whereNumber('chamado')->name('central.chamados.show');
+    Route::post('/chamados/{chamado}/responder', [ChamadoController::class, 'responder'])->whereNumber('chamado')->name('central.chamados.responder');
     Route::get('/vinculos', [VinculoController::class, 'index'])->name('central.vinculos.index');
     Route::post('/vinculos', [VinculoController::class, 'store'])->name('central.vinculos.store');
     Route::get('/vinculos/{vinculo}/editar', [VinculoController::class, 'edit'])->whereNumber('vinculo')->name('central.vinculos.edit');

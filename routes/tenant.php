@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\RoteiroController as ApiRoteiroController;
 use App\Http\Controllers\Tenant\AgenciaController;
 use App\Http\Controllers\Tenant\AlertaController;
 use App\Http\Controllers\Tenant\AparenciaController;
+use App\Http\Controllers\Tenant\AtendimentoController;
 use App\Http\Controllers\Tenant\AuthController;
 use App\Http\Controllers\Tenant\BiController;
 use App\Http\Controllers\Tenant\ContratoVisitaController;
@@ -93,6 +94,14 @@ Route::middleware([
         Route::get('/alertas', [AlertaController::class, 'index'])->name('alertas.index');
         Route::patch('/alertas/{alerta}/lida', [AlertaController::class, 'ler'])->whereNumber('alerta')->name('alertas.ler');
         Route::get('/indicadores', [IndicadorController::class, 'index'])->name('indicadores.index');
+        // Central de atendimento (fase 10): chamados ao fornecedor, no banco central.
+        Route::middleware('perfil:admin_instalacao,admin_agencia,gerente_trade')->group(function () {
+            Route::get('/atendimento', [AtendimentoController::class, 'index'])->name('atendimento.index');
+            Route::post('/atendimento', [AtendimentoController::class, 'store'])->middleware('throttle:10,10')->name('atendimento.store');
+            Route::get('/atendimento/{chamado}', [AtendimentoController::class, 'show'])->whereNumber('chamado')->name('atendimento.show');
+            Route::post('/atendimento/{chamado}/responder', [AtendimentoController::class, 'responder'])->whereNumber('chamado')->middleware('throttle:20,10')->name('atendimento.responder');
+            Route::patch('/atendimento/{chamado}/fechar', [AtendimentoController::class, 'fechar'])->whereNumber('chamado')->name('atendimento.fechar');
+        });
         // Meus documentos (fase 10): todos os perfis veem o que podem; só o admin da instalação envia.
         Route::get('/documentos', [DocumentoController::class, 'index'])->name('documentos.index');
         Route::get('/documentos/{documento}/baixar', [DocumentoController::class, 'baixar'])->whereNumber('documento')->name('documentos.baixar');

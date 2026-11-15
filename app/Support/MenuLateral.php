@@ -80,6 +80,7 @@ class MenuLateral
             ]),
 
             self::link('Meus documentos', 'flaticon-381-folder-1', 'documentos.index', ['documentos.*']),
+            $eu->temPerfil(Perfil::AdminInstalacao, Perfil::AdminAgencia, Perfil::GerenteTrade) ? self::link('Central de atendimento', 'flaticon-381-help', 'atendimento.index', ['atendimento.*']) : null,
             self::link(
                 'Meus alertas',
                 'flaticon-381-notification',
@@ -89,7 +90,7 @@ class MenuLateral
             ),
         ];
 
-        return array_values(array_filter($topicos, fn ($t) => $t['url'] !== null || $t['itens'] !== []));
+        return array_values(array_filter($topicos, fn ($t) => $t !== null && ($t['url'] !== null || $t['itens'] !== [])));
     }
 
     /** @return array<string, mixed> */
