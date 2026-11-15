@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Support\Fuso;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
@@ -40,9 +41,12 @@ class TenancyServiceProvider extends ServiceProvider
 
             Events\TenancyInitialized::class => [
                 Listeners\BootstrapTenancy::class,
+                // Cada empresa no seu fuso (o Brasil tem quatro).
+                fn (Events\TenancyInitialized $evento) => Fuso::aplicar(Fuso::de($evento->tenancy->tenant)),
             ],
             Events\TenancyEnded::class => [
                 Listeners\RevertToCentralContext::class,
+                fn () => Fuso::aplicar(Fuso::padrao()),
             ],
         ];
     }

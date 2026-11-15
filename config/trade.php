@@ -2,6 +2,8 @@
 
 return [
     'fotos_disk' => env('FOTOS_DISK', 'local'),
+    // Fuso de quem não escolheu outro (cada empresa pode ter o seu: App\Support\Fuso)
+    'fuso_padrao' => env('APP_TIMEZONE', 'America/Sao_Paulo'),
     'dominio_clientes' => env('TRADE_DOMINIO_CLIENTES', 'trade.mastervps.online'),
     // Tipos de instalação vendidos
     'tipos_instalacao' => [

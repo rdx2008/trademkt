@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Services\DominiosCliente;
 use App\Services\ProvisionarCliente;
+use App\Support\Fuso;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -41,6 +42,11 @@ class ClienteController extends Controller
             'admin_email' => (string) $request->input('admin_email'),
             'admin_senha' => $request->input('admin_senha'),
         ]);
+
+        if (isset(Fuso::OPCOES[(string) $request->input('fuso')])) {
+            $resultado['tenant']->fuso = (string) $request->input('fuso');
+            $resultado['tenant']->save();
+        }
 
         return redirect()->route('central.clientes.index')->with('criado', [
             'nome' => $resultado['tenant']->nome,

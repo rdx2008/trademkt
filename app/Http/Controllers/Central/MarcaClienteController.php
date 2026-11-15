@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Central;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
+use App\Support\Fuso;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
@@ -22,10 +24,14 @@ class MarcaClienteController extends Controller
 
     public function update(Request $request, Tenant $cliente): RedirectResponse
     {
+        $dados = $request->validate(['fuso' => ['nullable', Rule::in(array_keys(Fuso::OPCOES))]]);
         $cliente->white_label = $request->boolean('white_label');
+        if (! empty($dados['fuso'])) {
+            $cliente->fuso = $dados['fuso'];
+        }
         $cliente->mostrar_creditos = $request->boolean('mostrar_creditos');
         $cliente->save();
 
-        return redirect()->route('central.clientes.index')->with('status', "Marca de {$cliente->nome} atualizada.");
+        return redirect()->route('central.clientes.index')->with('status', "Configurações de {$cliente->nome} atualizadas.");
     }
 }

@@ -154,6 +154,16 @@ Tela própria em **Equipe → Promotores** (só instalação de agência); o pro
   40 caracteres, só foto, primeiro nome e ativo/inativo; nunca CPF, e-mail, telefone nem afastamento).
   O app tem "Meu crachá" no menu (QR do endereço vindo em `usuario.cracha_url`; sessão antiga precisa entrar de novo).
 
+### Fuso horário e app por link (15/11/2026)
+
+- Cada empresa tem o seu fuso (`tenants.fuso`, guardado em `data`; opções em `App\Support\Fuso`: Brasília, UTC−4,
+  Acre, Noronha). Ao inicializar a empresa o fuso dela vale para `now()`, `today()`, `config('app.timezone')` e as
+  conversões da API; ao sair volta `APP_TIMEZONE`. A agência dentro da operação de uma indústria usa o fuso da
+  indústria. O super admin escolhe no cadastro e em Clientes → Configurações. Trocar não converte horários gravados.
+- APK do promotor por link: o super admin publica em **App Android** (`/<INSTITUCIONAL_ACESSO>/aplicativo`, até
+  60 MB, só APK válido) e a landing page mostra "Baixar o app Android", que leva a `/app` (versão, instruções,
+  SHA-256) e `/app/promotor.apk`. Sem loja de aplicativos; iOS é feito por fora.
+
 ### Painéis e permissões
 
 Referência: `docs/PAINEIS.md`.

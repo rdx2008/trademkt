@@ -19,6 +19,14 @@
                     @endforeach
                 </select>
             </div>
+            <div class="campo">
+                <label for="fuso">Fuso horário</label>
+                <select id="fuso" name="fuso">
+                    @foreach (\App\Support\Fuso::OPCOES as $valor => $rotulo)
+                        <option value="{{ $valor }}" @selected(old('fuso', \App\Support\Fuso::padrao()) === $valor)>{{ $rotulo }}</option>
+                    @endforeach
+                </select>
+            </div>
         </div>
 
         <div class="linha">

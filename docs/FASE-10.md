@@ -114,9 +114,9 @@ Coisas que a primeira instalação escondia e que viram obrigação ao vender em
 | 10.7 | Avaliação e tag de foto. | P |
 | 10.8 | Relatórios com filtros ricos e fila de downloads. | M |
 | 10.9 | Book de fotos, meus documentos, central de atendimento, menu personalizável. | G |
-| N.1 | Fuso horário por empresa. | M |
+| N.1 | Fuso horário por empresa. **Feito em 15/11/2026.** | M |
 | N.2 | Planos, limites e cobrança. | G |
-| N.3 | Link de download do APK Android na página do sistema (sem loja; iOS feito por fora). | P |
+| N.3 | Link de download do APK Android na landing page (sem loja; iOS feito por fora). **Feito em 15/11/2026.** | P |
 | N.4 | LGPD em escala (termos, retenção, exclusão). | M |
 | N.5 | Escala (backup por empresa, monitoramento, retenção de fotos) e lista nacional de redes. | M |
 
