@@ -71,6 +71,7 @@ class MenuLateral
             ]),
 
             self::topico('Configurações', 'flaticon-381-settings-2', [
+                self::item('Empresas vinculadas', 'vinculadas.index', ['vinculadas.*'], $eu->perfil === Perfil::AdminInstalacao || ($agencia && $eu->perfil === Perfil::AdminAgencia)),
                 self::item('Aparência', 'configuracoes.aparencia', ['configuracoes.*'], $eu->temPerfil(Perfil::AdminInstalacao) && $instalacao?->whiteLabelAtivo()),
             ]),
 

@@ -16,6 +16,7 @@ use App\Http\Controllers\Tenant\ConviteController;
 use App\Http\Controllers\Tenant\CrachaController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\DemandaController;
+use App\Http\Controllers\Tenant\EmpresasVinculadasController;
 use App\Http\Controllers\Tenant\FichaPromotorController;
 use App\Http\Controllers\Tenant\ImportacaoPdvController;
 use App\Http\Controllers\Tenant\ImportacaoSkuController;
@@ -203,6 +204,14 @@ Route::middleware([
         Route::get('/agencias', [AgenciaController::class, 'index'])
             ->middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante')
             ->name('agencias.index');
+        // Empresas vinculadas: pedidos de vínculo por CNPJ, aceite e recusa (fase 9).
+        Route::middleware('perfil:admin_instalacao,admin_agencia')->group(function () {
+            Route::get('/empresas-vinculadas', [EmpresasVinculadasController::class, 'index'])->name('vinculadas.index');
+            Route::post('/empresas-vinculadas/pedidos', [EmpresasVinculadasController::class, 'pedir'])->name('vinculadas.pedir');
+            Route::patch('/empresas-vinculadas/pedidos/{vinculo}/aceitar', [EmpresasVinculadasController::class, 'aceitar'])->whereNumber('vinculo')->name('vinculadas.aceitar');
+            Route::patch('/empresas-vinculadas/pedidos/{vinculo}/recusar', [EmpresasVinculadasController::class, 'recusar'])->whereNumber('vinculo')->name('vinculadas.recusar');
+            Route::delete('/empresas-vinculadas/pedidos/{vinculo}', [EmpresasVinculadasController::class, 'cancelar'])->whereNumber('vinculo')->name('vinculadas.cancelar');
+        });
         // A indústria cria a agência interna ou uma agência externa nova (fase 9).
         Route::middleware('perfil:admin_instalacao')->group(function () {
             Route::get('/agencias/nova', [RedeAgenciaController::class, 'create'])->name('agencias.create');
