@@ -47,7 +47,7 @@ php artisan cliente:criar gaboardi --nome="Gaboardi" --tipo=industria \
 php artisan serve
 ```
 
-Painel central em `http://localhost:8000`, cliente em `http://gaboardi.localhost:8000`
+Página institucional em `http://localhost:8000`, acesso central em `http://localhost:8000/conexao-7f4c92`, cliente em `http://gaboardi.localhost:8000`
 (`*.localhost` já aponta para a máquina na maioria dos navegadores).
 
 Testes (SQLite, não precisam de MySQL):
@@ -121,3 +121,12 @@ Só o perfil **promotor** entra pelo app. Um token por aparelho; desativar o usu
 
 O `composer.lock` não está no repositório: gere com `composer install` e faça commit dele
 para fixar as versões usadas no build.
+
+
+## Site institucional
+
+A página pública do domínio central faz parte do sistema. Após atualizar, execute `php artisan migrate --force` (o deploy Docker já executa as migrações). Entre em `/conexao-7f4c92` e abra **Site institucional** no menu central. O antigo `/entrar` deixa de existir apenas no domínio central; os clientes mantêm seus acessos. Configure `INSTITUCIONAL_ACESSO` para alterar o caminho, sem barra inicial. Limpe/recrie o cache de configuração e rotas se utilizado no ambiente.
+
+O editor permite salvar rascunho, abrir prévia autenticada e publicar, editar identidade/textos/SEO/privacidade, ordenar e ocultar seções, adicionar/remover cartões e perguntas e enviar imagens PNG/JPG/WebP. Imagens ficam no volume persistente de `storage`, fora dos arquivos privados dos clientes. As ilustrações padrão não contêm dados reais. Materiais de PDV começa oculto.
+
+Pedidos de demonstração ficam no banco central, com situação de atendimento e opção de exclusão. Não há disparo automático de e-mail. Complete dados comerciais e política de privacidade antes de publicar. Não há nova senha: é usado o superadministrador já existente.

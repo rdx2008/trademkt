@@ -73,7 +73,7 @@ class CentralTest extends TestCase
 
     public function test_painel_central_exige_login_e_cria_cliente(): void
     {
-        $this->get('http://central.test/clientes')->assertRedirect('http://central.test/entrar');
+        $this->get('http://central.test/clientes')->assertRedirect('http://central.test/'.config('institucional.acesso'));
 
         $admin = Admin::create(['nome' => 'Rodolfo', 'email' => 'r@mastervps.test', 'password' => 'senha1234']);
 

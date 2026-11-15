@@ -41,7 +41,7 @@ class VinculoTest extends TestCase
 
     public function test_super_admin_vincula_agencia_a_industria_com_regioes(): void
     {
-        $this->get(self::CENTRAL.'/vinculos')->assertRedirect(self::CENTRAL.'/entrar');
+        $this->get(self::CENTRAL.'/vinculos')->assertRedirect(self::CENTRAL.'/'.config('institucional.acesso'));
 
         $this->actingAs($this->admin, 'admin')->get(self::CENTRAL.'/vinculos')->assertOk()
             ->assertSee('Nenhum vínculo ainda')->assertSee('Gaboardi')->assertSee('Sul');
