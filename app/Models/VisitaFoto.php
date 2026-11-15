@@ -17,6 +17,19 @@ class VisitaFoto extends Model
         return ['metadados' => 'array'];
     }
 
+    public function avaliacoes()
+    {
+        return $this->hasMany(FotoAvaliacao::class, 'foto_id');
+    }
+
+    /** Média das notas dadas à foto (nulo sem notas). */
+    public function notaMedia(): ?float
+    {
+        $notas = $this->avaliacoes->pluck('nota')->filter();
+
+        return $notas->isEmpty() ? null : round($notas->avg(), 1);
+    }
+
     public function visita()
     {
         return $this->belongsTo(Visita::class);

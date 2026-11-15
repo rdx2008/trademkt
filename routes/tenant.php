@@ -101,6 +101,7 @@ Route::middleware([
         Route::get('/bi', [BiController::class, 'index'])->middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade')->name('bi.index');
         Route::get('/visitas/{visita}', [VisitaController::class, 'show'])->whereNumber('visita')->name('visitas.show');
         Route::get('/visitas/{visita}/fotos/{foto}', [VisitaController::class, 'foto'])->whereNumber(['visita', 'foto'])->name('visitas.fotos');
+        Route::post('/visitas/{visita}/fotos/{foto}/avaliacao', [VisitaController::class, 'avaliar'])->whereNumber(['visita', 'foto'])->name('visitas.fotos.avaliar');
         Route::post('/sair', [AuthController::class, 'destroy'])->name('logout');
         Route::get('/painel', DashboardController::class)->name('dashboard');
 

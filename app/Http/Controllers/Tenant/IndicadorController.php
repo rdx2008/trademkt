@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Models\FotoAvaliacao;
 use App\Models\VisitaSku;
 use App\Services\Operacao\Indicadores;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use OpenSpout\Common\Entity\Cell;
 use OpenSpout\Common\Entity\Cell\StringCell;
 use OpenSpout\Common\Entity\Row;
@@ -30,9 +32,16 @@ class IndicadorController extends Controller
     public function galeria(Request $r, Indicadores $s)
     {
         [$opcoes, $filtros] = $this->contexto($r, $s);
-        $visitas = $s->visitas($r->user(), $filtros)->whereHas('fotos')->whereDate('data', '>=', $filtros['inicio'])->whereDate('data', '<=', $filtros['fim'])->with(['fotos', 'pdv', 'industria', 'roteiro'])->orderByDesc('data')->paginate(8)->withQueryString();
+        $av = $r->validate(['nota_min' => ['nullable', 'integer', 'between:1,5'], 'nota_max' => ['nullable', 'integer', 'between:1,5'], 'tag' => ['nullable', Rule::in(array_keys(FotoAvaliacao::TAGS))]]);
+        $comAvaliacao = fn ($q) => $q->whereHas('avaliacoes', fn ($a) => $a
+            ->when($av['nota_min'] ?? null, fn ($x, $n) => $x->where('nota', '>=', $n))
+            ->when($av['nota_max'] ?? null, fn ($x, $n) => $x->where('nota', '<=', $n))
+            ->when($av['tag'] ?? null, fn ($x, $t) => $x->whereJsonContains('tags', $t)));
+        $filtrandoAvaliacao = ($av['nota_min'] ?? null) || ($av['nota_max'] ?? null) || ($av['tag'] ?? null);
+        $visitas = $s->visitas($r->user(), $filtros)->whereHas('fotos', fn ($q) => $filtrandoAvaliacao ? $comAvaliacao($q) : $q)->whereDate('data', '>=', $filtros['inicio'])->whereDate('data', '<=', $filtros['fim'])->with(['fotos.avaliacoes', 'pdv', 'industria', 'roteiro'])->orderByDesc('data')->paginate(8)->withQueryString();
+        $avaliacao = $av;
 
-        return view('tenant.indicadores.galeria', compact('opcoes', 'filtros', 'visitas'));
+        return view('tenant.indicadores.galeria', compact('opcoes', 'filtros', 'visitas', 'avaliacao'));
     }
 
     public function exportar(Request $r, Indicadores $s)
