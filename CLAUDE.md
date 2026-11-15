@@ -160,9 +160,9 @@ Tela própria em **Equipe → Promotores** (só instalação de agência); o pro
   Acre, Noronha). Ao inicializar a empresa o fuso dela vale para `now()`, `today()`, `config('app.timezone')` e as
   conversões da API; ao sair volta `APP_TIMEZONE`. A agência dentro da operação de uma indústria usa o fuso da
   indústria. O super admin escolhe no cadastro e em Clientes → Configurações. Trocar não converte horários gravados.
-- APK do promotor por link: o super admin publica em **App Android** (`/<INSTITUCIONAL_ACESSO>/aplicativo`, até
-  60 MB, só APK válido) e a landing page mostra "Baixar o app Android", que leva a `/app` (versão, instruções,
-  SHA-256) e `/app/promotor.apk`. Sem loja de aplicativos; iOS é feito por fora.
+- APK do promotor por link: o fornecedor hospeda o APK fora do sistema e informa a URL no editor do site
+  institucional (campo "Link de download do app Android", HTTPS). Com a URL preenchida e publicada, a landing page
+  mostra "Baixar o app Android" apontando para ela. Sem loja de aplicativos; iOS é feito por fora.
 
 ### Painéis e permissões
 

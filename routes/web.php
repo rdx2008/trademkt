@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\AplicativoController;
 use App\Http\Controllers\Central\AuthController;
 use App\Http\Controllers\Central\ClienteController;
 use App\Http\Controllers\Central\DashboardController;
@@ -18,9 +17,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [InstitucionalController::class, 'index'])->name('institucional.home');
 Route::get('/privacidade', [InstitucionalController::class, 'privacidade'])->name('institucional.privacidade');
 Route::get('/institucional/arquivos/{arquivo}', [InstitucionalController::class, 'arquivo'])->name('institucional.arquivo');
-// App do promotor (Android): baixado por link, sem loja de aplicativos.
-Route::get('/app', [AplicativoController::class, 'pagina'])->name('aplicativo.pagina');
-Route::get('/app/promotor.apk', [AplicativoController::class, 'baixar'])->middleware('throttle:30,1')->name('aplicativo.baixar');
 Route::post('/demonstracao', [InstitucionalController::class, 'contato'])->middleware('throttle:5,10')->name('institucional.contato');
 
 Route::middleware('guest:admin')->group(function () {
@@ -37,9 +33,6 @@ Route::middleware('auth:admin')->group(function () {
         Route::patch('/contatos/{contato}', 'situacao')->name('situacao');
         Route::delete('/contatos/{contato}', 'excluirContato')->name('excluir-contato');
     });
-    Route::get(config('institucional.acesso').'/aplicativo', [AplicativoController::class, 'edit'])->name('central.aplicativo.edit');
-    Route::post(config('institucional.acesso').'/aplicativo', [AplicativoController::class, 'update'])->name('central.aplicativo.update');
-    Route::delete(config('institucional.acesso').'/aplicativo', [AplicativoController::class, 'destroy'])->name('central.aplicativo.destroy');
     Route::get('/vinculos', [VinculoController::class, 'index'])->name('central.vinculos.index');
     Route::post('/vinculos', [VinculoController::class, 'store'])->name('central.vinculos.store');
     Route::get('/vinculos/{vinculo}/editar', [VinculoController::class, 'edit'])->whereNumber('vinculo')->name('central.vinculos.edit');

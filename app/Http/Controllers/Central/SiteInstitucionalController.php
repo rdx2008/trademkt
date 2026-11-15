@@ -49,7 +49,7 @@ class SiteInstitucionalController extends Controller
             'remover_imagens.*' => ['boolean'],
             'uploads.*' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:4096', 'dimensions:max_width=5000,max_height=5000'],
         ];
-        foreach (['whatsapp', 'instagram', 'linkedin'] as $campo) {
+        foreach (['whatsapp', 'instagram', 'linkedin', 'app_android_url'] as $campo) {
             $regras['conteudo.'.$campo] = ['nullable', 'url:https', 'max:500'];
         }
         foreach ($padrao['secoes'] as $chave => $secao) {
