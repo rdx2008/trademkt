@@ -7,6 +7,7 @@ use App\Jobs\GerarExportacao;
 use App\Models\Agencia;
 use App\Models\ColetaResposta;
 use App\Models\Exportacao;
+use App\Models\FotoAvaliacao;
 use App\Models\Industria;
 use App\Models\ModeloColeta;
 use App\Models\Pdv;
@@ -15,9 +16,11 @@ use App\Models\Sku;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Visita;
+use App\Models\VisitaFoto;
 use App\Services\Coletas\Formulario;
 use App\Services\Coletas\ModelosDePartida;
 use App\Services\Coletas\ResultadosColeta;
+use App\Services\Operacao\BookDeFotos;
 use App\Services\Operacao\ExcelIndicadores;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
@@ -127,7 +130,7 @@ class FilaDeDownloadsTest extends TestCase
 
         $e = $this->tenant->run(fn () => Exportacao::create(['uuid' => (string) Str::uuid(), 'agencia_id' => null, 'usuario_id' => $this->admin->id, 'tipo' => 'coletas',
             'parametros' => ['filtros' => ['inicio' => '2026-10-01', 'fim' => '2026-10-31'], 'relatorio' => 'preco']])); // sem o escopo do usuário: o job registra o erro
-        $this->tenant->run(fn () => (new GerarExportacao($e->id))->handle(app(ExcelIndicadores::class), app(ResultadosColeta::class)));
+        $this->tenant->run(fn () => (new GerarExportacao($e->id))->handle(app(ExcelIndicadores::class), app(ResultadosColeta::class), app(BookDeFotos::class)));
         $e = $this->tenant->run(fn () => $e->fresh());
         $this->assertSame('erro', $e->estado);
         $this->assertNotEmpty($e->erro);
@@ -147,5 +150,35 @@ class FilaDeDownloadsTest extends TestCase
         Artisan::call('exportacoes:limpar');
         $this->assertSame(0, $this->tenant->run(fn () => Exportacao::count()));
         $this->assertFalse(Storage::disk('local')->exists($arquivo));
+    }
+
+    public function test_book_de_fotos_gera_zip_com_indice_e_respeita_o_escopo(): void
+    {
+        $this->tenant->run(function () {
+            $v = Visita::first();
+            Storage::disk('local')->put('visitas/1/a.jpg', 'conteudo-da-foto-a');
+            Storage::disk('local')->put('visitas/1/b.jpg', 'conteudo-da-foto-b');
+            VisitaFoto::create(['visita_id' => $v->id, 'uuid' => (string) Str::uuid(), 'tipo' => 'antes', 'caminho' => 'visitas/1/a.jpg', 'hash_origem' => Str::random(64), 'metadados' => []]);
+            $f = VisitaFoto::create(['visita_id' => $v->id, 'uuid' => (string) Str::uuid(), 'tipo' => 'depois', 'caminho' => 'visitas/1/b.jpg', 'hash_origem' => Str::random(64), 'metadados' => []]);
+            VisitaFoto::create(['visita_id' => $v->id, 'uuid' => (string) Str::uuid(), 'tipo' => 'ruptura', 'caminho' => 'visitas/1/nao-existe.jpg', 'hash_origem' => Str::random(64), 'metadados' => []]);
+            FotoAvaliacao::create(['foto_id' => $f->id, 'agencia_id' => null, 'usuario_id' => 1, 'usuario_nome' => 'X', 'nota' => 5]);
+        });
+
+        $this->actingAs($this->admin)->get(self::URL.'/indicadores/galeria?inicio=2026-10-01&fim=2026-10-31')->assertOk()->assertSee('Gerar book de fotos (ZIP)');
+        $this->post(self::URL.'/exportacoes', ['tipo' => 'book', 'inicio' => '2026-10-01', 'fim' => '2026-10-31'])->assertRedirect();
+
+        $e = $this->tenant->run(fn () => Exportacao::sole());
+        $this->assertSame('pronto', $e->estado);
+        $this->assertSame('book-fotos-2026-10-01-2026-10-31.zip', $e->nome);
+        $zip = new ZipArchive;
+        $this->assertTrue($zip->open(Storage::disk('local')->path($e->arquivo)));
+        $this->assertSame('conteudo-da-foto-a', $zip->getFromName('loja-centro/2026-10-31-v1-antes-1.jpg'));
+        $this->assertNotFalse($zip->locateName('loja-centro/2026-10-31-v1-depois-2.jpg'));
+        $this->assertFalse($zip->locateName('loja-centro/2026-10-31-v1-ruptura-3.jpg'), 'foto sem arquivo é ignorada');
+        $indice = (string) $zip->getFromName('indice.csv');
+        $this->assertStringContainsString('Loja Centro', $indice);
+        $this->assertStringContainsString(';5', $indice, 'nota média no índice');
+        $this->assertStringContainsString('2 foto(s)', (string) $zip->getFromName('LEIA-ME.txt'));
+        $zip->close();
     }
 }

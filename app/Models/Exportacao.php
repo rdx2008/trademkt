@@ -13,7 +13,7 @@ class Exportacao extends Model
 
     protected $guarded = ['id'];
 
-    public const TIPOS = ['indicadores' => 'Indicadores (Excel)', 'coletas' => 'Resultados das coletas (CSV)'];
+    public const TIPOS = ['indicadores' => 'Indicadores (Excel)', 'coletas' => 'Resultados das coletas (CSV)', 'book' => 'Book de fotos (ZIP)'];
 
     public const DIAS_DE_VALIDADE = 7;
 

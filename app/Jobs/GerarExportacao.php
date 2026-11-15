@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Exportacao;
 use App\Services\Coletas\ResultadosColeta;
+use App\Services\Operacao\BookDeFotos;
 use App\Services\Operacao\ExcelIndicadores;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -23,7 +24,7 @@ class GerarExportacao implements ShouldQueue
 
     public function __construct(public int $exportacaoId) {}
 
-    public function handle(ExcelIndicadores $excel, ResultadosColeta $coletas): void
+    public function handle(ExcelIndicadores $excel, ResultadosColeta $coletas, BookDeFotos $book): void
     {
         $e = Exportacao::find($this->exportacaoId);
         if (! $e || $e->estado !== 'pendente') {
@@ -36,7 +37,10 @@ class GerarExportacao implements ShouldQueue
         try {
             $usuario = $e->usuarioDoEscopo();
             $f = $p['filtros'];
-            if ($e->tipo === 'indicadores') {
+            if ($e->tipo === 'book') {
+                $book->gravar($usuario, $f, $local);
+                $nome = 'book-fotos-'.$f['inicio'].'-'.$f['fim'].'.zip';
+            } elseif ($e->tipo === 'indicadores') {
                 $excel->gravar($usuario, $f, $local);
                 $nome = 'indicadores-'.$f['inicio'].'-'.$f['fim'].'.xlsx';
             } else {

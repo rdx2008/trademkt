@@ -37,7 +37,7 @@ class ExportacaoController extends Controller
             'relatorio' => ['nullable', Rule::in(array_keys(ResultadosColeta::TIPOS))],
         ]);
 
-        if ($dados['tipo'] === 'indicadores') {
+        if (in_array($dados['tipo'], ['indicadores', 'book'], true)) {
             $filtros = $indicadores->filtros($request, $indicadores->opcoes($eu));
             $extra = [];
         } else {
