@@ -66,7 +66,7 @@ class _TelaLoginState extends State<TelaLogin> {
         title: Text(empresa?.nomeExibido ?? 'Entrar'),
         leading: estado.sessaoExpirada
             ? null
-            : IconButton(icon: const Icon(Icons.arrow_back), tooltip: 'Trocar empresa', onPressed: estado.trocarEmpresa),
+            : IconButton(icon: const Icon(Icons.arrow_back), tooltip: 'Trocar agência', onPressed: estado.trocarEmpresa),
       ),
       body: SafeArea(
         child: Center(

@@ -88,8 +88,9 @@ Coisas que a primeira instalação escondia e que viram obrigação ao vender em
   d'água dependem disso. Cada empresa passa a ter o seu fuso.
 - **Planos, limites e cobrança.** A fase 9 libera a criação de empresas sem limite; falta definir a cobrança
   (por empresa, usuário ou promotor) e o gancho de limite por plano.
-- **Publicação do app nas lojas e iOS.** Publicar na Google Play é obrigatório para vender fora. Com mercado
-  nacional, reavaliar o app iOS (hoje guardado), porque parte dos promotores usa iPhone.
+- **Distribuição do app (decisão de 15/11/2026).** Sem loja de aplicativos: o APK Android fica num link na
+  página do sistema e o promotor baixa por lá. O app iOS será feito por fora do projeto; aqui só se mantém o app
+  Android alinhado com o sistema.
 - **LGPD em escala.** Termo de operador e controlador entre as empresas, política de retenção de fotos,
   exclusão sob pedido, consentimento do promotor para foto e CPF (o convite já registra o aceite).
 - **Escala de infraestrutura.** Um banco por empresa, backup por empresa, monitoramento, filas e armazenamento
@@ -115,7 +116,7 @@ Coisas que a primeira instalação escondia e que viram obrigação ao vender em
 | 10.9 | Book de fotos, meus documentos, central de atendimento, menu personalizável. | G |
 | N.1 | Fuso horário por empresa. | M |
 | N.2 | Planos, limites e cobrança. | G |
-| N.3 | Google Play e decisão sobre iOS. | M |
+| N.3 | Link de download do APK Android na página do sistema (sem loja; iOS feito por fora). | P |
 | N.4 | LGPD em escala (termos, retenção, exclusão). | M |
 | N.5 | Escala (backup por empresa, monitoramento, retenção de fotos) e lista nacional de redes. | M |
 

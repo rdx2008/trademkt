@@ -355,7 +355,7 @@ class _Cabecalho extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(child: Text(industria?.nome ?? 'Indústria', style: Theme.of(context).textTheme.titleMedium)),
+                Expanded(child: Text(industria?.rotulo ?? 'Produtos da marca', style: Theme.of(context).textTheme.titleMedium)),
                 Chip(
                   label: Text(StatusVisita.rotulo(status)),
                   backgroundColor: cor.withValues(alpha: 0.15),

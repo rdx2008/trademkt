@@ -16,6 +16,9 @@ as tabelas e os critérios de aceite. Um commit por item, sempre com testes.
   A indústria solicita à sua agência; a agência verifica e atribui ao promotor responsável.
 - Tudo roda no VPS do fornecedor (Coolify). Cliente não tem acesso ao código.
 - Primeiro cliente: Gaboardi (bazar/limpeza). Até 30 usuários no início.
+- **Textos do app do promotor:** a indústria aparece só como marca dos produtos ("Produtos Gaboardi"); nada no
+  app pode sugerir que o promotor trabalha para a indústria (o vínculo dele é com a agência). Também não é
+  preciso escrever sobre vínculo no app. O APK é distribuído por link na página do sistema, sem loja.
 - **Venda nacional (15/11/2026):** o produto será vendido a agências e indústrias do país todo. Pensar sempre além
   da Gaboardi: fuso horário por empresa (hoje é único), coletas configuráveis por segmento, planos e LGPD
   (`docs/FASE-10.md`).
@@ -72,7 +75,7 @@ Só o promotor usa o app; os demais usam o painel web (responsivo).
 5. Indicadores — painel, produção, galeria privada e Excel implementados.
 6. Piloto Gaboardi — pendente.
 7. Materiais de PDV — pendente.
-8. App iOS — pendente (guardado para depois do piloto).
+8. App iOS — feito por fora do projeto (decisão de 15/11/2026); aqui só o Android.
 9. Rede de empresas — escopo definido em 15/11/2026 (`docs/FASE-9.md`), nada implementado.
 10. Coletas configuráveis e visão nacional — escopo definido em 15/11/2026 (`docs/FASE-10.md`), nada implementado.
 

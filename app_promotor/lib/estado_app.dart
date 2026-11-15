@@ -225,7 +225,7 @@ class EstadoApp extends ChangeNotifier {
   Future<void> entrar({required String email, required String senha}) async {
     final empresa = empresaPendente ?? sessao?.empresa;
     if (empresa == null) {
-      throw ErroApi(status: 422, mensagem: 'Escolha a empresa antes de entrar.');
+      throw ErroApi(status: 422, mensagem: 'Escolha a agência antes de entrar.');
     }
     final api = ApiPromotor(ClienteApi(http: _http, baseUrl: empresa.api));
     final resultado = await api.login(email: email, senha: senha, dispositivo: dispositivo);

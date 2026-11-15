@@ -243,7 +243,7 @@ void main() {
       await tester.pumpWidget(AppPromotor(estado: estado));
       await tester.pump();
 
-      expect(find.text('Código da empresa'), findsOneWidget);
+      expect(find.text('Código da agência'), findsOneWidget);
       await tester.enterText(find.byType(TextField), 'xyz');
       await tester.tap(find.text('Continuar'));
       await _ate(tester, find.text('Empresa XYZ'));

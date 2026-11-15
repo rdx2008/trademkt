@@ -161,7 +161,7 @@ class MenuLateral extends StatelessWidget {
             ListTile(
               key: const Key('adicionar-conta'),
               leading: const Icon(Icons.add_business_outlined),
-              title: const Text('Adicionar outra empresa'),
+              title: const Text('Adicionar outra agência'),
               subtitle: const Text('Para quem trabalha em mais de uma agência'),
               onTap: () {
                 Navigator.pop(context);

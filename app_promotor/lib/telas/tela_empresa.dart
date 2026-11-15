@@ -43,7 +43,7 @@ class _TelaEmpresaState extends State<TelaEmpresa> {
         await widget.estado.descobrirEmpresa(_codigo.text);
       }
     } on ErroApi catch (erro) {
-      setState(() => _erro = erro.status == 404 ? 'Empresa não encontrada. Confira o código.' : erro.descricao);
+      setState(() => _erro = erro.status == 404 ? 'Agência não encontrada. Confira o código.' : erro.descricao);
     } on SemConexao catch (erro) {
       setState(() => _erro = erro.mensagem);
     } finally {
@@ -60,7 +60,7 @@ class _TelaEmpresaState extends State<TelaEmpresa> {
     return Scaffold(
       appBar: acrescentando
           ? AppBar(
-              title: const Text('Adicionar empresa'),
+              title: const Text('Adicionar agência'),
               leading: IconButton(
                 icon: const Icon(Icons.close),
                 tooltip: 'Cancelar',
@@ -82,7 +82,7 @@ class _TelaEmpresaState extends State<TelaEmpresa> {
                   Text('Trade Promo', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
                   const SizedBox(height: 8),
                   const Text(
-                    'Informe o código da empresa fornecido pelo seu supervisor.',
+                    'Informe o código da sua agência, fornecido pelo seu supervisor.',
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
@@ -93,7 +93,7 @@ class _TelaEmpresaState extends State<TelaEmpresa> {
                       textInputAction: TextInputAction.done,
                       autocorrect: false,
                       decoration: const InputDecoration(
-                        labelText: 'Código da empresa',
+                        labelText: 'Código da agência',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.business),
                       ),
@@ -126,7 +126,7 @@ class _TelaEmpresaState extends State<TelaEmpresa> {
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: () => setState(() => _avancado = !_avancado),
-                    child: Text(_avancado ? 'Usar código da empresa' : 'Avançado: informar URL da instalação'),
+                    child: Text(_avancado ? 'Usar código da agência' : 'Avançado: informar URL da instalação'),
                   ),
                 ],
               ),

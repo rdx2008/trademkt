@@ -179,7 +179,7 @@ class _CartaoVisita extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (visita.pdv.endereco != null) Text(visita.pdv.endereco!, maxLines: 2, overflow: TextOverflow.ellipsis),
-            Text(industria?.nome ?? 'Indústria ${visita.industriaId}'),
+            Text(industria?.rotulo ?? 'Produtos da marca'),
             const SizedBox(height: 4),
             Wrap(
               spacing: 6,

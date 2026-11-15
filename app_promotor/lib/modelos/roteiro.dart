@@ -82,6 +82,10 @@ class Industria {
 
   String get chave => chaveDe(industria, id);
 
+  /// Como o app mostra a indústria ao promotor: só a marca dos produtos. O vínculo dele é com a
+  /// agência; o app nunca apresenta a indústria como empregadora.
+  String get rotulo => 'Produtos $nome';
+
   factory Industria.fromJson(Map<String, dynamic> json) => Industria(
         id: json['id'] as int,
         industria: json['industria'] as String? ?? '',
