@@ -77,7 +77,7 @@ Só o promotor usa o app; os demais usam o painel web (responsivo).
 7. Materiais de PDV — pendente.
 8. App iOS — feito por fora do projeto (decisão de 15/11/2026); aqui só o Android.
 9. Rede de empresas — implementada em 16/11/2026 (`docs/FASE-9.md`); falta validar no Coolify.
-10. Coletas configuráveis e visão nacional — escopo definido em 15/11/2026 (`docs/FASE-10.md`), nada implementado.
+10. Coletas configuráveis e visão nacional — implementada em 17/11/2026 (`docs/FASE-10.md`); falta validar no Coolify e em aparelho real.
 
 ## Estado consolidado — atualizado em 07/11/2026
 
@@ -153,6 +153,20 @@ Tela própria em **Equipe → Promotores** (só instalação de agência); o pro
 - Crachá digital: `/promotores/{id}/cracha` (imprimir, QR) e página pública `/verificar/{codigo}` (código de
   40 caracteres, só foto, primeiro nome e ativo/inativo; nunca CPF, e-mail, telefone nem afastamento).
   O app tem "Meu crachá" no menu (QR do endereço vindo em `usuario.cracha_url`; sessão antiga precisa entrar de novo).
+
+### Coletas e apoio (fase 10, 17/11/2026)
+
+- **Modelos de coleta** (`ModeloColeta`, `Formulario`, `ModelosDePartida`): formulário por indústria com campos
+  tipados, versões e escopo por rede. Respostas em `coleta_respostas` (`POST /api/v1/.../visitas/{id}/coletas`,
+  idempotente por UUID, validadas contra a versão informada). O roteiro do app leva `modelos` por indústria e `rede_id`
+  do PDV; o app (Flutter) tem o passo "Coletas" offline (`TelaColeta`, fila `TipoItemFila.coleta`).
+- **Resultados** (`ResultadosColeta`): preço, validade, estoque e share a partir do "papel" dos campos
+  (`ModeloColeta::PAPEIS`); alerta `validade_proxima` quando o modelo tem `alerta_dias`.
+- **Fotos:** `foto_avaliacoes` (nota 1–5 e tags por avaliador), filtro na galeria.
+- **Fila de downloads** (`Exportacao`, `GerarExportacao`, `exportacoes:limpar` às 03:30): indicadores (Excel), coletas
+  (CSV) e book de fotos (ZIP, até 400 fotos). O job refaz o escopo do usuário a partir do que foi guardado no pedido.
+- **Meus documentos** (`Documento`), **Central de atendimento** (`Chamado`, no banco central; painel central em
+  `/chamados`) e **atalhos personalizáveis** (`public/js/atalhos.js`, só no navegador).
 
 ### Rede de empresas (fase 9, 16/11/2026)
 

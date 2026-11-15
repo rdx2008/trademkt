@@ -2,7 +2,8 @@
 
 Escopo definido em 15/11/2026, a partir das telas de sistemas concorrentes que o dono recebeu dos clientes
 (ShelfSpy, TradePro Promoter e outro de roteiro de lojas) e da decisão de **vender para agências e indústrias do
-país todo**, não só para o primeiro cliente. **Nada desta fase está implementado.**
+país todo**, não só para o primeiro cliente. **Itens 10.1 a 10.9 implementados em 17/11/2026** (ver "O que foi
+feito" abaixo); falta validar no Coolify/MySQL e em aparelho real. Seguem em aberto N.2, N.4 e N.5.
 
 ## 1. Premissa
 
@@ -145,3 +146,25 @@ antes ou em paralelo com 10.1, porque define quem cria os modelos.
 - Validade exige lote? Sugestão: lote opcional, validade obrigatória.
 - Quanto tempo guardar as respostas e as fotos por plano (retenção).
 - Valores e forma de cobrança (N.2).
+
+## O que foi feito (17/11/2026)
+
+- **10.1 Motor de coletas:** modelos por indústria (`modelos_coleta`, versões em `modelo_coleta_versoes`, respostas em
+  `coleta_respostas`), com campos sim/não, número, quantidade, preço, texto, escolha e data, obrigatórios ou não, por
+  produto ou gerais, e escopo por rede. Painel em **Cadastros → Modelos de coleta**; o app mostra o passo "Coletas"
+  depois da foto antes, responde offline e envia pela fila (idempotente por UUID). Alterar os campos cria nova versão.
+  Campo de foto dentro da coleta ainda não existe (as fotos seguem as de antes/depois/ruptura).
+- **10.2 a 10.6 Módulos:** modelos de partida de preço, validade, estoque, share e checklist; cada campo pode ter um
+  "papel" (preço próprio, validade, estoque na gôndola, frentes da marca…) que alimenta **Resultados das coletas**
+  (preço por produto e rede com comparativo do concorrente, produtos a vencer, estoque com gôndolas vazias, share por
+  rede), com filtros de período, rede e cidade e CSV. Validade com janela de alerta por modelo avisa a gestão.
+- **10.7 Fotos:** nota de 1 a 5 e tags por avaliador, média na visita e filtro por nota/tag na galeria.
+- **10.8 Fila de downloads:** Excel dos indicadores, CSV das coletas e book de fotos (ZIP) em segundo plano, link privado
+  do dono por 7 dias, limpeza diária. Filtros de relatório: período, indústria, agência, rede, cidade, PDV, supervisor,
+  promotor, nota e tag (UF, representante e categoria ficam para depois).
+- **10.9 Apoio:** book de fotos (ZIP), Meus documentos (perfis que veem, até 20 MB), Central de atendimento (chamados ao
+  fornecedor, no banco central, com painel de resposta) e atalhos do painel que cada pessoa reordena e oculta.
+- **N.1 Fuso por empresa** e **N.3 link do APK** foram feitos antes (15/11/2026).
+
+Ficou de fora de propósito: "Ordem de serviço", "Sistemática" e "Book" como nomes de módulos (aguardam o que os
+clientes querem dizer com eles); foto dentro da coleta; filtros por UF/representante/categoria.
