@@ -1,5 +1,9 @@
 # Vínculo indústria–agência e endereços dos clientes
 
+> **Atualização de 15/11/2026:** a regra "só o super admin vincula e cria empresas" será ampliada pela fase 9
+> (`docs/FASE-9.md`): agência interna, cadastro de agência e de indústria pelo próprio cliente, indústria gerida
+> e pedido de vínculo com aceite. O que está abaixo continua descrevendo o funcionamento atual.
+
 ## Modelo aprovado (07/11/2026)
 
 **As pessoas moram na agência; a operação mora na indústria.**

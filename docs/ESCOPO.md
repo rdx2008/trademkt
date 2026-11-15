@@ -44,7 +44,7 @@ promotor. A indústria sempre solicita à sua agência, que verifica e atribui a
 
 | Grupo | Perfil | Acesso | O que faz |
 | --- | --- | --- | --- |
-| Plataforma | Super admin (fornecedor) | Painel central | Cria clientes, domínios, suporte |
+| Plataforma | Super admin (fornecedor) | Painel central | Cria clientes, domínios, suporte; indústria e agência também criam empresas (fase 9) |
 | Instalação | Admin da instalação | Painel web | Cadastros, usuários, configurações, todos os relatórios |
 | Indústria | Gerente de trade | Painel web | Métricas completas, solicita à agência, recebe alertas |
 | Indústria | Representante comercial | Painel web + notificações | Recebe aviso de ruptura dos PDVs da sua carteira |
@@ -256,8 +256,19 @@ Pagos: Google Play (US$ 25 uma vez) e Apple (US$ 99/ano, só se o app iOS for fe
 | 6. Piloto | Instalação Gaboardi, carga do catálogo, testes em campo, ajustes | 3 semanas |
 | 7. Materiais de PDV | Estoque, envio e comprovação de instalação | 2 semanas |
 | 8. App iOS | Mesmo código Flutter para iPhone e testes | 2 semanas |
+| 9. Rede de empresas | Agência interna da indústria, agência externa e indústria cadastradas pelo próprio cliente, indústria gerida pela agência, assumir cadastro, agência importa catálogo | ver `docs/FASE-9.md` |
 
 Publicação nas lojas: definir depois.
+
+## Rede de empresas (decisão de 15/11/2026)
+
+Os clientes pediram que **a indústria possa ter agência interna** (sem vínculo com outras empresas) **e cadastrar
+agências externas**, vigentes ou novas, e que **a agência possa cadastrar as indústrias** em que já trabalha e as
+que serão clientes dela, **importando o catálogo de SKUs**. Decisões: criação pelo próprio cliente, sem limite no
+começo; indústria gerida pela agência que a indústria pode assumir depois; agência importa catálogo por padrão
+(a indústria pode desligar por vínculo); prospect é só uma situação no cadastro. Agência interna é uma instalação
+de agência de verdade, vinculada à indústria dona, o que mantém a separação trabalhista. Detalhes, modelo, itens
+e critérios de aceite em `docs/FASE-9.md`. Nada implementado ainda.
 
 ## Ideias guardadas (depois do piloto)
 

@@ -16,6 +16,10 @@ as tabelas e os critérios de aceite. Um commit por item, sempre com testes.
   A indústria solicita à sua agência; a agência verifica e atribui ao promotor responsável.
 - Tudo roda no VPS do fornecedor (Coolify). Cliente não tem acesso ao código.
 - Primeiro cliente: Gaboardi (bazar/limpeza). Até 30 usuários no início.
+- **Fase 9 (escopo de 15/11/2026, `docs/FASE-9.md`, nada implementado):** a indústria poderá ter agência interna
+  (instalação de agência de verdade, vinculada) e cadastrar agências externas; a agência poderá cadastrar
+  indústrias (inclusive "geridas", que a dona assume depois) e importar o catálogo de SKUs. Hoje ainda vale
+  que só o super admin cria empresas e vínculos.
 
 ## Arquitetura (decidida)
 
@@ -65,7 +69,8 @@ Só o promotor usa o app; os demais usam o painel web (responsivo).
 5. Indicadores — painel, produção, galeria privada e Excel implementados.
 6. Piloto Gaboardi — pendente.
 7. Materiais de PDV — pendente.
-8. App iOS — pendente.
+8. App iOS — pendente (guardado para depois do piloto).
+9. Rede de empresas — escopo definido em 15/11/2026 (`docs/FASE-9.md`), nada implementado.
 
 ## Estado consolidado — atualizado em 07/11/2026
 
