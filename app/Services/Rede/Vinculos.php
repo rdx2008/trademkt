@@ -22,7 +22,7 @@ class Vinculos
      *
      * @throws ValidationException
      */
-    public function criar(Tenant $industria, Tenant $agencia, mixed $regioes = null): Vinculo
+    public function criar(Tenant $industria, Tenant $agencia, mixed $regioes = null, string $origem = 'super_admin'): Vinculo
     {
         if ($industria->tipo !== TipoInstalacao::Industria || $agencia->tipo !== TipoInstalacao::Agencia) {
             throw ValidationException::withMessages(['agencia_tenant_id' => 'Escolha uma instalação de indústria e uma de agência.']);
@@ -35,14 +35,14 @@ class Vinculos
         }
         $regioes = Regioes::normalizar($regioes);
 
-        return DB::connection(config('tenancy.database.central_connection'))->transaction(function () use ($industria, $agencia, $regioes) {
+        return DB::connection(config('tenancy.database.central_connection'))->transaction(function () use ($industria, $agencia, $regioes, $origem) {
             $vinculo = Vinculo::create([
                 'industria_tenant_id' => $industria->id,
                 'agencia_tenant_id' => $agencia->id,
                 'regioes' => $regioes,
                 'ativo' => true,
                 'status' => Vinculo::ATIVO,
-                'origem' => 'super_admin',
+                'origem' => $origem,
                 'relacao' => 'cliente',
                 'decidido_em' => now(),
             ]);

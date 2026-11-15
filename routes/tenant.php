@@ -25,6 +25,7 @@ use App\Http\Controllers\Tenant\MarcaController;
 use App\Http\Controllers\Tenant\OperacaoController;
 use App\Http\Controllers\Tenant\PdvController;
 use App\Http\Controllers\Tenant\PromotorController;
+use App\Http\Controllers\Tenant\RedeAgenciaController;
 use App\Http\Controllers\Tenant\RedeController;
 use App\Http\Controllers\Tenant\RegiaoController;
 use App\Http\Controllers\Tenant\RoteiroController;
@@ -202,6 +203,11 @@ Route::middleware([
         Route::get('/agencias', [AgenciaController::class, 'index'])
             ->middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante')
             ->name('agencias.index');
+        // A indústria cria a agência interna ou uma agência externa nova (fase 9).
+        Route::middleware('perfil:admin_instalacao')->group(function () {
+            Route::get('/agencias/nova', [RedeAgenciaController::class, 'create'])->name('agencias.create');
+            Route::post('/agencias', [RedeAgenciaController::class, 'store'])->name('agencias.store');
+        });
 
         Route::middleware('perfil:admin_instalacao')->group(function () {
             Route::resource('industrias', IndustriaController::class)

@@ -76,7 +76,7 @@ class AgenciaConsultaTest extends TestCase
                 ->assertSee($c['prestadora']->nome)->assertDontSee('Agência reservada');
             $this->get('http://xyz.test/agencias/create')->assertNotFound();
             $this->get('http://xyz.test/agencias/'.$c['prestadora']->id.'/edit')->assertNotFound();
-            $this->post('http://xyz.test/agencias', ['nome' => 'Indevida'])->assertMethodNotAllowed();
+            $this->post('http://xyz.test/agencias', ['nome' => 'Indevida'])->assertForbidden();
             $this->put('http://xyz.test/agencias/'.$c['prestadora']->id, ['nome' => 'Alterada'])->assertNotFound();
         }
     }
@@ -87,7 +87,7 @@ class AgenciaConsultaTest extends TestCase
         $representante = $this->criarUsuario($c['tenant'], Perfil::Representante, ['industria_id' => $c['marca']->id]);
         foreach ([$c['gerente'], $representante] as $usuario) {
             $this->actingAs($usuario)->get('http://xyz.test/agencias/create')->assertNotFound();
-            $this->post('http://xyz.test/agencias', ['nome' => 'Indevida'])->assertMethodNotAllowed();
+            $this->post('http://xyz.test/agencias', ['nome' => 'Indevida'])->assertForbidden();
             foreach ([$c['prestadora'], $c['outra']] as $agencia) {
                 $this->get("http://xyz.test/agencias/{$agencia->id}/edit")->assertNotFound();
                 $this->put("http://xyz.test/agencias/{$agencia->id}", ['nome' => 'Alterada'])->assertNotFound();
@@ -119,7 +119,7 @@ class AgenciaConsultaTest extends TestCase
             ->assertSee([$c['prestadora']->nome, 'Agência reservada'])
             ->assertDontSee('Nova agência');
         $this->get('http://xyz.test/agencias/create')->assertNotFound();
-        $this->post('http://xyz.test/agencias', ['nome' => 'Nova prestadora', 'ativo' => '1'])->assertMethodNotAllowed();
+        $this->post('http://xyz.test/agencias', ['nome' => 'Nova prestadora', 'ativo' => '1'])->assertForbidden();
         $c['tenant']->run(fn () => $this->assertSame(2, Agencia::count()));
     }
 }

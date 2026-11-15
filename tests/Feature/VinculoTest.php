@@ -133,9 +133,9 @@ class VinculoTest extends TestCase
         $this->actingAs($admin)->get('http://gaboardi.test/painel')->assertOk()->assertDontSee('Nenhuma agência vinculada ainda');
         $this->get('http://gaboardi.test/agencias')->assertOk()
             ->assertSee('Sul')->assertSee('Caxias do Sul, RS')
-            ->assertDontSee('Nova agência')->assertDontSee('Agências internas')->assertDontSee('>Editar</a>', false);
+            ->assertSee('Nova agência')->assertDontSee('>Editar</a>', false);
         $this->get('http://gaboardi.test/agencias/create')->assertNotFound();
-        $this->post('http://gaboardi.test/agencias', ['nome' => 'Interna'])->assertMethodNotAllowed();
+        $this->post('http://gaboardi.test/agencias', ['nome' => 'Interna'])->assertSessionHasErrors('tipo_agencia');
         $this->get('http://gaboardi.test/painel')->assertDontSee('Buscar agências')->assertDontSee('parcerias');
     }
 }
