@@ -47,9 +47,10 @@
         </div>
     </div>
 
-    <section class="painel-atalhos" aria-label="Ações do seu perfil">
+    <section class="painel-atalhos" aria-label="Ações do seu perfil" data-personalizavel data-chave="{{ tenant('id') }}:{{ $usuario->id }}">
         @include('tenant.painel.atalhos')
     </section>
+    @push('scripts')<script src="{{ asset('js/atalhos.js') }}"></script>@endpush
 
     @if ($resumo['semPromotor'] || $resumo['pendentesAnteriores'])<section class="painel-pendencias" aria-label="Pontos de atenção"><strong>Pontos de atenção</strong>@if ($resumo['semPromotor'])<span>{{ $resumo['semPromotor'] }} visita(s) do dia sem promotor atribuído.</span>@endif @if ($resumo['pendentesAnteriores'])<span>{{ $resumo['pendentesAnteriores'] }} visita(s) dos 6 dias anteriores continuam previstas.</span>@endif @if ($usuario->temPerfil(\App\Enums\Perfil::AdminAgencia, \App\Enums\Perfil::Supervisor))<a href="{{ route('roteiros.semana', ['semana' => $data->copy()->startOfWeek()->toDateString()]) }}">Abrir roteiros →</a>@endif</section>@endif
     @if ($usuario->perfil === \App\Enums\Perfil::GerentePdv)
