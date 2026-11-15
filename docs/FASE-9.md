@@ -1,7 +1,8 @@
 # Fase 9 — Rede de empresas (autoatendimento)
 
-Escopo definido em 15/11/2026, a partir da conversa do dono com os clientes. **Nada desta fase está
-implementado.** Substitui a regra de 07/11/2026 de que só o super admin cria empresas e vínculos
+Escopo definido em 15/11/2026, a partir da conversa do dono com os clientes. **Implementada em 16/11/2026**
+(itens 9.1 a 9.8, com testes); falta validar no Coolify/MySQL. Acréscimo do dono: uma indústria pode ter uma
+agência por região ou estado, e as regiões do vínculo passam a decidir qual agência pode ter o contrato do PDV. Substitui a regra de 07/11/2026 de que só o super admin cria empresas e vínculos
 (ver `docs/REDE-E-DOMINIOS.md`, que continua valendo para o funcionamento por dentro).
 
 ## 1. O que os clientes pediram

@@ -213,6 +213,7 @@ Route::middleware([
             Route::patch('/empresas-vinculadas/pedidos/{vinculo}/recusar', [EmpresasVinculadasController::class, 'recusar'])->whereNumber('vinculo')->name('vinculadas.recusar');
             Route::post('/empresas-vinculadas/industrias', [EmpresasVinculadasController::class, 'criarIndustria'])->name('vinculadas.industria');
             Route::patch('/empresas-vinculadas/{vinculo}/relacao', [EmpresasVinculadasController::class, 'relacao'])->whereNumber('vinculo')->name('vinculadas.relacao');
+            Route::patch('/empresas-vinculadas/{vinculo}/regioes', [EmpresasVinculadasController::class, 'regioes'])->whereNumber('vinculo')->name('vinculadas.regioes');
             Route::patch('/empresas-vinculadas/{vinculo}/permissoes', [EmpresasVinculadasController::class, 'permissoes'])->whereNumber('vinculo')->name('vinculadas.permissoes');
             Route::post('/empresas-vinculadas/{vinculo}/entregar', [EmpresasVinculadasController::class, 'entregar'])->whereNumber('vinculo')->name('vinculadas.entregar');
             Route::delete('/empresas-vinculadas/pedidos/{vinculo}', [EmpresasVinculadasController::class, 'cancelar'])->whereNumber('vinculo')->name('vinculadas.cancelar');

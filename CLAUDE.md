@@ -22,10 +22,10 @@ as tabelas e os critérios de aceite. Um commit por item, sempre com testes.
 - **Venda nacional (15/11/2026):** o produto será vendido a agências e indústrias do país todo. Pensar sempre além
   da Gaboardi: fuso horário por empresa (hoje é único), coletas configuráveis por segmento, planos e LGPD
   (`docs/FASE-10.md`).
-- **Fase 9 (escopo de 15/11/2026, `docs/FASE-9.md`, nada implementado):** a indústria poderá ter agência interna
-  (instalação de agência de verdade, vinculada) e cadastrar agências externas; a agência poderá cadastrar
-  indústrias (inclusive "geridas", que a dona assume depois) e importar o catálogo de SKUs. Hoje ainda vale
-  que só o super admin cria empresas e vínculos.
+- **Fase 9 (rede de empresas, implementada em 16/11/2026, `docs/FASE-9.md`):** além do super admin, a indústria
+  cria a agência interna ou uma agência externa nova e pede vínculo a agências do sistema; a agência pede vínculo
+  a indústrias e cadastra indústria gerida (que ela administra até entregar à indústria); a agência importa o
+  catálogo quando o vínculo permite. CNPJ é a chave das empresas. Regiões do vínculo decidem a agência do contrato.
 
 ## Arquitetura (decidida)
 
@@ -76,7 +76,7 @@ Só o promotor usa o app; os demais usam o painel web (responsivo).
 6. Piloto Gaboardi — pendente.
 7. Materiais de PDV — pendente.
 8. App iOS — feito por fora do projeto (decisão de 15/11/2026); aqui só o Android.
-9. Rede de empresas — escopo definido em 15/11/2026 (`docs/FASE-9.md`), nada implementado.
+9. Rede de empresas — implementada em 16/11/2026 (`docs/FASE-9.md`); falta validar no Coolify.
 10. Coletas configuráveis e visão nacional — escopo definido em 15/11/2026 (`docs/FASE-10.md`), nada implementado.
 
 ## Estado consolidado — atualizado em 07/11/2026
@@ -153,6 +153,24 @@ Tela própria em **Equipe → Promotores** (só instalação de agência); o pro
 - Crachá digital: `/promotores/{id}/cracha` (imprimir, QR) e página pública `/verificar/{codigo}` (código de
   40 caracteres, só foto, primeiro nome e ativo/inativo; nunca CPF, e-mail, telefone nem afastamento).
   O app tem "Meu crachá" no menu (QR do endereço vindo em `usuario.cracha_url`; sessão antiga precisa entrar de novo).
+
+### Rede de empresas (fase 9, 16/11/2026)
+
+- `tenants`: `cnpj` (único por tipo), `modo` (`propria`, `interna`, `gerida`), `dono_tenant_id`, `origem`
+  (`super_admin`/`autocadastro`), `criado_por_tenant_id`. `vinculos`: `status` (pendente, ativo, recusado,
+  encerrado; `ativo` acompanha), `origem` (quem pediu), `relacao` (prospect, cliente, encerrado), `permissoes`
+  (`agencia_mantem_catalogo`, padrão sim), `decidido_em`.
+- `App\Services\Rede\Autocadastro`: empresa cria empresa (provisiona banco, subdomínio `<id>.TRADE_DOMINIO_CLIENTES`,
+  fuso herdado, convite do admin). Exige DNS/roteamento/certificado curinga para o subdomínio responder sozinho.
+- Indústria: **Agências → Nova agência** (interna = dono a indústria; externa nova = independente), vínculo ativo.
+- **Configurações → Empresas vinculadas** (admin): pedido de vínculo por CNPJ com aceite/recusa/cancelamento,
+  regiões por agência (texto "RS" ou "Cidade - UF"), permissão de catálogo; na agência, cadastrar indústria
+  gerida, relação prospect/cliente e "Entregar à indústria" (`EntregaDeCadastro`: vira própria, admin por convite).
+- Na indústria gerida a agência é gestora: `Contexto::agenciaGestora()` libera os cadastros e
+  `User::temPerfil`/`EnsurePerfil` tratam o admin da agência como admin da instalação ali.
+- Agência importa catálogo (`Contexto::agenciaMantemCatalogo()`), com trilha em `importacoes_catalogo`.
+- Prospect não gera visitas (`GeradorVisitas`). Contrato só aceita agência que atende a UF/cidade do PDV
+  (`Regioes::atende`; agência sem regiões atende todas).
 
 ### Fuso horário e app por link (15/11/2026)
 

@@ -9,6 +9,8 @@ use App\Models\ContratoVisita;
 use App\Models\Industria;
 use App\Models\Pdv;
 use App\Models\User;
+use App\Models\Vinculo;
+use App\Services\Rede\Regioes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -140,6 +142,11 @@ class ContratoVisitaController extends Controller
             $dados['agencia_id'] = $eu->agencia_id;
         }
 
+        // Indústria com uma agência por região: o contrato vai para quem atende o estado/cidade do PDV.
+        if (! empty($dados['agencia_id'])) {
+            $this->exigirRegiaoAtendida((int) $dados['agencia_id'], (int) $dados['pdv_id']);
+        }
+
         $dias = array_map('intval', $dados['dias']);
         sort($dias);
         $dados['dias'] = $dias;
@@ -179,5 +186,22 @@ class ContratoVisitaController extends Controller
             'agencias' => Agencia::where(fn ($q) => $q->where('ativo', true)->orWhere('id', $contrato->agencia_id))->when($eu->agenciaVinculada(), fn ($q) => $q->whereKey($eu->agencia_id))->orderBy('nome')->pluck('nome', 'id'),
             'diasSemana' => ContratoVisita::DIAS,
         ];
+    }
+
+    /** @throws ValidationException */
+    private function exigirRegiaoAtendida(int $agenciaId, int $pdvId): void
+    {
+        $agencia = Agencia::find($agenciaId);
+        $pdv = Pdv::find($pdvId);
+        if (! $agencia?->agencia_tenant_id || ! $pdv) {
+            return;
+        }
+        $vinculo = Vinculo::where('industria_tenant_id', tenant('id'))->where('agencia_tenant_id', $agencia->agencia_tenant_id)->first();
+        if ($vinculo && ! Regioes::atende($vinculo->regioes, $pdv->uf, $pdv->cidade)) {
+            throw ValidationException::withMessages([
+                'agencia_id' => 'A agência '.$agencia->nome.' atende só '.Regioes::rotulo($vinculo->regioes).'. O PDV fica em '
+                    .trim(($pdv->cidade ? $pdv->cidade.', ' : '').$pdv->uf).'. Escolha a agência da região ou ajuste as regiões dela.',
+            ]);
+        }
     }
 }

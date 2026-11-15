@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Vinculo;
 use App\Services\Rede\Autocadastro;
 use App\Services\Rede\EntregaDeCadastro;
+use App\Services\Rede\Regioes;
 use App\Services\Rede\Vinculos;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -113,6 +114,18 @@ class EmpresasVinculadasController extends Controller
         $registro->update(['relacao' => $dados['relacao']]);
 
         return redirect()->route('vinculadas.index')->with('status', 'Relação com '.$registro->industria->nome.' atualizada.');
+    }
+
+    /** A indústria define as regiões (estados e cidades) que cada agência atende. */
+    public function regioes(Request $request, int $vinculo, Vinculos $vinculos): RedirectResponse
+    {
+        $this->exigirGestor($request);
+        abort_unless(tenant()->tipo === TipoInstalacao::Industria, 403);
+        $registro = $this->doMeu($vinculo);
+        $request->validate(['regioes' => ['nullable', 'string', 'max:3000']]);
+        $vinculos->atualizar($registro, Regioes::doTexto((string) $request->input('regioes')), $registro->ativo);
+
+        return redirect()->route('vinculadas.index')->with('status', 'Regiões de '.$registro->agencia->nome.' atualizadas.');
     }
 
     /** A indústria permite ou não que a agência mantenha o catálogo dela. */

@@ -51,6 +51,53 @@ class Regioes
         return $resultado;
     }
 
+    /**
+     * A agência com estas regiões atende o local? Sem regiões = atende todas; com UF só, o estado
+     * inteiro; com cidade, só a cidade. Local sem UF conhecida não é barrado.
+     *
+     * @param  ?list<array{uf: string, cidade: ?string}>  $regioes
+     */
+    public static function atende(?array $regioes, ?string $uf, ?string $cidade): bool
+    {
+        if (! $regioes || ! $uf) {
+            return true;
+        }
+        $cidade = Str::lower(Str::ascii(trim((string) $cidade)));
+        foreach ($regioes as $r) {
+            if (strtoupper($r['uf']) !== strtoupper($uf)) {
+                continue;
+            }
+            if (empty($r['cidade']) || Str::lower(Str::ascii(trim($r['cidade']))) === $cidade) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Texto com uma região por linha ("RS" ou "Caxias do Sul - RS") para a lista [{uf, cidade}].
+     *
+     * @return list<array{uf: string, cidade: ?string}>
+     */
+    public static function doTexto(string $texto): array
+    {
+        $regioes = [];
+        foreach (preg_split('/\R/', $texto) as $linha) {
+            $linha = trim($linha);
+            if ($linha === '') {
+                continue;
+            }
+            if (preg_match('/^(.*?)[\s,\/\-]+([A-Za-z]{2})$/u', $linha, $m) && trim($m[1]) !== '') {
+                $regioes[] = ['uf' => strtoupper($m[2]), 'cidade' => trim($m[1])];
+            } else {
+                $regioes[] = ['uf' => strtoupper($linha), 'cidade' => null];
+            }
+        }
+
+        return $regioes;
+    }
+
     /** @param  list<array{uf: string, cidade: ?string}>  $regioes */
     public static function rotulo(array $regioes): string
     {

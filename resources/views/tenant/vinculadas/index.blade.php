@@ -110,11 +110,25 @@
 
     <div class="tabela-rolagem">
         <table>
-            <thead><tr><th>{{ $souIndustria ? 'Agência' : 'Indústria' }}</th><th>Situação</th><th>{{ $souIndustria ? 'Catálogo' : 'Relação' }}</th><th>Desde</th>@unless ($souIndustria)<th></th>@endunless</tr></thead>
+            <thead><tr><th>{{ $souIndustria ? 'Agência' : 'Indústria' }}</th><th>Regiões</th><th>Situação</th><th>{{ $souIndustria ? 'Catálogo' : 'Relação' }}</th><th>Desde</th>@unless ($souIndustria)<th></th>@endunless</tr></thead>
             <tbody>
                 @forelse ($vinculos as $v)
                     <tr>
                         <td>{{ $outra($v)->nome }}@if ($outra($v)->cnpjFormatado())<div class="rotulo">{{ $outra($v)->cnpjFormatado() }}</div>@endif</td>
+                        <td>
+                            {{ $v->regioesRotulo() }}
+                            @if ($souIndustria && $v->status === \App\Models\Vinculo::ATIVO)
+                                <details>
+                                    <summary>Editar regiões</summary>
+                                    <form method="POST" action="{{ route('vinculadas.regioes', $v->id) }}">
+                                        @csrf @method('PATCH')
+                                        <textarea name="regioes" rows="4" placeholder="Uma por linha: RS ou Caxias do Sul - RS" aria-label="Regiões de {{ $v->agencia->nome }}">{{ collect($v->regioes ?? [])->map(fn ($r) => $r['cidade'] ? $r['cidade'].' - '.$r['uf'] : $r['uf'])->implode("\n") }}</textarea>
+                                        <div class="dica">Vazio = todas as regiões. O contrato de um PDV só aceita agência que atende o estado ou a cidade dele.</div>
+                                        <button type="submit" class="botao secundario">Salvar regiões</button>
+                                    </form>
+                                </details>
+                            @endif
+                        </td>
                         <td>
                             @switch($v->status)
                                 @case(\App\Models\Vinculo::ATIVO)<span class="selo ok">Ativo</span>@break
@@ -158,7 +172,7 @@
                         @endunless
                     </tr>
                 @empty
-                    <tr><td colspan="4">Nenhum vínculo ainda.</td></tr>
+                    <tr><td colspan="5">Nenhum vínculo ainda.</td></tr>
                 @endforelse
             </tbody>
         </table>
