@@ -101,23 +101,25 @@ class ProvisionarCliente
     private function validar(array $dados): array
     {
         $centrais = config('tenancy.central_domains');
+        // Validação sempre no banco central, mesmo quando uma empresa cria outra de dentro da própria instalação.
+        $central = config('tenancy.database.central_connection');
 
         $validados = Validator::make($dados, [
-            'id' => ['required', 'regex:/^[a-z][a-z0-9_]{2,39}$/', Rule::unique('tenants', 'id')],
+            'id' => ['required', 'regex:/^[a-z][a-z0-9_]{2,39}$/', Rule::unique($central.'.tenants', 'id')],
             'nome' => ['required', 'string', 'max:120'],
             'tipo' => ['required', Rule::enum(TipoInstalacao::class)],
-            'codigo' => ['required', 'regex:/^[a-z0-9_-]{3,40}$/', Rule::unique('tenants', 'codigo')],
+            'codigo' => ['required', 'regex:/^[a-z0-9_-]{3,40}$/', Rule::unique($central.'.tenants', 'codigo')],
             'dominios' => ['required', 'array', 'min:1'],
             'dominios.*' => [
                 'required',
                 'regex:/^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/',
-                Rule::unique('domains', 'domain'),
+                Rule::unique($central.'.domains', 'domain'),
                 Rule::notIn($centrais),
             ],
             'admin_nome' => ['required', 'string', 'max:120'],
             'admin_email' => ['required', 'email'],
             'admin_senha' => ['nullable', 'string', 'min:8'],
-            'cnpj' => ['nullable', new Cnpj, Rule::unique('tenants', 'cnpj')->where('tipo', $dados['tipo'] ?? null)],
+            'cnpj' => ['nullable', new Cnpj, Rule::unique($central.'.tenants', 'cnpj')->where('tipo', $dados['tipo'] ?? null)],
         ], [
             'cnpj.unique' => 'Já existe uma empresa deste tipo com este CNPJ no sistema.',
             'id.regex' => 'O identificador deve começar com letra e ter só letras minúsculas, números e _ (3 a 40).',

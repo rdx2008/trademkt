@@ -92,7 +92,10 @@ class Cadastro
      *
      * @return string o link completo
      */
-    public function gerarConvite(User $usuario, ?User $autor, bool $auditar = true): string
+    /**
+     * @param  ?string  $base  endereço da instalação, quando o link é gerado a partir de outra (empresa nova)
+     */
+    public function gerarConvite(User $usuario, ?User $autor, bool $auditar = true, ?string $base = null): string
     {
         $usuario->convites()->whereNull('usado_em')->delete();
         $token = Str::random(48);
@@ -105,7 +108,7 @@ class Cadastro
             $this->auditar($usuario, 'convite_gerado', $autor);
         }
 
-        return route('convite.mostrar', $token);
+        return $base ? rtrim($base, '/').'/convite/'.$token : route('convite.mostrar', $token);
     }
 
     public function conviteDoToken(string $token): ?Convite

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Enums\Perfil;
 use App\Http\Controllers\Controller;
 use App\Models\Convite;
 use App\Services\Promotores\Cadastro;
@@ -50,7 +51,8 @@ class ConviteController extends Controller
         ], ['password' => 'senha']);
         $this->cadastro->aceitarConvite($convite, $request->string('password')->toString());
 
-        return redirect()->route('convite.pronto')->withHeaders($this->cabecalhos());
+        // Quem não é promotor (admin de empresa criada pelo painel) segue para o painel, não para o app.
+        return redirect()->route('convite.pronto')->with('convite_painel', $convite->usuario->perfil !== Perfil::Promotor)->withHeaders($this->cabecalhos());
     }
 
     public function pronto(): View
