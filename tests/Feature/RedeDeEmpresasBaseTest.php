@@ -3,10 +3,12 @@
 namespace Tests\Feature;
 
 use App\Enums\ModoEmpresa;
+use App\Enums\TipoInstalacao;
 use App\Models\Admin;
 use App\Models\Tenant;
 use App\Models\Vinculo;
 use App\Services\ProvisionarCliente;
+use App\Services\Rede\Autocadastro;
 use App\Services\Rede\Vinculos;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -96,5 +98,17 @@ class RedeDeEmpresasBaseTest extends TestCase
         $this->put("http://central.test/clientes/{$cliente->id}/marca", ['cnpj' => '45.723.174/0001-10'])->assertRedirect();
         $this->assertSame('45723174000110', Tenant::find($cliente->id)->cnpj);
         $this->get("http://central.test/clientes/{$cliente->id}/marca")->assertSee('45.723.174/0001-10');
+    }
+
+    public function test_lista_de_clientes_mostra_cnpj_modo_e_origem(): void
+    {
+        $agencia = $this->criarCliente('agsul', 'agencia');
+        tenancy()->end();
+        $agencia->update(['cnpj' => '45723174000110']);
+        app(Autocadastro::class)->criar($agencia, TipoInstalacao::Industria, ModoEmpresa::Gerida, ['nome' => 'Doces Serra', 'cnpj' => self::CNPJ]);
+        $this->actingAs(Admin::create(['nome' => 'R', 'email' => 'r@t.com', 'password' => 'senha1234']), 'admin');
+
+        $this->get('http://central.test/clientes')->assertOk()
+            ->assertSee('45.723.174/0001-10')->assertSee('Gerida pela agência · Agsul')->assertSee('Criada pelo painel de agsul');
     }
 }

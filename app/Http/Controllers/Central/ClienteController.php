@@ -17,7 +17,7 @@ class ClienteController extends Controller
     public function index(): View
     {
         return view('central.clientes.index', [
-            'clientes' => Tenant::with('domains')->orderBy('nome')->get(),
+            'clientes' => Tenant::with(['domains', 'dono'])->orderBy('nome')->get(),
         ]);
     }
 

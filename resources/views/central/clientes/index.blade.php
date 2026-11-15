@@ -30,8 +30,8 @@
             <tbody>
                 @forelse ($clientes as $cliente)
                     <tr>
-                        <td>{{ $cliente->nome }}<div class="rotulo">{{ $cliente->id }}</div><a href="{{ route('central.dominios.index', $cliente) }}">Gerenciar endereços</a> · <a href="{{ route('central.clientes.marca', $cliente) }}">Marca</a></td>
-                        <td>{{ $cliente->tipo->label() }}</td>
+                        <td>{{ $cliente->nome }}<div class="rotulo">{{ $cliente->id }}</div><a href="{{ route('central.dominios.index', $cliente) }}">Gerenciar endereços</a> · <a href="{{ route('central.clientes.marca', $cliente) }}">Configurações</a>@if ($cliente->cnpj)<div class="rotulo">CNPJ {{ $cliente->cnpjFormatado() }}</div>@endif</td>
+                        <td>{{ $cliente->tipo->label() }}@if ($cliente->modo !== \App\Enums\ModoEmpresa::Propria)<div class="rotulo">{{ $cliente->modo->label() }} · {{ $cliente->dono?->nome ?? $cliente->dono_tenant_id }}</div>@endif @if ($cliente->origem === 'autocadastro')<div class="rotulo">Criada pelo painel de {{ $cliente->criado_por_tenant_id }}</div>@endif</td>
                         <td><code>{{ $cliente->codigo }}</code></td>
                         <td>
                             @foreach ($cliente->domains as $dominio)
