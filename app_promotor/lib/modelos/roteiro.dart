@@ -1,6 +1,8 @@
 /// Modelos do roteiro do dia (`GET /api/v1/roteiro`).
 library;
 
+import 'coleta.dart';
+
 double? _numero(dynamic valor) {
   if (valor == null) {
     return null;
@@ -71,7 +73,7 @@ class Sku {
 String chaveDe(String industria, int id) => industria.isEmpty ? '$id' : '$industria:$id';
 
 class Industria {
-  const Industria({required this.id, required this.nome, this.industria = '', this.skus = const []});
+  const Industria({required this.id, required this.nome, this.industria = '', this.skus = const [], this.modelos = const []});
 
   final int id;
 
@@ -79,6 +81,9 @@ class Industria {
   final String industria;
   final String nome;
   final List<Sku> skus;
+
+  /// Modelos de coleta ativos da indústria (fase 10).
+  final List<ModeloColeta> modelos;
 
   String get chave => chaveDe(industria, id);
 
@@ -91,10 +96,16 @@ class Industria {
         industria: json['industria'] as String? ?? '',
         nome: json['nome'] as String,
         skus: ((json['skus'] as List?) ?? const []).map((e) => Sku.fromJson(e as Map<String, dynamic>)).toList(),
+        modelos: ((json['modelos'] as List?) ?? const []).map((e) => ModeloColeta.fromJson(e as Map<String, dynamic>)).toList(),
       );
 
-  Map<String, dynamic> toJson() =>
-      {'id': id, 'industria': industria, 'nome': nome, 'skus': skus.map((e) => e.toJson()).toList()};
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'industria': industria,
+        'nome': nome,
+        'skus': skus.map((e) => e.toJson()).toList(),
+        'modelos': modelos.map((e) => e.toJson()).toList(),
+      };
 }
 
 class Pdv {
@@ -106,6 +117,7 @@ class Pdv {
     this.lat,
     this.lng,
     this.raioM = 200,
+    this.redeId,
   });
 
   final int id;
@@ -115,6 +127,9 @@ class Pdv {
   final double? lat;
   final double? lng;
   final int raioM;
+
+  /// Rede de supermercados da loja, para escolher os modelos de coleta que valem.
+  final int? redeId;
 
   bool get temCoordenadas => lat != null && lng != null;
 
@@ -126,10 +141,11 @@ class Pdv {
         lat: _numero(json['lat']),
         lng: _numero(json['lng']),
         raioM: (json['raio_m'] as num?)?.toInt() ?? 200,
+        redeId: (json['rede_id'] as num?)?.toInt(),
       );
 
   Map<String, dynamic> toJson() =>
-      {'id': id, 'nome': nome, 'cnpj': cnpj, 'endereco': endereco, 'lat': lat, 'lng': lng, 'raio_m': raioM};
+      {'id': id, 'nome': nome, 'cnpj': cnpj, 'endereco': endereco, 'lat': lat, 'lng': lng, 'raio_m': raioM, 'rede_id': redeId};
 }
 
 /// Situações da visita devolvidas pela API (`App\Enums\StatusVisita`).

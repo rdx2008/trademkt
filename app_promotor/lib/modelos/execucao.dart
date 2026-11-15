@@ -2,7 +2,8 @@
 /// enviado ou não. É gravado no banco local e sobrevive ao fechamento do app.
 library;
 
-import '../util/datas.dart';
+import '../util/datas.dart';
+import 'coleta.dart';
 
 enum TipoFoto {
   antes('antes'),
@@ -240,6 +241,7 @@ class ExecucaoVisita {
     this.itens = const [],
     this.conclusao,
     this.statusServidor,
+    this.coletas = const [],
   });
 
   /// Chave da visita no aparelho (ver `Visita.chave`).
@@ -250,6 +252,9 @@ class ExecucaoVisita {
   /// SKUs selecionados durante o trabalho (antes da conclusão).
   final List<ItemTrabalhado> itens;
   final ConclusaoLocal? conclusao;
+
+  /// Respostas dos modelos de coleta (fase 10).
+  final List<RespostaColeta> coletas;
 
   /// Último status confirmado pelo servidor (reconciliação).
   final String? statusServidor;
@@ -267,6 +272,7 @@ class ExecucaoVisita {
   bool get temPendencias =>
       (checkIn != null && !checkIn!.enviado) ||
       fotos.any((f) => !f.enviada) ||
+      coletas.any((c) => !c.enviada) ||
       (conclusao != null && !conclusao!.enviada);
 
   /// Última hora de GPS registrada (check-in ou foto), para validar a sequência.
@@ -287,6 +293,7 @@ class ExecucaoVisita {
     List<ItemTrabalhado>? itens,
     ConclusaoLocal? conclusao,
     String? statusServidor,
+    List<RespostaColeta>? coletas,
   }) =>
       ExecucaoVisita(
         visitaId: visitaId,
@@ -295,6 +302,7 @@ class ExecucaoVisita {
         itens: itens ?? this.itens,
         conclusao: conclusao ?? this.conclusao,
         statusServidor: statusServidor ?? this.statusServidor,
+        coletas: coletas ?? this.coletas,
       );
 
   factory ExecucaoVisita.fromJson(Map<String, dynamic> json) => ExecucaoVisita(
@@ -307,10 +315,14 @@ class ExecucaoVisita {
         conclusao:
             json['conclusao'] == null ? null : ConclusaoLocal.fromJson(json['conclusao'] as Map<String, dynamic>),
         statusServidor: json['status_servidor'] as String?,
+        coletas: ((json['coletas'] as List?) ?? const [])
+            .map((e) => RespostaColeta.fromJson(e as Map<String, dynamic>))
+            .toList(),
       );
 
   Map<String, dynamic> toJson() => {
         'visita_id': visitaId,
+        'coletas': coletas.map((c) => c.toJson()).toList(),
         'check_in': checkIn?.toJson(),
         'fotos': fotos.map((f) => f.toJson()).toList(),
         'itens': itens.map((i) => i.toJson()).toList(),

@@ -12,6 +12,7 @@ import 'api/api_promotor.dart';
 import 'api/cliente_api.dart';
 import 'dados/repositorio_local.dart';
 import 'dominio/regras_visita.dart';
+import 'modelos/coleta.dart';
 import 'modelos/execucao.dart';
 import 'modelos/payloads.dart';
 import 'modelos/roteiro.dart';
@@ -496,6 +497,90 @@ class EstadoApp extends ChangeNotifier {
     await repositorio.modificarExecucao(visitaId, (atual) => atual.copiarCom(itens: itens));
     await _recarregarExecucoes();
     notifyListeners();
+  }
+
+  /// Modelos de coleta que valem para a loja da visita (rede do PDV).
+  List<ModeloColeta> modelosDaVisita(Visita visita) =>
+      (industriaDa(visita)?.modelos ?? const []).where((m) => m.vale(visita.pdv.redeId)).toList();
+
+  /// Guarda as respostas de um modelo (uma geral e uma por SKU) e as põe na fila de envio. Respostas
+  /// ainda não enviadas podem ser refeitas; as já enviadas ficam como estão. Devolve erro ou `null`.
+  Future<String?> salvarColeta(
+    Visita visita,
+    ModeloColeta modelo, {
+    Map<String, Object?> gerais = const {},
+    Map<int, Map<String, Object?>> porSku = const {},
+  }) async {
+    final e = execucao(visita.chave);
+    if (e.concluida) {
+      return 'A visita já foi concluída.';
+    }
+    if (!e.temFotoAntes) {
+      return 'Tire a foto antes da gôndola para começar as coletas.';
+    }
+    final erros = <String>[];
+    final blocos = <int?, Map<String, dynamic>>{};
+    final geral = validarBloco(modelo.camposGerais, gerais);
+    erros.addAll(geral.erros);
+    if (modelo.camposGerais.isNotEmpty && (geral.respostas.isNotEmpty || gerais.isNotEmpty)) {
+      blocos[null] = geral.respostas;
+    }
+    for (final entrada in porSku.entries) {
+      final preenchido = entrada.value.values.any((v) => v != null && v.toString().trim().isNotEmpty);
+      if (!preenchido) {
+        continue;
+      }
+      final bloco = validarBloco(modelo.camposPorSku, entrada.value);
+      erros.addAll(bloco.erros.map((m) => 'Produto ${entrada.key}: $m'));
+      blocos[entrada.key] = bloco.respostas;
+    }
+    if (blocos[null] == null && modelo.camposGerais.any((c) => c.obrigatorio)) {
+      erros.add('Responda as perguntas obrigatórias do modelo.');
+    }
+    if (blocos.isEmpty) {
+      return 'Nada foi respondido.';
+    }
+    if (erros.isNotEmpty) {
+      return erros.first;
+    }
+
+    final agora = DateTime.now();
+    for (final entrada in blocos.entries) {
+      final existente = e.coletas.where((c) => c.modeloId == modelo.id && c.skuId == entrada.key).firstOrNull;
+      if (existente != null && existente.enviada) {
+        continue;
+      }
+      final resposta = (existente ?? RespostaColeta(
+        uuid: const Uuid().v4(),
+        modeloId: modelo.id,
+        versao: modelo.versao,
+        skuId: entrada.key,
+        respostas: const {},
+        respondidaEm: agora,
+      )).copiarCom(respostas: entrada.value, respondidaEm: agora);
+      await repositorio.modificarExecucao(
+        visita.chave,
+        (atual) => atual.copiarCom(coletas: [...atual.coletas.where((c) => c.uuid != resposta.uuid), resposta]),
+      );
+      final item = await repositorio.obterItemPorChave(resposta.uuid);
+      if (item == null) {
+        await repositorio.enfileirar(ItemFila(
+          visitaId: visita.chave,
+          tipo: TipoItemFila.coleta,
+          chave: resposta.uuid,
+          payload: resposta.toPayload(),
+          prioridade: prioridadeFila(TipoItemFila.coleta),
+          criadoEm: agora,
+        ));
+      } else if (item.estado != EstadoItemFila.enviado) {
+        await repositorio.atualizarItem(item.copiarCom(payload: resposta.toPayload(), estado: EstadoItemFila.pendente, limparErro: true));
+      }
+    }
+    await _recarregarExecucoes();
+    notifyListeners();
+    unawaited(sincronizar(silencioso: true));
+
+    return null;
   }
 
   /// Conclui a visita (normal, ruptura ou impedimento). Devolve erro ou `null`.

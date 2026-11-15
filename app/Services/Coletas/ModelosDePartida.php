@@ -18,7 +18,6 @@ class ModelosDePartida
                 self::c('Concorrente principal (marca e produto)', 'texto'),
                 self::c('Preço do concorrente', 'preco'),
                 self::c('Concorrente em promoção?', 'sim_nao'),
-                self::c('Foto da etiqueta de preço', 'foto'),
             ]],
             'validade' => ['nome' => 'Validade (produtos a vencer)', 'tipo' => 'validade', 'campos' => [
                 self::c('Validade', 'data', true, true),
@@ -35,7 +34,6 @@ class ModelosDePartida
                 self::c('Frentes da nossa marca', 'quantidade', true),
                 self::c('Frentes de concorrentes', 'quantidade', true),
                 self::c('Categoria pesquisada', 'texto'),
-                self::c('Foto da gôndola', 'foto'),
             ]],
             'checklist' => ['nome' => 'Checklist de execução', 'tipo' => 'checklist', 'campos' => [
                 self::c('Produtos no lugar certo?', 'sim_nao', true),

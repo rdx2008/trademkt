@@ -94,6 +94,10 @@ class ApiPromotor {
         nomeArquivo: nomeArquivo,
       );
 
+  /// `POST .../visitas/{visita}/coletas`.
+  Future<RespostaJson> enviarColeta(String visitaId, Map<String, dynamic> payload) =>
+      cliente.post('${caminhoDaVisita(visitaId)}/coletas', payload);
+
   /// `POST .../visitas/{visita}/concluir`.
   Future<RespostaJson> concluir(String visitaId, Map<String, dynamic> payload) =>
       cliente.post('${caminhoDaVisita(visitaId)}/concluir', payload);

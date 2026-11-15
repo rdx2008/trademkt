@@ -6,6 +6,7 @@ import '../modelos/execucao.dart';
 enum TipoItemFila {
   checkIn('check_in'),
   foto('foto'),
+  coleta('coleta'),
   conclusao('conclusao');
 
   const TipoItemFila(this.valor);
@@ -46,6 +47,8 @@ int prioridadeFila(TipoItemFila tipo, {TipoFoto? tipoFoto}) => switch (tipo) {
           TipoFoto.depois => 3,
           null => 3,
         },
+      // Coletas vão antes da conclusão, junto das fotos de depois.
+      TipoItemFila.coleta => 3,
       TipoItemFila.conclusao => 4,
     };
 
@@ -84,13 +87,20 @@ class ItemFila {
   final String? ultimoErro;
   final EstadoItemFila estado;
 
-  ItemFila copiarCom({int? id, int? tentativas, String? ultimoErro, EstadoItemFila? estado, bool limparErro = false}) =>
+  ItemFila copiarCom({
+    int? id,
+    int? tentativas,
+    String? ultimoErro,
+    EstadoItemFila? estado,
+    bool limparErro = false,
+    Map<String, dynamic>? payload,
+  }) =>
       ItemFila(
         id: id ?? this.id,
         visitaId: visitaId,
         tipo: tipo,
         chave: chave,
-        payload: payload,
+        payload: payload ?? this.payload,
         prioridade: prioridade,
         criadoEm: criadoEm,
         arquivo: arquivo,

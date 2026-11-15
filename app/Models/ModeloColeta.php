@@ -36,7 +36,6 @@ class ModeloColeta extends Model
         'texto' => 'Texto',
         'escolha' => 'Escolha de uma opção',
         'data' => 'Data',
-        'foto' => 'Foto',
     ];
 
     protected function casts(): array

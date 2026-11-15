@@ -170,6 +170,13 @@ class Sincronizador {
 
           return atualizada;
         });
+      case TipoItemFila.coleta:
+        await api.enviarColeta(item.visitaId, item.payload);
+        await _confirmar(item);
+        await _atualizarExecucao(
+          item.visitaId,
+          (e) => e.copiarCom(coletas: e.coletas.map((c) => c.uuid == item.chave ? c.copiarCom(enviada: true) : c).toList()),
+        );
       case TipoItemFila.conclusao:
         final resposta = await api.concluir(item.visitaId, item.payload);
         await _confirmar(item);
@@ -203,6 +210,8 @@ class Sincronizador {
     final presente = switch (item.tipo) {
       TipoItemFila.checkIn => visita['check_in'] != null,
       TipoItemFila.foto => _fotosDoServidor(visita).contains(item.chave),
+      // A resposta de coleta com o mesmo UUID e conteúdo diferente não se reconcilia sozinha.
+      TipoItemFila.coleta => false,
       TipoItemFila.conclusao => visita['tipo_conclusao'] == item.payload['tipo'] &&
           StatusVisita.encerrada(visita['status'] as String? ?? ''),
     };
@@ -253,6 +262,7 @@ class Sincronizador {
       final presente = switch (item.tipo) {
         TipoItemFila.checkIn => checkInServidor != null,
         TipoItemFila.foto => fotosServidor.contains(item.chave),
+        TipoItemFila.coleta => false,
         TipoItemFila.conclusao => concluidaNoServidor && visita['tipo_conclusao'] == item.payload['tipo'],
       };
       if (presente) {

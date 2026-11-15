@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 
 import '../dominio/regras_visita.dart';
 import '../estado_app.dart';
+import '../modelos/coleta.dart';
 import '../modelos/execucao.dart';
 import '../modelos/roteiro.dart';
 import '../sincronizacao/item_fila.dart';
 import '../util/datas.dart';
 import 'tela_camera.dart';
+import 'tela_coleta.dart';
 import 'tela_roteiro.dart' show corStatus;
 import 'tela_skus.dart';
 
@@ -186,6 +188,7 @@ class _TelaVisitaState extends State<TelaVisita> {
         final industria = estado.industriaDa(visita);
         final status = estado.statusExibido(visita);
         final bloqueado = e.concluida || _ocupado;
+        final modelos = estado.modelosDaVisita(visita);
 
         return Scaffold(
           appBar: AppBar(title: Text(visita.pdv.nome)),
@@ -254,8 +257,34 @@ class _TelaVisitaState extends State<TelaVisita> {
                   ],
                 ),
               ),
+              if (modelos.isNotEmpty)
+                _Passo(
+                  numero: 3,
+                  titulo: 'Coletas',
+                  feito: modelos.every((m) => e.coletas.any((c) => c.modeloId == m.id)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final modelo in modelos)
+                        ListTile(
+                          key: ValueKey('coleta-${modelo.id}'),
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.fact_check_outlined),
+                          title: Text(modelo.nome),
+                          subtitle: Text(_resumoColeta(e, modelo)),
+                          trailing: const Icon(Icons.chevron_right),
+                          enabled: !bloqueado && e.temFotoAntes,
+                          onTap: () => Navigator.of(context).push(MaterialPageRoute<bool>(
+                            builder: (_) => TelaColeta(estado: estado, visita: visita, modelo: modelo, industria: industria),
+                          )),
+                        ),
+                      if (!e.temFotoAntes) const Text('Tire a foto antes da gôndola para começar.'),
+                    ],
+                  ),
+                ),
               _Passo(
-                numero: 3,
+                numero: modelos.isNotEmpty ? 4 : 3,
                 titulo: 'Foto depois',
                 feito: e.temFotoDepois,
                 child: _Fotos(
@@ -577,6 +606,17 @@ class _Envios extends StatelessWidget {
   String _rotuloItem(ItemFila item) => switch (item.tipo) {
         TipoItemFila.checkIn => 'Local e hora da visita',
         TipoItemFila.foto => 'Foto ${item.payload['tipo']}',
+        TipoItemFila.coleta => 'Coleta',
         TipoItemFila.conclusao => 'Conclusão (${item.payload['tipo']})',
       };
+}
+
+String _resumoColeta(ExecucaoVisita e, ModeloColeta modelo) {
+  final respostas = e.coletas.where((c) => c.modeloId == modelo.id).toList();
+  if (respostas.isEmpty) {
+    return 'Ainda não respondido';
+  }
+  final pendentes = respostas.where((c) => !c.enviada).length;
+
+  return '${respostas.length} resposta(s)${pendentes > 0 ? ' · $pendentes aguardando envio' : ' · enviado'}';
 }
