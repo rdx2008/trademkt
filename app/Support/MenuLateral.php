@@ -79,6 +79,7 @@ class MenuLateral
                 self::item('Aparência', 'configuracoes.aparencia', ['configuracoes.*'], $eu->temPerfil(Perfil::AdminInstalacao) && $instalacao?->whiteLabelAtivo()),
             ]),
 
+            self::link('Meus documentos', 'flaticon-381-folder-1', 'documentos.index', ['documentos.*']),
             self::link(
                 'Meus alertas',
                 'flaticon-381-notification',

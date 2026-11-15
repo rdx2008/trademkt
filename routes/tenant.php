@@ -17,6 +17,7 @@ use App\Http\Controllers\Tenant\ConviteController;
 use App\Http\Controllers\Tenant\CrachaController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\DemandaController;
+use App\Http\Controllers\Tenant\DocumentoController;
 use App\Http\Controllers\Tenant\EmpresasVinculadasController;
 use App\Http\Controllers\Tenant\ExportacaoController;
 use App\Http\Controllers\Tenant\FichaPromotorController;
@@ -92,6 +93,13 @@ Route::middleware([
         Route::get('/alertas', [AlertaController::class, 'index'])->name('alertas.index');
         Route::patch('/alertas/{alerta}/lida', [AlertaController::class, 'ler'])->whereNumber('alerta')->name('alertas.ler');
         Route::get('/indicadores', [IndicadorController::class, 'index'])->name('indicadores.index');
+        // Meus documentos (fase 10): todos os perfis veem o que podem; só o admin da instalação envia.
+        Route::get('/documentos', [DocumentoController::class, 'index'])->name('documentos.index');
+        Route::get('/documentos/{documento}/baixar', [DocumentoController::class, 'baixar'])->whereNumber('documento')->name('documentos.baixar');
+        Route::middleware('perfil:admin_instalacao')->group(function () {
+            Route::post('/documentos', [DocumentoController::class, 'store'])->name('documentos.store');
+            Route::delete('/documentos/{documento}', [DocumentoController::class, 'destroy'])->whereNumber('documento')->name('documentos.destroy');
+        });
         // Fila de downloads (fase 10): exportações grandes em segundo plano, só do dono.
         Route::middleware('perfil:admin_instalacao,admin_agencia,supervisor,gerente_trade,representante')->group(function () {
             Route::get('/exportacoes', [ExportacaoController::class, 'index'])->name('exportacoes.index');
