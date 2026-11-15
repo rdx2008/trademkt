@@ -333,7 +333,7 @@ class MarcaPropriaTest extends TestCase
         $central = Admin::create(['nome' => 'Rodolfo', 'email' => 'r@mastervps.test', 'password' => 'senha1234']);
         $this->actingAs($central, 'admin');
 
-        $this->get('http://central.test/clientes')->assertOk()->assertSee('Marca');
+        $this->get('http://central.test/clientes')->assertOk()->assertSee('Configurações');
         $this->get("http://central.test/clientes/{$this->tenant->id}/marca")->assertOk()
             ->assertSee('Liberar marca própria')
             ->assertSee('css/app.css', false)
