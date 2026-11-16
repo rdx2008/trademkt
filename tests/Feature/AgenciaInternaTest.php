@@ -34,6 +34,7 @@ class AgenciaInternaTest extends TestCase
             'tipo_agencia' => 'interna',
             'nome' => 'Gaboardi Promoções',
             'cnpj' => '11.222.333/0001-81',
+            'subdominio' => 'gaboardipromo',
             'admin_nome' => 'Paula Coordenadora',
             'admin_email' => 'paula@gaboardipromo.com.br',
         ], $extra);

@@ -7,6 +7,7 @@ use App\Enums\TipoInstalacao;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Rules\Cnpj;
+use App\Services\DominiosCliente;
 use App\Services\Promotores\Cadastro;
 use App\Services\ProvisionarCliente;
 use Illuminate\Support\Facades\Validator;
@@ -27,10 +28,10 @@ use Illuminate\Validation\ValidationException;
  */
 class Autocadastro
 {
-    public function __construct(private ProvisionarCliente $provisionar, private Cadastro $cadastro) {}
+    public function __construct(private ProvisionarCliente $provisionar, private Cadastro $cadastro, private DominiosCliente $dominios) {}
 
     /**
-     * @param  array{nome?: string, cnpj?: string, admin_nome?: string, admin_email?: string}  $dados
+     * @param  array{nome?: string, cnpj?: string, subdominio?: string, admin_nome?: string, admin_email?: string}  $dados
      * @return array{tenant: Tenant, convite: ?string} sem convite na indústria gerida
      *
      * @throws ValidationException
@@ -44,6 +45,7 @@ class Autocadastro
             $dados['admin_nome'] = 'Administrador (aguardando a indústria)';
             $dados['admin_email'] = 'pendente@'.Str::lower(Str::random(12)).'.invalid';
         }
+        $subdominio = $dados['subdominio'] ?? null;
         $dados = Validator::make($dados, [
             'nome' => ['required', 'string', 'max:120'],
             'cnpj' => ['required', new Cnpj],
@@ -51,13 +53,17 @@ class Autocadastro
             'admin_email' => ['required', 'email', 'max:190'],
         ], [], ['admin_nome' => 'nome do responsável', 'admin_email' => 'e-mail do responsável'])->validate();
 
-        $id = $this->identificador($dados['nome']);
+        // O prefixo do endereço é escolhido por quem cria (ex.: minhaagencia.bra.net.br) e vira também o
+        // código que o promotor digita no app e o identificador do banco.
+        $prefixo = $this->dominios->validarPrefixo($subdominio);
+        $id = str_replace('-', '_', $prefixo);
         $resultado = $this->provisionar->executar([
             'id' => $id,
+            'codigo' => $prefixo,
             'nome' => $dados['nome'],
             'tipo' => $tipo->value,
             'cnpj' => $dados['cnpj'],
-            'dominios' => [str_replace('_', '-', $id).'.'.config('trade.dominio_clientes')],
+            'dominios' => [$this->dominios->enderecoDoPrefixo($prefixo)],
             'admin_nome' => $dados['admin_nome'],
             'admin_email' => $dados['admin_email'],
             'modo' => $modo->value,
@@ -83,18 +89,5 @@ class Autocadastro
         ));
 
         return ['tenant' => $novo, 'convite' => $convite];
-    }
-
-    /** Identificador (e nome do banco) a partir do nome: letras minúsculas, números e _, único. */
-    private function identificador(string $nome): string
-    {
-        $base = Str::of(Str::ascii($nome))->lower()->replaceMatches('/[^a-z0-9]+/', '_')->trim('_')->limit(28, '')->toString();
-        $base = preg_match('/^[a-z]/', $base) ? $base : 'e_'.$base;
-        $base = rtrim($base, '_') ?: 'empresa';
-        do {
-            $id = $base.'_'.Str::lower(Str::random(4));
-        } while (Tenant::whereKey($id)->orWhere('codigo', $id)->exists());
-
-        return $id;
     }
 }

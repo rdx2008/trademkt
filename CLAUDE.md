@@ -186,6 +186,14 @@ Tela própria em **Equipe → Promotores** (só instalação de agência); o pro
 - Prospect não gera visitas (`GeradorVisitas`). Contrato só aceita agência que atende a UF/cidade do PDV
   (`Regioes::atende`; agência sem regiões atende todas).
 
+### Endereços (17/11/2026)
+
+Landing em `bra.net.br` (`INSTITUCIONAL_DOMINIO_SITE`), painel do fornecedor em `trade.bra.net.br` e o domínio antigo,
+empresas em `<nome>.bra.net.br` (`TRADE_DOMINIO_CLIENTES`). Quem cria agência ou indústria escolhe só o prefixo
+(`DominiosCliente::validarPrefixo`), que vira endereço, código do app e identificador. Middleware `central.dominio`
+separa site e painel; `DominiosCentrais` registra as rotas só no domínio acessado. Detalhes de DNS e Coolify em
+`docs/REDE-E-DOMINIOS.md`. O app do promotor deve ser compilado com `URL_CENTRAL=https://trade.bra.net.br`.
+
 ### Fuso horário e app por link (15/11/2026)
 
 - Cada empresa tem o seu fuso (`tenants.fuso`, guardado em `data`; opções em `App\Support\Fuso`: Brasília, UTC−4,

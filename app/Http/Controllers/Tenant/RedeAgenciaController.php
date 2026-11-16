@@ -39,7 +39,7 @@ class RedeAgenciaController extends Controller
         $modo = $request->input('tipo_agencia') === 'interna' ? ModoEmpresa::Interna : ModoEmpresa::Propria;
         $industria = tenant();
 
-        $criada = $autocadastro->criar($industria, TipoInstalacao::Agencia, $modo, $request->only(['nome', 'cnpj', 'admin_nome', 'admin_email']));
+        $criada = $autocadastro->criar($industria, TipoInstalacao::Agencia, $modo, $request->only(['nome', 'cnpj', 'subdominio', 'admin_nome', 'admin_email']));
         $vinculos->criar($industria, $criada['tenant'], null, 'industria');
 
         return redirect()->route('agencias.index')

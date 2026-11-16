@@ -67,6 +67,15 @@
                     </select>
                 </div>
             </div>
+            <div class="campo">
+                <label for="ind-subdominio">Nome do endereço</label>
+                <div style="display:flex;align-items:center;gap:6px">
+                    <input id="ind-subdominio" name="subdominio" value="{{ old('subdominio') }}" maxlength="30" required pattern="[a-z][a-z0-9-]{1,28}[a-z0-9]" placeholder="minhaempresa" autocomplete="off" style="max-width:220px">
+                    <span>.{{ config('trade.dominio_clientes') }}</span>
+                </div>
+                <div class="dica">É o endereço da empresa no sistema e também o código que o promotor digita no aplicativo. De 3 a 30 letras minúsculas, números ou hífen; não dá para mudar depois.</div>
+                @error('subdominio')<div class="erro">{{ $message }}</div>@enderror
+            </div>
             <button type="submit" class="botao">Cadastrar indústria</button>
         </form>
     @endunless

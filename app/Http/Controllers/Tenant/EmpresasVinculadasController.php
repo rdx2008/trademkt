@@ -97,7 +97,7 @@ class EmpresasVinculadasController extends Controller
         $this->exigirGestor($request);
         abort_unless(tenant()->tipo === TipoInstalacao::Agencia, 403);
         $dados = $request->validate(['relacao' => ['required', Rule::in(['prospect', 'cliente'])]]);
-        $criada = $autocadastro->criar(tenant(), TipoInstalacao::Industria, ModoEmpresa::Gerida, $request->only(['nome', 'cnpj']));
+        $criada = $autocadastro->criar(tenant(), TipoInstalacao::Industria, ModoEmpresa::Gerida, $request->only(['nome', 'cnpj', 'subdominio']));
         $vinculo = $this->vinculos->criar($criada['tenant'], tenant(), null, 'agencia');
         $vinculo->update(['relacao' => $dados['relacao']]);
 

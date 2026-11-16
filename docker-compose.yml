@@ -13,6 +13,9 @@ x-env: &env
   CENTRAL_DOMAINS: ${CENTRAL_DOMAINS:?Defina CENTRAL_DOMAINS (dominio do painel central)}
   TRADE_ESQUEMA_URL: ${TRADE_ESQUEMA_URL:-https}
   TRADE_DOMINIO_CLIENTES: ${TRADE_DOMINIO_CLIENTES:-trade.mastervps.online}
+  # Login do super admin (troque!) e, opcionalmente, o domínio só da landing page (ex.: bra.net.br).
+  INSTITUCIONAL_ACESSO: ${INSTITUCIONAL_ACESSO:-conexao-7f4c92}
+  INSTITUCIONAL_DOMINIO_SITE: ${INSTITUCIONAL_DOMINIO_SITE:-}
   SUPER_ADMIN_NOME: ${SUPER_ADMIN_NOME:-Super admin}
   SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL}
   SUPER_ADMIN_SENHA: ${SUPER_ADMIN_SENHA}

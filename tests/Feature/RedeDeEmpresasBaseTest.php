@@ -105,7 +105,7 @@ class RedeDeEmpresasBaseTest extends TestCase
         $agencia = $this->criarCliente('agsul', 'agencia');
         tenancy()->end();
         $agencia->update(['cnpj' => '45723174000110']);
-        app(Autocadastro::class)->criar($agencia, TipoInstalacao::Industria, ModoEmpresa::Gerida, ['nome' => 'Doces Serra', 'cnpj' => self::CNPJ]);
+        app(Autocadastro::class)->criar($agencia, TipoInstalacao::Industria, ModoEmpresa::Gerida, ['nome' => 'Doces Serra', 'cnpj' => self::CNPJ, 'subdominio' => 'docesserra', 'admin_nome' => 'A', 'admin_email' => 'a@a.com']);
         $this->actingAs(Admin::create(['nome' => 'R', 'email' => 'r@t.com', 'password' => 'senha1234']), 'admin');
 
         $this->get('http://central.test/clientes')->assertOk()

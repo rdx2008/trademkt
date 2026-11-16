@@ -119,3 +119,56 @@ Testes: `VinculoTest`, `EquipeVinculadaTest`, `PainelAgenciaTest`, `DominiosClie
 suíte existente (SQLite). Cada instalação de agência vira um banco a mais por teste. O deploy em
 MySQL/Coolify deve ser verificado após publicar: a conexão própria com o banco da agência usa a
 mesma configuração da conexão de tenant, trocando o nome do banco.
+
+## Endereços em produção: bra.net.br (atualização de 17/11/2026)
+
+Desenho adotado:
+
+| Endereço | Para quê |
+| --- | --- |
+| `bra.net.br` | Landing page (site do produto). Só ela. |
+| `trade.bra.net.br` | Painel do fornecedor (super admin) e API de descoberta do app. |
+| `<nome>.bra.net.br` | Cada empresa cliente. O nome é escolhido por quem cria a empresa. |
+| `trade.mastervps.online` e `<cliente>.trade.mastervps.online` | Endereços antigos, que continuam funcionando. |
+
+### Variáveis (Coolify)
+
+```env
+APP_URL=https://trade.bra.net.br
+CENTRAL_DOMAINS=bra.net.br,trade.bra.net.br,trade.mastervps.online
+INSTITUCIONAL_DOMINIO_SITE=bra.net.br
+TRADE_DOMINIO_CLIENTES=bra.net.br
+INSTITUCIONAL_ACESSO=<um-caminho-so-seu>
+```
+
+- `INSTITUCIONAL_DOMINIO_SITE`: com ele, a landing só responde em `bra.net.br` e o painel central só nos outros
+  domínios centrais (`trade.bra.net.br` e o antigo). Na raiz do painel, a pessoa é levada ao login. Sem a variável,
+  todo domínio central serve as duas coisas.
+- `TRADE_DOMINIO_CLIENTES=bra.net.br`: base dos endereços das empresas **novas**. As antigas guardam o endereço
+  delas e não mudam.
+- `INSTITUCIONAL_ACESSO`: caminho do login do super admin; troque o padrão do repositório.
+- Antes desta atualização o `docker-compose.yml` não repassava `INSTITUCIONAL_ACESSO` ao container: a variável do
+  Coolify era ignorada. Agora é repassada.
+
+### Quem escolhe o nome do endereço
+
+Ao criar agência (indústria) ou indústria (agência), a pessoa preenche só o prefixo, e o sistema mostra o
+domínio base ao lado (`.bra.net.br`). O prefixo tem de 3 a 30 caracteres, começa com letra, usa minúsculas, números
+e hífen, não pode ser reservado (`www`, `admin`, `trade`, `api`…) nem já estar em uso. Ele vira o endereço, o
+**código da empresa que o promotor digita no app** e o identificador do banco. Não muda depois.
+
+### DNS e certificado (Cloudflare + Coolify)
+
+1. Cloudflare, zona `bra.net.br`: registro `A` `@` e registro `A` `*` apontando para o IP do servidor (o `*` cobre
+   `trade` e todas as empresas).
+2. Cloudflare: token de API só desta zona (editar DNS e ler a zona).
+3. Coolify → Servers → Proxy → Configuration: no Traefik, o token em `CF_DNS_API_TOKEN` e o desafio DNS com
+   provedor `cloudflare` no lugar do desafio HTTP. Editar só pela tela do Coolify.
+4. Coolify → Proxy → Dynamic Configurations: certificado curinga para `bra.net.br` e `*.bra.net.br`.
+5. Aplicação `app`: domínios `bra.net.br`, `trade.bra.net.br` e os antigos que já existem. Para qualquer
+   `<nome>.bra.net.br` cair no sistema sem cadastrar um a um, uma regra `HostRegexp` nos labels do container
+   (ver https://coolify.io/docs/knowledge-base/domains).
+6. Aplicativo do promotor: compilar com `--dart-define=URL_CENTRAL=https://trade.bra.net.br`.
+
+Rotas centrais agora são registradas só no domínio acessado (em artisan e testes, em todos): com vários domínios
+centrais, registrar todos fazia os links e redirecionamentos pularem de um domínio para outro.

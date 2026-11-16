@@ -46,7 +46,7 @@ class IndustriaGeridaTest extends TestCase
     private function criarGerida(string $relacao = 'cliente'): Tenant
     {
         $this->actingAs($this->admin)->post(self::SUL.'/empresas-vinculadas/industrias', [
-            'nome' => 'Doces Serra', 'cnpj' => '11.222.333/0001-81', 'relacao' => $relacao,
+            'nome' => 'Doces Serra', 'cnpj' => '11.222.333/0001-81', 'subdominio' => 'docesserra', 'relacao' => $relacao,
         ])->assertSessionHasNoErrors()->assertRedirect();
 
         return Tenant::where('tipo', TipoInstalacao::Industria->value)->sole();

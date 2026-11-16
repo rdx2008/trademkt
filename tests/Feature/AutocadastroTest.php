@@ -20,6 +20,7 @@ class AutocadastroTest extends TestCase
         return array_merge([
             'nome' => 'Ação & Cia Indústria Ltda.',
             'cnpj' => '11.222.333/0001-81',
+            'subdominio' => 'docesserra',
             'admin_nome' => 'Maria Gestora',
             'admin_email' => 'Maria@AcaoCia.com.br',
         ], $extra);
@@ -37,7 +38,8 @@ class AutocadastroTest extends TestCase
         tenancy()->end();
 
         $nova = Tenant::find($r['tenant']->id);
-        $this->assertMatchesRegularExpression('/^acao_cia_industria_ltda_[a-z0-9]{4}$/', $nova->id);
+        $this->assertSame('docesserra', $nova->id);
+        $this->assertSame('docesserra', $nova->codigo, 'o prefixo escolhido é o código do app');
         $this->assertSame(TipoInstalacao::Industria, $nova->tipo);
         $this->assertSame(ModoEmpresa::Gerida, $nova->modo);
         $this->assertSame('agsul', $nova->dono_tenant_id);
@@ -45,7 +47,7 @@ class AutocadastroTest extends TestCase
         $this->assertSame('autocadastro', $nova->origem);
         $this->assertSame('11222333000181', $nova->cnpj);
         $this->assertSame('America/Manaus', $nova->fuso);
-        $dominio = str_replace('_', '-', $nova->id).'.'.config('trade.dominio_clientes');
+        $dominio = 'docesserra.'.config('trade.dominio_clientes');
         $this->assertSame($dominio, $nova->domains()->value('domain'));
 
         // Indústria gerida não tem admin próprio: a agência opera; o admin só ganha acesso na entrega.
@@ -57,7 +59,7 @@ class AutocadastroTest extends TestCase
     {
         $industria = $this->criarCliente('marca');
         tenancy()->end();
-        $r = app(Autocadastro::class)->criar($industria, TipoInstalacao::Agencia, ModoEmpresa::Propria, $this->dados(['nome' => 'Agência Nova', 'cnpj' => '45.723.174/0001-10']));
+        $r = app(Autocadastro::class)->criar($industria, TipoInstalacao::Agencia, ModoEmpresa::Propria, $this->dados(['nome' => 'Agência Nova', 'cnpj' => '45.723.174/0001-10', 'subdominio' => 'agencianova']));
 
         $nova = Tenant::find($r['tenant']->id);
         $this->assertSame(ModoEmpresa::Propria, $nova->modo);
@@ -83,7 +85,7 @@ class AutocadastroTest extends TestCase
         $servico = app(Autocadastro::class);
         $servico->criar($agencia, TipoInstalacao::Industria, ModoEmpresa::Gerida, $this->dados());
 
-        foreach ([['cnpj' => ''], ['cnpj' => '11.222.333/0001-00'], ['cnpj' => '11222333000181', 'nome' => 'Outra']] as $extra) {
+        foreach ([['cnpj' => ''], ['cnpj' => '11.222.333/0001-00'], ['cnpj' => '11222333000181', 'nome' => 'Outra', 'subdominio' => 'outranome']] as $extra) {
             try {
                 $servico->criar($agencia, TipoInstalacao::Industria, ModoEmpresa::Gerida, $this->dados($extra));
                 $this->fail('deveria recusar o CNPJ '.$extra['cnpj']);
