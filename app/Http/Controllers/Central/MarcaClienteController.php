@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Central;
 
+use App\Enums\TipoInstalacao;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Rules\Cnpj;
@@ -36,6 +37,7 @@ class MarcaClienteController extends Controller
             $cliente->fuso = $dados['fuso'];
         }
         $cliente->mostrar_creditos = $request->boolean('mostrar_creditos');
+        $cliente->rede_jobs = $cliente->tipo === TipoInstalacao::Agencia && $request->boolean('rede_jobs');
         $cliente->save();
 
         return redirect()->route('central.clientes.index')->with('status', "Configurações de {$cliente->nome} atualizadas.");

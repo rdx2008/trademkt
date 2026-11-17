@@ -71,6 +71,15 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         return $this->belongsTo(self::class, 'dono_tenant_id');
     }
 
+    /**
+     * Rede de jobs de freelancers (fase futura): desligada por padrão e liberada pelo super admin,
+     * agência por agência. Só vale para agência.
+     */
+    public function redeJobsHabilitada(): bool
+    {
+        return $this->tipo === TipoInstalacao::Agencia && (bool) $this->rede_jobs;
+    }
+
     public function cnpjFormatado(): ?string
     {
         if (! $this->cnpj) {

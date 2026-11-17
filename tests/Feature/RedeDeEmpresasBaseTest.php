@@ -100,6 +100,27 @@ class RedeDeEmpresasBaseTest extends TestCase
         $this->get("http://central.test/clientes/{$cliente->id}/marca")->assertSee('45.723.174/0001-10');
     }
 
+    public function test_rede_de_jobs_nasce_desligada_e_so_o_super_admin_libera_para_agencia(): void
+    {
+        $agencia = $this->criarCliente('semequipe', 'agencia');
+        $industria = $this->criarCliente('marcajob');
+        tenancy()->end();
+        $this->assertFalse(Tenant::find($agencia->id)->redeJobsHabilitada());
+        $this->actingAs(Admin::create(['nome' => 'R', 'email' => 'r@t.com', 'password' => 'senha1234']), 'admin');
+
+        $this->get("http://central.test/clientes/{$agencia->id}/marca")->assertSee('Liberar a rede de jobs');
+        $this->get("http://central.test/clientes/{$industria->id}/marca")->assertDontSee('Liberar a rede de jobs');
+
+        $this->put("http://central.test/clientes/{$agencia->id}/marca", ['rede_jobs' => 1])->assertRedirect();
+        $this->assertTrue(Tenant::find($agencia->id)->redeJobsHabilitada());
+        // Indústria nunca habilita, mesmo que o campo seja enviado.
+        $this->put("http://central.test/clientes/{$industria->id}/marca", ['rede_jobs' => 1])->assertRedirect();
+        $this->assertFalse(Tenant::find($industria->id)->redeJobsHabilitada());
+        // Desmarcar desliga.
+        $this->put("http://central.test/clientes/{$agencia->id}/marca", [])->assertRedirect();
+        $this->assertFalse(Tenant::find($agencia->id)->redeJobsHabilitada());
+    }
+
     public function test_lista_de_clientes_mostra_cnpj_modo_e_origem(): void
     {
         $agencia = $this->criarCliente('agsul', 'agencia');

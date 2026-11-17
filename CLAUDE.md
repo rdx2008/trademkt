@@ -157,6 +157,8 @@ Tela própria em **Equipe → Promotores** (só instalação de agência); o pro
   Base da rede aberta: tabelas centrais `promotores_globais` (identidade por hash do CPF, cidade, coordenada, raio,
   `disponivel_rede`) e `consentimentos_promotor` (finalidade, versão, origem, IP, aparelho, revogação);
   `users.origem_cadastro` (painel, importacao, link). Revisão jurídica do termo é do fornecedor.
+  Rede de jobs: desligada; o super admin libera por agência (Clientes → Configurações, `redeJobsHabilitada()`). A agência
+  só vê quantos prestadores há na área e os dados de quem aceitar o job (`docs/ESCOPO.md`).
 - Crachá digital: `/promotores/{id}/cracha` (imprimir, QR) e página pública `/verificar/{codigo}` (código de
   40 caracteres, só foto, primeiro nome e ativo/inativo; nunca CPF, e-mail, telefone nem afastamento).
   O app tem "Meu crachá" no menu (QR do endereço vindo em `usuario.cracha_url`; sessão antiga precisa entrar de novo).

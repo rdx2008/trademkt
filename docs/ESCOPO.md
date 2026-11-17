@@ -308,6 +308,16 @@ hash do CPF, cidade/UF, coordenada, raio de atuação e `disponivel_rede`). Aind
 valor nem avaliação. Modelo de trabalho: freelancer/autônomo; a redação do contrato do job deve passar por revisão
 jurídica antes da fase.
 
+**Regras da rede de jobs (decididas em 18/11/2026):**
+- A rede fica **desligada** e é liberada pelo **super admin da plataforma, agência por agência**
+  (`Tenant::redeJobsHabilitada()`, campo em Clientes → Configurações, só para agência; já implementado). Serve a
+  agência que ainda não tem promotores e precisa de freelancers.
+- A plataforma pode oferecer o recurso aos donos de agências como serviço.
+- A agência que lança o job **só vê quantos prestadores existem na rede para a área** (cidade/UF e raio) e
+  **só conhece os dados do prestador que aceitar o job**. Os demais ficam anônimos.
+- O prestador é o promotor freelancer da identidade central (`promotores_globais`), com aceite do termo da rede.
+- Falta construir: job, divulgação por área, aceite do primeiro, valor fixo, avaliação e a contagem por região.
+
 
 ## Site institucional (10/11/2026)
 

@@ -33,6 +33,12 @@
             </select>
             <div class="dica">Define o "dia de hoje" das visitas, a geração do roteiro, o encerramento do dia e a hora das fotos desta empresa. Trocar não converte horários já gravados: escolha antes de começar a operar.</div>
         </div>
+        @if ($cliente->tipo === \App\Enums\TipoInstalacao::Agencia)
+            <div class="campo">
+                <label class="check"><input type="checkbox" name="rede_jobs" value="1" @checked($cliente->redeJobsHabilitada())> Liberar a rede de jobs de freelancers para esta agência</label>
+                <div class="dica">Desligada por padrão. Quando a rede existir, só as agências liberadas aqui poderão lançar jobs para freelancers da plataforma (útil para quem ainda não tem promotores). A agência vê só quantos prestadores há na região e os dados de quem aceitar o job.</div>
+            </div>
+        @endif
         <button class="botao" type="submit">Salvar</button>
     </form>
 </x-layout>
