@@ -1,4 +1,4 @@
-@props(['titulo' => null, 'marca' => null, 'visitante' => false])
+@props(['titulo' => null, 'marca' => null, 'visitante' => false, 'largo' => false])
 @php
     // `visitante`: páginas públicas (convite do promotor) sempre na tela simples, mesmo com outra pessoa logada no navegador.
     $eu = $visitante ? null : auth()->user();
@@ -52,7 +52,7 @@
     <div class="fix-wrapper">
         <div class="container">
             <div class="row justify-content-center">
-                <div class="col-lg-5 col-md-6">
+                <div class="{{ $largo ? 'col-12' : 'col-lg-5 col-md-6' }}" @if ($largo) style="max-width:900px" @endif>
                     <div class="card mb-0 h-auto">
                         <div class="card-body">
                             <div class="text-center mb-3">
