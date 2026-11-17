@@ -122,14 +122,28 @@ class _TelaRoteiroState extends State<TelaRoteiro> with WidgetsBindingObserver {
                           Text('Sem visitas neste dia.', textAlign: TextAlign.center),
                         ],
                       )
-                    : ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 80),
-                        itemCount: roteiro.visitas.length,
-                        itemBuilder: (context, i) => _CartaoVisita(
-                          estado: estado,
-                          visita: roteiro.visitas[i],
-                          industria: estado.industriaDa(roteiro.visitas[i]),
-                        ),
+                    : Builder(
+                        builder: (context) {
+                          // Visita começada e não concluída: o app foi fechado no meio? Basta tocar para continuar.
+                          final emAndamento = roteiro.visitas.where((v) {
+                            final e = estado.execucao(v.chave);
+
+                            return e.temCheckIn && !e.concluida;
+                          }).toList();
+
+                          return ListView.builder(
+                            padding: const EdgeInsets.only(bottom: 80),
+                            itemCount: emAndamento.length + roteiro.visitas.length,
+                            itemBuilder: (context, i) {
+                              if (i < emAndamento.length) {
+                                return _VisitaEmAndamento(estado: estado, visita: emAndamento[i]);
+                              }
+                              final visita = roteiro.visitas[i - emAndamento.length];
+
+                              return _CartaoVisita(estado: estado, visita: visita, industria: estado.industriaDa(visita));
+                            },
+                          );
+                        },
                       ),
           ),
           bottomNavigationBar: _RodapeSincronizacao(estado: estado),
@@ -154,6 +168,37 @@ class _TelaRoteiroState extends State<TelaRoteiro> with WidgetsBindingObserver {
     }
 
     return '$nome, ${formatarDataBr(dia)}';
+  }
+}
+
+/// Aviso no topo: há uma visita começada que ainda não foi concluída.
+class _VisitaEmAndamento extends StatelessWidget {
+  const _VisitaEmAndamento({required this.estado, required this.visita});
+
+  final EstadoApp estado;
+  final Visita visita;
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+
+    return Card(
+      key: Key('em-andamento-${visita.chave}'),
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      color: tema.colorScheme.primaryContainer,
+      child: ListTile(
+        leading: Icon(Icons.play_circle_outline, color: tema.colorScheme.onPrimaryContainer),
+        title: Text('Visita em andamento', style: TextStyle(fontWeight: FontWeight.w600, color: tema.colorScheme.onPrimaryContainer)),
+        subtitle: Text(visita.pdv.nome, style: TextStyle(color: tema.colorScheme.onPrimaryContainer)),
+        trailing: FilledButton(
+          key: const Key('continuar-visita'),
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => TelaVisita(estado: estado, visitaId: visita.chave)),
+          ),
+          child: const Text('Continuar'),
+        ),
+      ),
+    );
   }
 }
 

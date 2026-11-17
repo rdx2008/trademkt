@@ -293,6 +293,21 @@ void main() {
       expect(find.text('Prevista'), findsOneWidget);
     });
   });
+
+  testWidgets('visita começada e não concluída aparece no topo do roteiro para continuar', (tester) async {
+    await tester.runAsync(() async {
+      await entrar();
+      await tester.pumpWidget(AppPromotor(estado: estado));
+      await tester.pump();
+      expect(find.text('Visita em andamento'), findsNothing, reason: 'ainda não começou nenhuma');
+
+      expect(await abrirVisita(estado, estado.roteiro!.visitas.single), isNull);
+      await _ate(tester, find.text('Visita em andamento'));
+
+      expect(find.byKey(const Key('continuar-visita')), findsOneWidget);
+      expect(find.byKey(const Key('em-andamento-1')), findsOneWidget);
+    });
+  });
 }
 
 /// Repinta até o [finder] aparecer (ou desiste depois de alguns segundos).
