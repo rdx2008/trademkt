@@ -74,6 +74,22 @@ services:
     environment:
       <<: *env
       CONTAINER_ROLE: web
+    # Qualquer <nome>.bra.net.br cai neste serviço sem cadastrar um a um no Coolify (Traefik).
+    # O certificado curinga exige o desafio DNS (Cloudflare) configurado no proxy do Coolify.
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.empresas.loadbalancer.server.port=8080"
+      - "traefik.http.routers.empresas.rule=HostRegexp(`^[a-z0-9-]+\.bra\.net\.br$$`)"
+      - "traefik.http.routers.empresas.entrypoints=https"
+      - "traefik.http.routers.empresas.service=empresas"
+      - "traefik.http.routers.empresas.tls=true"
+      - "traefik.http.routers.empresas.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.empresas.tls.domains[0].main=bra.net.br"
+      - "traefik.http.routers.empresas.tls.domains[0].sans=*.bra.net.br"
+      - "traefik.http.routers.empresas-http.rule=HostRegexp(`^[a-z0-9-]+\.bra\.net\.br$$`)"
+      - "traefik.http.routers.empresas-http.entrypoints=http"
+      - "traefik.http.routers.empresas-http.middlewares=empresas-https"
+      - "traefik.http.middlewares.empresas-https.redirectscheme.scheme=https"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/up"]
       interval: 30s
