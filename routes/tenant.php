@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AuthController as ApiAuthController;
 use App\Http\Controllers\Api\CheckInController;
 use App\Http\Controllers\Api\ColetaController;
 use App\Http\Controllers\Api\ExecucaoVisitaController;
+use App\Http\Controllers\Api\MinhaContaController;
 use App\Http\Controllers\Api\RoteiroController as ApiRoteiroController;
 use App\Http\Controllers\Tenant\AgenciaController;
 use App\Http\Controllers\Tenant\AlertaController;
@@ -298,6 +299,8 @@ Route::middleware([
     Route::middleware(['auth:sanctum', AbrirOperacaoDaAgencia::class])->group(function () {
         Route::get('/me', [ApiAuthController::class, 'me'])->name('me');
         Route::post('/logout', [ApiAuthController::class, 'logout'])->name('logout');
+        Route::post('/senha', [MinhaContaController::class, 'senha'])->middleware('throttle:10,1')->name('senha');
+        Route::get('/producao', [MinhaContaController::class, 'producao'])->name('producao');
         // Na agência, soma as visitas de todas as indústrias atendidas.
         Route::get('/roteiro', [ApiRoteiroController::class, 'show'])->name('roteiro');
 

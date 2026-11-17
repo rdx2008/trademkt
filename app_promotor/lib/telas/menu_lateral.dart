@@ -4,6 +4,8 @@ import '../estado_app.dart';
 import '../modelos/usuario.dart';
 import 'logo_marca.dart';
 import 'tela_cracha.dart';
+import 'tela_producao.dart';
+import 'tela_senha.dart';
 
 /// Menu do app: quem está logado, as contas do aparelho (uma por empresa/agência),
 /// troca de conta, acrescentar empresa e sair.
@@ -164,6 +166,25 @@ class MenuLateral extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => TelaCracha(sessao: atual)));
+              },
+            ),
+            ListTile(
+              key: const Key('minha-producao'),
+              leading: const Icon(Icons.bar_chart_outlined),
+              title: const Text('Minha produção'),
+              subtitle: const Text('SKUs trabalhados no mês'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => TelaProducao(estado: estado)));
+              },
+            ),
+            ListTile(
+              key: const Key('alterar-senha'),
+              leading: const Icon(Icons.lock_reset),
+              title: const Text('Alterar minha senha'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => TelaSenha(estado: estado)));
               },
             ),
             ListTile(

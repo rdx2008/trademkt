@@ -19,7 +19,9 @@ use App\Services\Operacao\Equipe;
 use App\Services\Roteiros\Atribuicao;
 use App\Services\Roteiros\GeradorVisitas;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -428,6 +430,63 @@ class FichaPromotorTest extends TestCase
         // Mês sem visitas e mês inválido não quebram.
         $this->get(self::URL."/promotores/{$this->joao->id}?mes=2026-01")->assertOk()->assertSee('Nenhum SKU trabalhado neste mês');
         $this->get(self::URL."/promotores/{$this->joao->id}?mes=lixo")->assertOk();
+    }
+
+    public function test_promotor_ve_a_propria_producao_do_mes_pelo_app(): void
+    {
+        $this->industria->run(function () {
+            $marca = Industria::first();
+            $a = Sku::create(['industria_id' => $marca->id, 'codigo' => 'A1', 'descricao' => 'Detergente']);
+            $c = Sku::create(['industria_id' => $marca->id, 'codigo' => 'C3', 'descricao' => 'Em falta']);
+            $visita = Visita::whereDate('data', '2026-10-14')->sole();
+            VisitaSku::create(['visita_id' => $visita->id, 'sku_id' => $a->id, 'situacao_estoque' => 'tem_estoque']);
+            VisitaSku::create(['visita_id' => $visita->id, 'sku_id' => $c->id, 'situacao_estoque' => 'ruptura']);
+        });
+
+        Sanctum::actingAs($this->joao, ['promotor']);
+        $r = $this->getJson(self::URL.'/api/v1/producao?mes=2026-10')->assertOk();
+        $this->assertSame(1, $r->json('total'), 'ruptura não conta');
+        $this->assertSame(1, $r->json('visitas'));
+        $this->assertSame('2026-10-14', $r->json('dias.0.data'));
+        $this->assertSame('Detergente', $r->json('dias.0.itens.0.descricao'));
+        $this->assertSame('Super Centro', $r->json('dias.0.itens.0.pdv'));
+
+        // Sem mês usa o atual; mês sem produção vem vazio; formato inválido é recusado.
+        $this->getJson(self::URL.'/api/v1/producao')->assertOk()->assertJsonPath('mes', '2026-10');
+        $this->getJson(self::URL.'/api/v1/producao?mes=2026-01')->assertOk()->assertJsonPath('total', 0)->assertJsonPath('dias', []);
+        $this->getJson(self::URL.'/api/v1/producao?mes=lixo')->assertStatus(422);
+
+        // Outro promotor não enxerga a produção do João.
+        $colega = $this->colega('Maria', 'maria@sul.test');
+        Sanctum::actingAs($colega, ['promotor']);
+        $this->getJson(self::URL.'/api/v1/producao?mes=2026-10')->assertOk()->assertJsonPath('total', 0);
+    }
+
+    public function test_promotor_troca_a_propria_senha_e_os_outros_aparelhos_caem(): void
+    {
+        $this->agencia->run(fn () => $this->joao->forceFill(['password' => 'SenhaAntiga1'])->save());
+        $este = $this->agencia->run(fn () => $this->joao->createToken('Este', ['promotor']));
+        $outro = $this->agencia->run(fn () => $this->joao->createToken('Outro', ['promotor']));
+        $this->app['auth']->forgetGuards();
+
+        $cabecalho = ['Authorization' => 'Bearer '.$este->plainTextToken];
+        $this->withHeaders($cabecalho)->postJson(self::URL.'/api/v1/senha', ['senha_atual' => 'errada', 'password' => 'NovaSenha99', 'password_confirmation' => 'NovaSenha99'])
+            ->assertStatus(422)->assertJsonValidationErrors('senha_atual');
+        $this->withHeaders($cabecalho)->postJson(self::URL.'/api/v1/senha', ['senha_atual' => 'SenhaAntiga1', 'password' => 'SenhaAntiga1', 'password_confirmation' => 'SenhaAntiga1'])
+            ->assertStatus(422)->assertJsonValidationErrors('password');
+        $this->withHeaders($cabecalho)->postJson(self::URL.'/api/v1/senha', ['senha_atual' => 'SenhaAntiga1', 'password' => 'curta', 'password_confirmation' => 'curta'])
+            ->assertStatus(422)->assertJsonValidationErrors('password');
+
+        $this->withHeaders($cabecalho)->postJson(self::URL.'/api/v1/senha', ['senha_atual' => 'SenhaAntiga1', 'password' => 'NovaSenha99', 'password_confirmation' => 'NovaSenha99'])
+            ->assertOk();
+
+        $this->agencia->run(function () use ($este, $outro) {
+            $this->assertTrue(Hash::check('NovaSenha99', $this->joao->fresh()->password));
+            $this->assertNotNull(PersonalAccessToken::findToken($este->plainTextToken), 'este aparelho continua conectado');
+            $this->assertNull(PersonalAccessToken::findToken($outro->plainTextToken), 'os outros aparelhos são desconectados');
+            $this->assertDatabaseHas('auditoria_usuarios', ['usuario_id' => $this->joao->id, 'acao' => 'senha_alterada']);
+        });
+        $this->postJson(self::URL.'/api/v1/login', ['email' => 'joao@sul.test', 'password' => 'NovaSenha99', 'dispositivo' => 'Novo'])->assertOk();
     }
 
     public function test_editar_e_remover_ocorrencia(): void

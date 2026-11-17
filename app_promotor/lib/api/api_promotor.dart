@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
+import '../modelos/producao.dart';
 import '../modelos/roteiro.dart';
 import '../modelos/usuario.dart';
 import 'cliente_api.dart';
@@ -80,6 +81,18 @@ class ApiPromotor {
   }
 
   Future<void> logout() => cliente.post('logout');
+
+  /// `POST /senha`: troca a senha desta agência (os outros aparelhos são desconectados pelo servidor).
+  Future<void> alterarSenha({required String atual, required String nova}) async {
+    await cliente.post('senha', {'senha_atual': atual, 'password': nova, 'password_confirmation': nova});
+  }
+
+  /// `GET /producao?mes=AAAA-MM`: SKUs trabalhados no mês, por dia.
+  Future<Producao> producao(String mes) async {
+    final resposta = await cliente.get('producao', query: {'mes': mes});
+
+    return Producao.fromJson(resposta.corpo);
+  }
 
   /// `GET /roteiro?data=AAAA-MM-DD`.
   Future<Roteiro> roteiro(String data) async {

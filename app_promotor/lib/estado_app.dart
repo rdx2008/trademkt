@@ -16,6 +16,7 @@ import 'dominio/regras_visita.dart';
 import 'modelos/coleta.dart';
 import 'modelos/execucao.dart';
 import 'modelos/payloads.dart';
+import 'modelos/producao.dart';
 import 'modelos/roteiro.dart';
 import 'modelos/usuario.dart';
 import 'servicos/fotos.dart';
@@ -154,6 +155,40 @@ class EstadoApp extends ChangeNotifier {
     execucoes = await repositorio.listarExecucoes();
     pendentes = await repositorio.contarPendentes();
     comProblema = await repositorio.contarComProblema();
+  }
+
+  /// Troca a senha da conta ativa. Com [nasOutras], tenta a mesma troca nas outras agências do
+  /// aparelho (só vale onde a senha atual for a mesma). Devolve quantas outras foram trocadas.
+  Future<int> alterarSenha({required String atual, required String nova, bool nasOutras = false}) async {
+    final api = _api;
+    if (api == null) {
+      throw ErroApi(status: 401, mensagem: 'Entre novamente para continuar.');
+    }
+    await api.alterarSenha(atual: atual, nova: nova);
+    if (!nasOutras) {
+      return 0;
+    }
+    var trocadas = 0;
+    for (final conta in contas.where((c) => c.chave != sessao?.chave)) {
+      try {
+        await ApiPromotor(ClienteApi(http: _http, baseUrl: conta.empresa.api, token: conta.token)).alterarSenha(atual: atual, nova: nova);
+        trocadas++;
+      } on Object {
+        // Senha diferente, sem rede ou token vencido: essa agência continua com a senha dela.
+      }
+    }
+
+    return trocadas;
+  }
+
+  /// Produção do mês (precisa de internet: o servidor soma todas as agências atendidas).
+  Future<Producao> carregarProducao(String mes) async {
+    final api = _api;
+    if (api == null) {
+      throw ErroApi(status: 401, mensagem: 'Entre novamente para continuar.');
+    }
+
+    return api.producao(mes);
   }
 
   Future<void> mudarModoTema(ThemeMode modo) async {
