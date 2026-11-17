@@ -16,7 +16,7 @@
         </div>
         <div class="campo">
             <label for="cpf">CPF</label>
-            <input type="text" id="cpf" name="cpf" value="{{ old('cpf') }}" required inputmode="numeric" maxlength="14" autocomplete="off">
+            <input type="text" id="cpf" name="cpf" value="{{ old('cpf') }}" required inputmode="numeric" maxlength="14" autocomplete="off" data-mascara="cpf" placeholder="000.000.000-00">
         </div>
         <div class="campo">
             <label for="email">E-mail</label>
@@ -24,7 +24,7 @@
         </div>
         <div class="campo">
             <label for="telefone">Telefone (WhatsApp)</label>
-            <input type="tel" id="telefone" name="telefone" value="{{ old('telefone') }}" required maxlength="20" autocomplete="tel">
+            <input type="tel" id="telefone" name="telefone" value="{{ old('telefone') }}" required maxlength="15" autocomplete="tel" inputmode="tel" data-mascara="telefone" placeholder="(00) 00000-0000">
         </div>
         <div class="campo">
             <label for="uf_base">UF</label>
@@ -52,12 +52,12 @@
         </div>
         <div class="campo">
             <label for="password">Crie uma senha</label>
-            <input type="password" id="password" name="password" required autocomplete="new-password">
+            <input type="password" id="password" name="password" required autocomplete="new-password" data-ver-senha>
             <div class="dica">Mínimo de 8 caracteres, com letras e números.</div>
         </div>
         <div class="campo">
             <label for="password_confirmation">Repita a senha</label>
-            <input type="password" id="password_confirmation" name="password_confirmation" required autocomplete="new-password">
+            <input type="password" id="password_confirmation" name="password_confirmation" required autocomplete="new-password" data-ver-senha>
         </div>
 
         </div>
@@ -74,4 +74,5 @@
         <button type="submit" class="botao" style="width:100%">Criar meu cadastro</button>
     </form>
     <script src="{{ asset('js/municipios.js') }}" defer></script>
+    <script src="{{ asset('js/formulario.js') }}" defer></script>
 </x-layout>

@@ -38,14 +38,14 @@
             </div>
             <div class="campo">
                 <label for="telefone">Telefone / WhatsApp</label>
-                <input type="text" id="telefone" name="telefone" value="{{ old('telefone', $usuario->telefone) }}" maxlength="20">
+                <input type="text" id="telefone" name="telefone" value="{{ old('telefone', $usuario->telefone) }}" maxlength="15" inputmode="tel" data-mascara="telefone" placeholder="(00) 00000-0000">
             </div>
         </div>
 
         <div class="linha">
             <div class="campo">
                 <label for="cpf">CPF</label>
-                <input type="text" id="cpf" name="cpf" value="{{ old('cpf', $cpfAtual) }}" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" autocomplete="off" @required(! $editando || ! $usuario->cpf)>
+                <input type="text" id="cpf" name="cpf" value="{{ old('cpf', $cpfAtual) }}" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" autocomplete="off" data-mascara="cpf" @required(! $editando || ! $usuario->cpf)>
                 <div class="dica">Guardado criptografado e visível só para a gestão da agência. A indústria e os mercados nunca veem o CPF.</div>
             </div>
             <div class="campo">
@@ -173,4 +173,5 @@
             })();
         </script>
     @endpush
+    <script src="{{ asset('js/formulario.js') }}" defer></script>
 </x-layout>

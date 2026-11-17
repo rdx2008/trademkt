@@ -6,12 +6,12 @@
         @csrf
         <div class="campo">
             <label for="password">Nova senha</label>
-            <input type="password" id="password" name="password" required autocomplete="new-password" autofocus>
+            <input type="password" id="password" name="password" required autocomplete="new-password" autofocus data-ver-senha>
             <div class="dica">Mínimo de 8 caracteres, com letras e números.</div>
         </div>
         <div class="campo">
             <label for="password_confirmation">Repita a senha</label>
-            <input type="password" id="password_confirmation" name="password_confirmation" required autocomplete="new-password">
+            <input type="password" id="password_confirmation" name="password_confirmation" required autocomplete="new-password" data-ver-senha>
         </div>
 
         @include('tenant.convite._aviso')
@@ -21,4 +21,5 @@
         </div>
         <button type="submit" class="botao" style="width:100%">Criar senha e continuar</button>
     </form>
+    <script src="{{ asset('js/formulario.js') }}" defer></script>
 </x-layout>

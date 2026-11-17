@@ -9,7 +9,7 @@
         </div>
         <div class="form-group mb-4">
             <label class="form-label" for="password">Senha</label>
-            <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password">
+            <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password" data-ver-senha>
         </div>
         <div class="form-group mb-4">
             <div class="form-check custom-checkbox ms-1">
@@ -21,4 +21,5 @@
             <button class="btn btn-primary btn-block w-100" type="submit">Entrar</button>
         </div>
     </form>
+    <script src="{{ asset('js/formulario.js') }}" defer></script>
 </x-layout>
