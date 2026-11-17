@@ -5,6 +5,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
@@ -20,6 +21,7 @@ import 'modelos/usuario.dart';
 import 'servicos/fotos.dart';
 import 'servicos/localizacao.dart';
 import 'servicos/marca.dart';
+import 'servicos/preferencias.dart';
 import 'servicos/sessao.dart';
 import 'sincronizacao/item_fila.dart';
 import 'sincronizacao/sincronizador.dart';
@@ -37,7 +39,9 @@ class EstadoApp extends ChangeNotifier {
     this.dispositivo = 'Android',
     this.fabricaRepositorio,
     ServicoMarca? servicoMarca,
+    PreferenciasApp? preferencias,
   })  : _http = httpClient,
+        _preferencias = preferencias ?? PreferenciasMemoria(),
         _servicoMarca = servicoMarca ?? ServicoMarca();
 
   final http.Client _http;
@@ -49,6 +53,10 @@ class EstadoApp extends ChangeNotifier {
   /// Abre o banco local de uma conta (pela chave). Sem ela, todas as contas dividem [repositorio].
   final Future<RepositorioLocal> Function(String chave)? fabricaRepositorio;
   final ServicoMarca _servicoMarca;
+  final PreferenciasApp _preferencias;
+
+  /// Aparência escolhida: claro, escuro ou a do celular (padrão).
+  ThemeMode modoTema = ThemeMode.system;
   final ServicoLocalizacao localizacao;
   final ServicoFotos fotos;
 
@@ -104,6 +112,7 @@ class EstadoApp extends ChangeNotifier {
   // ----------------------------------------------------------------- início
 
   Future<void> carregar() async {
+    modoTema = await _preferencias.carregarTema();
     sessao = await armazenamento.carregar();
     contas = await armazenamento.listar();
     if (sessao != null) {
@@ -145,6 +154,15 @@ class EstadoApp extends ChangeNotifier {
     execucoes = await repositorio.listarExecucoes();
     pendentes = await repositorio.contarPendentes();
     comProblema = await repositorio.contarComProblema();
+  }
+
+  Future<void> mudarModoTema(ThemeMode modo) async {
+    if (modo == modoTema) {
+      return;
+    }
+    modoTema = modo;
+    notifyListeners();
+    await _preferencias.salvarTema(modo);
   }
 
   // ------------------------------------------------------- empresa e login

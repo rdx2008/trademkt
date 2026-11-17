@@ -7,6 +7,7 @@ import 'dados/repositorio_local.dart';
 import 'estado_app.dart';
 import 'servicos/fotos.dart';
 import 'servicos/localizacao.dart';
+import 'servicos/preferencias.dart';
 import 'servicos/sessao.dart';
 import 'telas/tela_empresa.dart';
 import 'telas/tela_login.dart';
@@ -23,6 +24,7 @@ Future<void> main() async {
   final estado = EstadoApp(
     httpClient: http.Client(),
     armazenamento: ArmazenamentoSeguro(),
+    preferencias: PreferenciasSeguras(),
     repositorio: await RepositorioLocal.abrirDaConta('padrao'),
     fabricaRepositorio: RepositorioLocal.abrirDaConta,
     localizacao: const ServicoLocalizacaoGeolocator(),
@@ -49,8 +51,18 @@ Future<String> _nomeDoAparelho() async {
 const Color corPadrao = Color(0xFF1B5E20);
 
 /// Tema do app: a cor principal da empresa (white label) ou a padrão.
-ThemeData temaDaMarca(Color? cor) {
+ThemeData temaDaMarca(Color? cor, {Brightness brilho = Brightness.light}) {
   final base = cor ?? corPadrao;
+  if (brilho == Brightness.dark) {
+    // No escuro o Material escolhe tons claros da cor da empresa, com contraste garantido.
+    final escuro = ColorScheme.fromSeed(seedColor: base, brightness: Brightness.dark);
+
+    return ThemeData(
+      colorScheme: escuro,
+      useMaterial3: true,
+      appBarTheme: AppBarTheme(backgroundColor: escuro.surfaceContainer, foregroundColor: escuro.onSurface),
+    );
+  }
   final esquema = ColorScheme.fromSeed(seedColor: base).copyWith(primary: base, onPrimary: Colors.white);
 
   return ThemeData(
@@ -82,6 +94,8 @@ class AppPromotor extends StatelessWidget {
           GlobalCupertinoLocalizations.delegate,
         ],
         theme: temaDaMarca(estado.marcaAtual?.cor),
+        darkTheme: temaDaMarca(estado.marcaAtual?.cor, brilho: Brightness.dark),
+        themeMode: estado.modoTema,
         home: _tela(),
       ),
     );

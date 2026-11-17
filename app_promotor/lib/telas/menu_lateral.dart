@@ -41,6 +41,33 @@ class MenuLateral extends StatelessWidget {
     }
   }
 
+  static String _rotuloTema(ThemeMode modo) => switch (modo) {
+        ThemeMode.light => 'Claro',
+        ThemeMode.dark => 'Escuro',
+        ThemeMode.system => 'Automático (segue o celular)',
+      };
+
+  Future<void> _escolherAparencia(BuildContext context) async {
+    final escolhido = await showDialog<ThemeMode>(
+      context: context,
+      builder: (contexto) => SimpleDialog(
+        title: const Text('Aparência'),
+        children: [
+          for (final modo in ThemeMode.values)
+            ListTile(
+              key: Key('tema-${modo.name}'),
+              leading: Icon(modo == estado.modoTema ? Icons.radio_button_checked : Icons.radio_button_off),
+              title: Text(_rotuloTema(modo)),
+              onTap: () => Navigator.pop(contexto, modo),
+            ),
+        ],
+      ),
+    );
+    if (escolhido != null) {
+      await estado.mudarModoTema(escolhido);
+    }
+  }
+
   Future<void> _sair(BuildContext context) async {
     final navegador = Navigator.of(context);
     final conta = estado.sessao!;
@@ -138,6 +165,13 @@ class MenuLateral extends StatelessWidget {
                 Navigator.pop(context);
                 Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => TelaCracha(sessao: atual)));
               },
+            ),
+            ListTile(
+              key: const Key('aparencia'),
+              leading: const Icon(Icons.brightness_6_outlined),
+              title: const Text('Aparência'),
+              subtitle: Text(_rotuloTema(estado.modoTema)),
+              onTap: () => _escolherAparencia(context),
             ),
             const Divider(),
             Padding(
