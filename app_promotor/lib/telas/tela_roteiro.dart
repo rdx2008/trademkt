@@ -260,6 +260,12 @@ class _RodapeSincronizacao extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
+              if (estado.pendentes > 0 && !estado.sincronizando)
+                TextButton(
+                  key: const Key('enviar-agora'),
+                  onPressed: () => estado.sincronizar(),
+                  child: const Text('Enviar agora'),
+                ),
             ],
           ),
         ),

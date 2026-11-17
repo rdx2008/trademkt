@@ -10,6 +10,7 @@ import '../modelos/execucao.dart';
 import '../modelos/roteiro.dart';
 import '../sincronizacao/item_fila.dart';
 import '../util/datas.dart';
+import '../servicos/mapas.dart';
 import 'tela_camera.dart';
 import 'tela_coleta.dart';
 import 'tela_roteiro.dart' show corStatus;
@@ -394,6 +395,21 @@ class _Cabecalho extends StatelessWidget {
               ],
             ),
             if (visita.pdv.endereco != null) Text(visita.pdv.endereco!),
+            if (urlComoChegar(visita.pdv) != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  key: const Key('como-chegar'),
+                  icon: const Icon(Icons.directions_outlined),
+                  label: const Text('Como chegar'),
+                  onPressed: () async {
+                    final mensagens = ScaffoldMessenger.of(context);
+                    if (!await abrirNoMapa(visita.pdv)) {
+                      mensagens.showSnackBar(const SnackBar(content: Text('Não foi possível abrir o mapa neste aparelho.')));
+                    }
+                  },
+                ),
+              ),
             if (visita.pdv.cnpj != null) Text('CNPJ ${visita.pdv.cnpj}', style: Theme.of(context).textTheme.bodySmall),
             if (e.temPendencias)
               Padding(
