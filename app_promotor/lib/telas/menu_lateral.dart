@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../estado_app.dart';
 import '../modelos/usuario.dart';
 import 'logo_marca.dart';
+import 'tela_ajuda.dart';
 import 'tela_cracha.dart';
 import 'tela_producao.dart';
 import 'tela_senha.dart';
@@ -168,6 +170,20 @@ class MenuLateral extends StatelessWidget {
                 Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => TelaCracha(sessao: atual)));
               },
             ),
+            if (estado.atualizacaoDisponivel)
+              ListTile(
+                key: const Key('atualizacao-disponivel'),
+                leading: Icon(Icons.system_update, color: tema.colorScheme.primary),
+                title: const Text('Nova versão do aplicativo'),
+                subtitle: const Text('Toque para baixar'),
+                onTap: () async {
+                  final url = estado.urlAtualizacao;
+                  Navigator.pop(context);
+                  if (url != null) {
+                    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                  }
+                },
+              ),
             ListTile(
               key: const Key('minha-producao'),
               leading: const Icon(Icons.bar_chart_outlined),
@@ -185,6 +201,16 @@ class MenuLateral extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => TelaSenha(estado: estado)));
+              },
+            ),
+            ListTile(
+              key: const Key('ajuda'),
+              leading: const Icon(Icons.help_outline),
+              title: const Text('Ajuda'),
+              subtitle: const Text('Passo a passo da visita'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const TelaAjuda()));
               },
             ),
             ListTile(

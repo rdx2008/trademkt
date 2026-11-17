@@ -17,6 +17,13 @@ return [
     // Versão da API consumida pelo app do promotor
     'api_versao' => '1',
 
+    // Versões do app Android (APK por link, sem loja): abaixo da mínima o app pede para atualizar;
+    // abaixo da atual só avisa. Suba a mínima só quando uma mudança da API quebrar o app antigo.
+    'app' => [
+        'versao_minima' => env('APP_VERSAO_MINIMA', '0.0.0'),
+        'versao_atual' => env('APP_VERSAO_ATUAL', '0.0.0'),
+    ],
+
     // Geocoding do endereço do PDV (só no cadastro, com cache)
     'geocoding' => [
         'google_key' => env('GOOGLE_MAPS_API_KEY'),

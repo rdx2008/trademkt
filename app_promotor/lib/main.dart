@@ -8,7 +8,9 @@ import 'estado_app.dart';
 import 'servicos/fotos.dart';
 import 'servicos/localizacao.dart';
 import 'servicos/preferencias.dart';
+import 'servicos/versao.dart';
 import 'servicos/sessao.dart';
+import 'telas/tela_atualizar.dart';
 import 'telas/tela_empresa.dart';
 import 'telas/tela_login.dart';
 import 'telas/tela_login_unico.dart';
@@ -25,6 +27,7 @@ Future<void> main() async {
     httpClient: http.Client(),
     armazenamento: ArmazenamentoSeguro(),
     preferencias: PreferenciasSeguras(),
+    servicoVersao: const ServicoVersaoPacote(),
     repositorio: await RepositorioLocal.abrirDaConta('padrao'),
     fabricaRepositorio: RepositorioLocal.abrirDaConta,
     localizacao: const ServicoLocalizacaoGeolocator(),
@@ -104,6 +107,9 @@ class AppPromotor extends StatelessWidget {
   Widget _tela() {
     if (!estado.carregado) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (estado.atualizacaoObrigatoria) {
+      return TelaAtualizar(estado: estado);
     }
     if (estado.adicionandoConta) {
       return estado.empresaPendente != null ? TelaLogin(estado: estado) : TelaEmpresa(estado: estado);

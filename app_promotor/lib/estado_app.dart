@@ -23,6 +23,7 @@ import 'servicos/fotos.dart';
 import 'servicos/localizacao.dart';
 import 'servicos/marca.dart';
 import 'servicos/preferencias.dart';
+import 'servicos/versao.dart';
 import 'servicos/sessao.dart';
 import 'sincronizacao/item_fila.dart';
 import 'sincronizacao/sincronizador.dart';
@@ -41,7 +42,9 @@ class EstadoApp extends ChangeNotifier {
     this.fabricaRepositorio,
     ServicoMarca? servicoMarca,
     PreferenciasApp? preferencias,
+    ServicoVersao? servicoVersao,
   })  : _http = httpClient,
+        _servicoVersao = servicoVersao ?? const ServicoVersaoFixa('0.0.0'),
         _preferencias = preferencias ?? PreferenciasMemoria(),
         _servicoMarca = servicoMarca ?? ServicoMarca();
 
@@ -55,6 +58,13 @@ class EstadoApp extends ChangeNotifier {
   final Future<RepositorioLocal> Function(String chave)? fabricaRepositorio;
   final ServicoMarca _servicoMarca;
   final PreferenciasApp _preferencias;
+  final ServicoVersao _servicoVersao;
+
+  /// Versão instalada e o que o servidor disse sobre ela.
+  String versaoInstalada = '';
+  bool atualizacaoObrigatoria = false;
+  bool atualizacaoDisponivel = false;
+  String? urlAtualizacao;
 
   /// Aparência escolhida: claro, escuro ou a do celular (padrão).
   ThemeMode modoTema = ThemeMode.system;
@@ -114,6 +124,7 @@ class EstadoApp extends ChangeNotifier {
 
   Future<void> carregar() async {
     modoTema = await _preferencias.carregarTema();
+    versaoInstalada = await _servicoVersao.instalada();
     sessao = await armazenamento.carregar();
     contas = await armazenamento.listar();
     if (sessao != null) {
@@ -123,6 +134,7 @@ class EstadoApp extends ChangeNotifier {
     await _carregarLocal();
     carregado = true;
     notifyListeners();
+    unawaited(verificarVersao());
     if (sessao != null) {
       unawaited(atualizarMarca());
       unawaited(atualizarRoteiro(silencioso: true));
@@ -189,6 +201,21 @@ class EstadoApp extends ChangeNotifier {
     }
 
     return api.producao(mes);
+  }
+
+  /// Pergunta ao servidor se esta versão do app ainda é aceita. Sem internet ou com erro, não bloqueia
+  /// ninguém: o trabalho de campo não pode parar por causa disso.
+  Future<void> verificarVersao() async {
+    try {
+      final resposta = await ClienteApi(http: _http, baseUrl: '$urlCentral/api/v1').get('app');
+      final info = InfoVersao.fromJson(resposta.corpo);
+      atualizacaoObrigatoria = compararVersoes(versaoInstalada, info.minima) < 0;
+      atualizacaoDisponivel = compararVersoes(versaoInstalada, info.atual) < 0;
+      urlAtualizacao = info.downloadUrl;
+      notifyListeners();
+    } on Object {
+      // Fica como estava.
+    }
   }
 
   Future<void> mudarModoTema(ThemeMode modo) async {

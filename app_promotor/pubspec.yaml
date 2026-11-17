@@ -1,7 +1,7 @@
 name: app_promotor
 description: "App Android do promotor (Trade Promo): roteiro, check-in, fotos e sincronização offline."
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.2.0+2
 
 environment:
   sdk: ^3.13.7
@@ -17,6 +17,7 @@ dependencies:
   geolocator: ^14.1.2
   http: ^1.6.0
   image: ^4.12.0
+  package_info_plus: ^10.2.2
   path: ^1.9.1
   path_provider: ^2.1.6
   qr_flutter: ^4.1.0
