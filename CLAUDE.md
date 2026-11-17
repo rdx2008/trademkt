@@ -163,6 +163,13 @@ Tela própria em **Equipe → Promotores** (só instalação de agência); o pro
   **Rede de promotores** do super admin (`/rede-de-promotores`, só números por UF, cidade e agência, nada pessoal).
   `promotores:sincronizar-rede` liga os antigos à rede (roda a cada deploy no entrypoint). O app não mostra nada da
   rede até o super admin habilitar; o app só faz login (o cadastro é pelas agências).
+  **Login único do app (18/11/2026):** `POST /api/v1/entrar` no domínio central (e-mail, senha, aparelho, `throttle:login`):
+  o índice central `promotor_agencias.email` mostra em quais agências a pessoa está e o servidor entra em cada uma em que
+  a senha confere (token por agência, `SessaoDoApp`), devolvendo `contas[]` com empresa (mesmo formato da descoberta),
+  token e usuário. A senha continua em cada agência (quem tem senha diferente em outra entra nela por "Adicionar outra
+  agência", pelo código). O app tem só login (`TelaLoginUnico`, sem cadastro); "Entrar com o código da agência" segue como
+  caminho alternativo e as sessões antigas continuam valendo, sem deslogar ninguém. Promotor sem CPF não entra no índice
+  (usa o código). `promotores:sincronizar-rede` preenche o índice dos antigos a cada deploy.
   Rede de jobs: desligada; o super admin libera por agência (Clientes → Configurações, `redeJobsHabilitada()`). A agência
   só vê quantos prestadores há na área e os dados de quem aceitar o job (`docs/ESCOPO.md`).
 - Crachá digital: `/promotores/{id}/cracha` (imprimir, QR) e página pública `/verificar/{codigo}` (código de

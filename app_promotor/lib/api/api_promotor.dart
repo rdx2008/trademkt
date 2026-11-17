@@ -26,6 +26,27 @@ class ApiCentral {
 
     return Empresa.fromJson(resposta.corpo);
   }
+
+  /// `POST /api/v1/entrar`: login único, só com e-mail e senha. O servidor acha as agências onde a
+  /// pessoa está cadastrada e devolve uma sessão por agência em que a senha confere.
+  Future<List<Sessao>> entrar({required String email, required String senha, required String dispositivo}) async {
+    final resposta = await _cliente.post('entrar', {
+      'email': email.trim(),
+      'password': senha,
+      'dispositivo': dispositivo.length > 100 ? dispositivo.substring(0, 100) : dispositivo,
+    });
+
+    return (resposta.corpo['contas'] as List<dynamic>? ?? const [])
+        .map((c) => c as Map<String, dynamic>)
+        .map(
+          (c) => Sessao(
+            empresa: Empresa.fromJson(c['empresa'] as Map<String, dynamic>),
+            token: c['token'] as String,
+            usuario: Usuario.fromJson(c['usuario'] as Map<String, dynamic>),
+          ),
+        )
+        .toList();
+  }
 }
 
 /// API da instalação do cliente (`{url}/api/v1`), com o token do promotor.

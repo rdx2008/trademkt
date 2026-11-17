@@ -44,20 +44,20 @@ class IdentidadeGlobal
         if ($usuario->promotor_global_id !== $global->codigo) {
             $usuario->forceFill(['promotor_global_id' => $global->codigo])->save();
         }
-        $this->marcarAgencia($global->codigo, (string) tenant('id'), (bool) $usuario->ativo);
+        $this->marcarAgencia($global->codigo, (string) tenant('id'), (bool) $usuario->ativo, Str::lower((string) $usuario->email));
 
         return $global;
     }
 
-    private function marcarAgencia(string $codigo, string $tenantId, bool $ativo): void
+    private function marcarAgencia(string $codigo, string $tenantId, bool $ativo, string $email): void
     {
         $tabela = DB::connection(config('tenancy.database.central_connection'))->table('promotor_agencias');
         $agora = now();
         $existe = (clone $tabela)->where(['promotor_global_codigo' => $codigo, 'tenant_id' => $tenantId])->exists();
         if ($existe) {
-            (clone $tabela)->where(['promotor_global_codigo' => $codigo, 'tenant_id' => $tenantId])->update(['ativo' => $ativo, 'updated_at' => $agora]);
+            (clone $tabela)->where(['promotor_global_codigo' => $codigo, 'tenant_id' => $tenantId])->update(['ativo' => $ativo, 'email' => $email, 'updated_at' => $agora]);
         } else {
-            $tabela->insert(['promotor_global_codigo' => $codigo, 'tenant_id' => $tenantId, 'ativo' => $ativo, 'created_at' => $agora, 'updated_at' => $agora]);
+            $tabela->insert(['promotor_global_codigo' => $codigo, 'tenant_id' => $tenantId, 'ativo' => $ativo, 'email' => $email, 'created_at' => $agora, 'updated_at' => $agora]);
         }
     }
 

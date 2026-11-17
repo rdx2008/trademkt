@@ -124,6 +124,12 @@ class _TelaEmpresaState extends State<TelaEmpresa> {
                         : const Text('Continuar'),
                   ),
                   const SizedBox(height: 8),
+                  if (!acrescentando)
+                    TextButton(
+                      key: const Key('voltar-login-unico'),
+                      onPressed: widget.estado.voltarAoLoginUnico,
+                      child: const Text('Entrar só com e-mail e senha'),
+                    ),
                   TextButton(
                     onPressed: () => setState(() => _avancado = !_avancado),
                     child: Text(_avancado ? 'Usar código da agência' : 'Avançado: informar URL da instalação'),

@@ -23,14 +23,25 @@ class EmpresaController extends Controller
             return response()->json(['message' => 'Empresa não encontrada.'], 404);
         }
 
-        return response()->json([
+        return response()->json($this->descricao($tenant));
+    }
+
+    /**
+     * Como o app enxerga a empresa: código, nome, endereços e marca. Serve à descoberta pelo código
+     * e ao login único.
+     *
+     * @return array<string, mixed>
+     */
+    public function descricao(Tenant $tenant): array
+    {
+        return [
             'codigo' => $tenant->codigo,
             'nome' => $tenant->nome,
             'url' => $tenant->url(),
             'api' => $tenant->url().'/api/v1',
             'api_versao' => config('trade.api_versao'),
             'marca' => $this->marca($tenant),
-        ]);
+        ];
     }
 
     /**

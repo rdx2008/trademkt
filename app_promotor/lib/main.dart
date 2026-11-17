@@ -10,6 +10,7 @@ import 'servicos/localizacao.dart';
 import 'servicos/sessao.dart';
 import 'telas/tela_empresa.dart';
 import 'telas/tela_login.dart';
+import 'telas/tela_login_unico.dart';
 import 'telas/tela_roteiro.dart';
 
 /// Domínio central do sistema. Troque em tempo de compilação:
@@ -100,6 +101,6 @@ class AppPromotor extends StatelessWidget {
       return TelaLogin(estado: estado);
     }
 
-    return TelaEmpresa(estado: estado);
+    return estado.entrandoPorCodigo ? TelaEmpresa(estado: estado) : TelaLoginUnico(estado: estado);
   }
 }

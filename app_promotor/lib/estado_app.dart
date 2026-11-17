@@ -67,6 +67,9 @@ class EstadoApp extends ChangeNotifier {
   /// Empresa escolhida na primeira tela, antes do login.
   Empresa? empresaPendente;
 
+  /// Quem não consegue o login único usa o código da agência (caminho antigo, ainda aceito).
+  bool entrandoPorCodigo = false;
+
   /// O token deixou de valer (401): pede login de novo sem apagar o que está no aparelho.
   bool sessaoExpirada = false;
 
@@ -208,6 +211,46 @@ class EstadoApp extends ChangeNotifier {
   void trocarEmpresa() {
     empresaPendente = null;
     notifyListeners();
+  }
+
+  void usarCodigoDaAgencia() {
+    entrandoPorCodigo = true;
+    empresaPendente = null;
+    notifyListeners();
+  }
+
+  void voltarAoLoginUnico() {
+    entrandoPorCodigo = false;
+    empresaPendente = null;
+    notifyListeners();
+  }
+
+  /// Login único: só e-mail e senha. Guarda uma conta por agência em que a senha confere e abre a primeira.
+  Future<void> entrarUnico({required String email, required String senha}) async {
+    final recebidas = await ApiCentral(http: _http, urlCentral: urlCentral).entrar(email: email, senha: senha, dispositivo: dispositivo);
+    if (recebidas.isEmpty) {
+      throw ErroApi(status: 422, mensagem: 'E-mail ou senha inválidos.');
+    }
+    final anterior = sessao;
+    if (fabricaRepositorio == null && anterior != null && anterior.chave != recebidas.first.chave) {
+      if (anterior.usuario.id != recebidas.first.usuario.id && pendentes > 0) {
+        throw ErroApi(
+          status: 409,
+          mensagem: 'Há envios pendentes de ${anterior.usuario.nome}. Sincronize antes de entrar com outro usuário.',
+        );
+      }
+      await repositorio.limparTudo();
+    }
+    final guardadas = <Sessao>[];
+    for (final recebida in recebidas) {
+      final empresa = await _comLogoLocal(recebida.empresa);
+      final conta = Sessao(empresa: empresa, token: recebida.token, usuario: recebida.usuario);
+      await armazenamento.salvar(conta);
+      guardadas.add(conta);
+    }
+    contas = await armazenamento.listar();
+    entrandoPorCodigo = false;
+    await _ativar(guardadas.first);
   }
 
   /// Abre o fluxo para acrescentar outra empresa sem sair da conta atual.

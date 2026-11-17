@@ -236,13 +236,44 @@ void main() {
     expect(estado.pendentes, 0);
   });
 
-  testWidgets('telas: empresa → login → roteiro', (tester) async {
+  testWidgets('telas: login único (e-mail e senha) → roteiro', (tester) async {
+    servidor.responder('POST /api/v1/entrar', 200, {
+      'contas': [
+        {
+          'empresa': {'codigo': 'xyz', 'nome': 'Empresa XYZ', 'url': 'http://xyz.test', 'api': 'http://xyz.test/api/v1', 'api_versao': '1'},
+          'token': '1|token',
+          'usuario': {'id': 5, 'nome': 'João Promotor', 'email': 'promotor@xyz.test', 'perfil': 'promotor', 'tipo_vinculo': 'clt', 'agencia': {'id': 1, 'nome': 'Agência'}, 'empresa': {'codigo': 'xyz', 'nome': 'Empresa XYZ'}},
+        },
+      ],
+    });
+    await tester.runAsync(() async {
+      await estado.carregar();
+      await tester.pumpWidget(AppPromotor(estado: estado));
+      await tester.pump();
+
+      // Só login: sem tela de cadastro e sem pedir o código da agência.
+      expect(find.text('E-mail'), findsOneWidget);
+      expect(find.text('Código da agência'), findsNothing);
+      expect(find.textContaining('Cadastr'), findsNothing);
+
+      await tester.enterText(find.byType(TextField).at(0), 'promotor@xyz.test');
+      await tester.enterText(find.byType(TextField).at(1), 'senha1234');
+      await tester.tap(find.text('Entrar'));
+      await _ate(tester, find.text('Mercado Centro'));
+
+      expect(find.text('João Promotor'), findsOneWidget);
+    });
+  });
+
+  testWidgets('telas: empresa → login → roteiro (pelo código da agência)', (tester) async {
     // runAsync: o banco SQLite e o HTTP falso são assíncronos de verdade.
     await tester.runAsync(() async {
       await estado.carregar();
       await tester.pumpWidget(AppPromotor(estado: estado));
       await tester.pump();
 
+      await tester.tap(find.text('Entrar com o código da agência'));
+      await tester.pump();
       expect(find.text('Código da agência'), findsOneWidget);
       await tester.enterText(find.byType(TextField), 'xyz');
       await tester.tap(find.text('Continuar'));
