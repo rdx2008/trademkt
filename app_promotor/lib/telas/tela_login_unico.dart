@@ -56,6 +56,24 @@ class _TelaLoginUnicoState extends State<TelaLoginUnico> {
     final tema = Theme.of(context);
 
     return Scaffold(
+      // O acesso por código da agência fica escondido neste menu: quase ninguém precisa dele.
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        foregroundColor: tema.colorScheme.onSurface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        actions: [
+          PopupMenuButton<String>(
+            key: const Key('opcoes-acesso'),
+            tooltip: 'Mais opções',
+            icon: const Icon(Icons.more_vert),
+            onSelected: (_) => widget.estado.usarCodigoDaAgencia(),
+            itemBuilder: (_) => const [
+              PopupMenuItem<String>(key: Key('usar-codigo'), value: 'codigo', child: Text('Entrar com o código da agência')),
+            ],
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -115,12 +133,6 @@ class _TelaLoginUnicoState extends State<TelaLoginUnico> {
                       child: _ocupado
                           ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                           : const Text('Entrar'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      key: const Key('usar-codigo'),
-                      onPressed: widget.estado.usarCodigoDaAgencia,
-                      child: const Text('Entrar com o código da agência'),
                     ),
                   ],
                 ),

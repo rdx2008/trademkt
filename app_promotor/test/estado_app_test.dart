@@ -254,6 +254,7 @@ void main() {
       // Só login: sem tela de cadastro e sem pedir o código da agência.
       expect(find.text('E-mail'), findsOneWidget);
       expect(find.text('Código da agência'), findsNothing);
+      expect(find.text('Entrar com o código da agência'), findsNothing, reason: 'o acesso por código fica escondido no menu');
       expect(find.textContaining('Cadastr'), findsNothing);
 
       await tester.enterText(find.byType(TextField).at(0), 'promotor@xyz.test');
@@ -272,8 +273,12 @@ void main() {
       await tester.pumpWidget(AppPromotor(estado: estado));
       await tester.pump();
 
-      await tester.tap(find.text('Entrar com o código da agência'));
+      await tester.tap(find.byKey(const Key('opcoes-acesso')));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.tap(find.byKey(const Key('usar-codigo')), warnIfMissed: false);
+      await tester.pump(const Duration(milliseconds: 400));
       expect(find.text('Código da agência'), findsOneWidget);
       await tester.enterText(find.byType(TextField), 'xyz');
       await tester.tap(find.text('Continuar'));
