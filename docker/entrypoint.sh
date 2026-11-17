@@ -13,6 +13,8 @@ if [ "${CONTAINER_ROLE:-web}" = "web" ]; then
     su-exec www-data php artisan migrate --force
     su-exec www-data php artisan tenants:migrate --force
     su-exec www-data php artisan db:seed --force
+    # Liga os promotores já cadastrados à rede (contagem por região); seguro rodar a cada deploy.
+    su-exec www-data php artisan promotores:sincronizar-rede || true
 fi
 
 su-exec www-data php artisan config:cache

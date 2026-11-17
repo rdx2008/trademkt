@@ -60,18 +60,25 @@
 
         <div class="linha">
             <div class="campo">
-                <label for="cidade_base">Cidade base</label>
-                <input type="text" id="cidade_base" name="cidade_base" value="{{ old('cidade_base', $usuario->cidade_base) }}" maxlength="80">
-                <div class="dica">Onde a pessoa mora ou atende. Ajuda a distribuir as visitas.</div>
-            </div>
-            <div class="campo">
                 <label for="uf_base">UF</label>
-                <select id="uf_base" name="uf_base">
+                <select id="uf_base" name="uf_base" data-cidade="municipio_ibge" data-url="{{ route('municipios.uf', '__UF__') }}">
                     <option value="">—</option>
                     @foreach ($ufs as $sigla => $nome)
                         <option value="{{ $sigla }}" @selected(old('uf_base', $usuario->uf_base) === $sigla)>{{ $sigla }}</option>
                     @endforeach
                 </select>
+            </div>
+            <div class="campo">
+                <label for="municipio_ibge">Cidade base</label>
+                <select id="municipio_ibge" name="municipio_ibge" data-atual="{{ old('municipio_ibge', $usuario->municipio_ibge) }}">
+                    <option value="">Escolha a UF primeiro</option>
+                </select>
+                <div class="dica">Onde a pessoa mora ou atende. Ajuda a distribuir as visitas.</div>
+            </div>
+            <div class="campo">
+                <label for="raio_km">Raio de atuação (km)</label>
+                <input type="number" id="raio_km" name="raio_km" value="{{ old('raio_km', $usuario->raio_km ?: 30) }}" min="5" max="200" step="1">
+                <div class="dica">Até onde aceita trabalhar a partir do centro da cidade.</div>
             </div>
         </div>
 
@@ -94,6 +101,7 @@
         <button type="submit" class="botao">{{ $editando ? 'Salvar' : 'Cadastrar e gerar convite' }}</button>
         <a href="{{ route('promotores.index') }}" class="botao secundario">Cancelar</a>
     </form>
+    <script src="{{ asset('js/municipios.js') }}" defer></script>
 
     @if ($editando)
         <div class="cartao">

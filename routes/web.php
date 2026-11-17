@@ -6,6 +6,7 @@ use App\Http\Controllers\Central\ClienteController;
 use App\Http\Controllers\Central\DashboardController;
 use App\Http\Controllers\Central\DominioController;
 use App\Http\Controllers\Central\MarcaClienteController;
+use App\Http\Controllers\Central\RedePromotoresController;
 use App\Http\Controllers\Central\SiteInstitucionalController;
 use App\Http\Controllers\Central\VinculoController;
 use App\Http\Controllers\InstitucionalController;
@@ -40,6 +41,7 @@ Route::middleware('central.dominio:admin')->group(function () {
         Route::get('/chamados', [ChamadoController::class, 'index'])->name('central.chamados.index');
         Route::get('/chamados/{chamado}', [ChamadoController::class, 'show'])->whereNumber('chamado')->name('central.chamados.show');
         Route::post('/chamados/{chamado}/responder', [ChamadoController::class, 'responder'])->whereNumber('chamado')->name('central.chamados.responder');
+        Route::get('/rede-de-promotores', [RedePromotoresController::class, 'index'])->name('central.rede.index');
         Route::get('/vinculos', [VinculoController::class, 'index'])->name('central.vinculos.index');
         Route::post('/vinculos', [VinculoController::class, 'store'])->name('central.vinculos.store');
         Route::get('/vinculos/{vinculo}/editar', [VinculoController::class, 'edit'])->whereNumber('vinculo')->name('central.vinculos.edit');

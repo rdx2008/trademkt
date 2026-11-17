@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Rules\Cpf;
 use App\Services\Promotores\Cadastro;
 use App\Support\Estados;
+use App\Support\Municipios;
 use App\Support\TermoDaRede;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -63,8 +64,13 @@ class CadastroPublicoController extends Controller
             }],
             'email' => ['required', 'email', 'max:190', Rule::unique('users', 'email')],
             'telefone' => ['required', 'string', 'max:20'],
-            'cidade_base' => ['required', 'string', 'max:80'],
             'uf_base' => ['required', Rule::in(Estados::UFS)],
+            'municipio_ibge' => ['required', 'digits:7', function ($atributo, $valor, $falhar) use ($request) {
+                if (! Municipios::pertenceAUf((string) $valor, (string) $request->input('uf_base'))) {
+                    $falhar('Escolha a cidade na lista, dentro da UF informada.');
+                }
+            }],
+            'raio_km' => ['nullable', 'integer', 'between:5,200'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
             'aceite' => ['accepted'],
@@ -73,10 +79,10 @@ class CadastroPublicoController extends Controller
             'email.unique' => 'Este e-mail já está cadastrado.',
             'foto.image' => 'Envie uma foto em JPG, PNG ou WebP.',
             'foto.max' => 'A foto pode ter até 3 MB.',
-        ], ['cpf' => 'CPF', 'uf_base' => 'UF', 'password' => 'senha', 'cidade_base' => 'cidade', 'telefone' => 'telefone']);
+        ], ['cpf' => 'CPF', 'uf_base' => 'UF', 'password' => 'senha', 'municipio_ibge' => 'cidade', 'raio_km' => 'raio de atuação', 'telefone' => 'telefone']);
 
         $this->cadastro->autocadastrar(
-            collect($dados)->only(['nome', 'cpf', 'email', 'telefone', 'cidade_base', 'uf_base'])->all(),
+            collect($dados)->only(['nome', 'cpf', 'email', 'telefone', 'uf_base', 'municipio_ibge', 'raio_km'])->all(),
             $request->file('foto'),
             $dados['password'],
             $request->ip(),

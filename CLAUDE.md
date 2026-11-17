@@ -157,6 +157,12 @@ Tela própria em **Equipe → Promotores** (só instalação de agência); o pro
   Base da rede aberta: tabelas centrais `promotores_globais` (identidade por hash do CPF, cidade, coordenada, raio,
   `disponivel_rede`) e `consentimentos_promotor` (finalidade, versão, origem, IP, aparelho, revogação);
   `users.origem_cadastro` (painel, importacao, link). Revisão jurídica do termo é do fornecedor.
+  Cidade do promotor vem da lista do IBGE (`App\Support\Municipios`, `database/data/municipios.csv`, 5.571 linhas com a
+  coordenada do centro; seletor por UF em `public/js/municipios.js`) e o raio de atuação parte do centro dela (padrão
+  30 km, 5 a 200). Banco central: `promotor_agencias` (em quais agências a pessoa está e se ativa) alimenta o painel
+  **Rede de promotores** do super admin (`/rede-de-promotores`, só números por UF, cidade e agência, nada pessoal).
+  `promotores:sincronizar-rede` liga os antigos à rede (roda a cada deploy no entrypoint). O app não mostra nada da
+  rede até o super admin habilitar; o app só faz login (o cadastro é pelas agências).
   Rede de jobs: desligada; o super admin libera por agência (Clientes → Configurações, `redeJobsHabilitada()`). A agência
   só vê quantos prestadores há na área e os dados de quem aceitar o job (`docs/ESCOPO.md`).
 - Crachá digital: `/promotores/{id}/cracha` (imprimir, QR) e página pública `/verificar/{codigo}` (código de

@@ -313,6 +313,11 @@ jurídica antes da fase.
   (`Tenant::redeJobsHabilitada()`, campo em Clientes → Configurações, só para agência; já implementado). Serve a
   agência que ainda não tem promotores e precisa de freelancers.
 - A plataforma pode oferecer o recurso aos donos de agências como serviço.
+- **Fase de captação (18/11/2026):** os promotores já cadastrados contam como ativos na rede para saber quantos há e
+  onde. O painel do super admin "Rede de promotores" mostra cadastrados, ativos e com aceite do termo por UF, cidade e
+  agência. A cidade é escolhida na lista do IBGE (com coordenada do centro) e o raio de atuação parte dela (padrão 30 km).
+  Só quem aceitou o termo da rede receberá jobs. O app Android não exibe nada da rede e não tem tela de cadastro;
+  só login. Próximas fases: conta única e login central no app, "disponível hoje" e os jobs.
 - A agência que lança o job **só vê quantos prestadores existem na rede para a área** (cidade/UF e raio) e
   **só conhece os dados do prestador que aceitar o job**. Os demais ficam anônimos.
 - O prestador é o promotor freelancer da identidade central (`promotores_globais`), com aceite do termo da rede.

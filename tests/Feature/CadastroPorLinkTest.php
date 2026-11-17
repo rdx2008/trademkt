@@ -49,7 +49,7 @@ class CadastroPorLinkTest extends TestCase
     {
         return array_merge([
             'nome' => 'João Freela', 'cpf' => self::CPF, 'email' => 'joao@exemplo.com', 'telefone' => '(54) 99999-0000',
-            'cidade_base' => 'Caxias do Sul', 'uf_base' => 'RS',
+            'uf_base' => 'RS', 'municipio_ibge' => '4305108', 'raio_km' => 40,
             'password' => 'Senha12345', 'password_confirmation' => 'Senha12345', 'aceite' => 1,
         ], $extra);
     }

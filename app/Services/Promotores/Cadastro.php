@@ -8,6 +8,7 @@ use App\Models\AuditoriaUsuario;
 use App\Models\Convite;
 use App\Models\User;
 use App\Rules\Cpf;
+use App\Support\Municipios;
 use App\Support\TermoDaRede;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +25,7 @@ class Cadastro
     public const VALIDADE_CONVITE_DIAS = 7;
 
     /** Campos comparados para o histórico de alterações (o CPF e a foto têm registro próprio). */
-    private const CAMPOS = ['nome', 'email', 'telefone', 'tipo_vinculo', 'cidade_base', 'uf_base', 'observacoes'];
+    private const CAMPOS = ['nome', 'email', 'telefone', 'tipo_vinculo', 'cidade_base', 'uf_base', 'municipio_ibge', 'raio_km', 'observacoes'];
 
     /**
      * @param  array<string, mixed>  $dados  nome, email, telefone, cpf, tipo_vinculo, cidade_base, uf_base, observacoes
@@ -103,6 +104,7 @@ class Cadastro
             if ($cpfMudou) {
                 $this->auditar($usuario, 'cpf_alterado', $autor);
             }
+            app(IdentidadeGlobal::class)->vincular($usuario->fresh());
         });
     }
 
@@ -118,6 +120,7 @@ class Cadastro
             $usuario->convites()->whereNull('usado_em')->delete();
         }
         $this->auditar($usuario, $ativo ? 'ativado' : 'desativado', $autor);
+        app(IdentidadeGlobal::class)->vincular($usuario);
     }
 
     /**
@@ -217,6 +220,16 @@ class Cadastro
         }
         if (isset($campos['uf_base'])) {
             $campos['uf_base'] = strtoupper($campos['uf_base']);
+        }
+        // Município escolhido na lista manda no texto; sem ele, tenta achar pelo nome e UF digitados.
+        $municipio = Municipios::achar($campos['municipio_ibge'] ?? null);
+        if (! $municipio && ! empty($campos['cidade_base']) && ! empty($campos['uf_base'])) {
+            $municipio = Municipios::achar(Municipios::procurar($campos['cidade_base'], $campos['uf_base']));
+        }
+        if ($municipio) {
+            $campos['municipio_ibge'] = $municipio['codigo'];
+            $campos['cidade_base'] = $municipio['nome'];
+            $campos['uf_base'] = $municipio['uf'];
         }
         if (! empty($dados['cpf'])) {
             $campos['cpf'] = Cpf::limpar($dados['cpf']);

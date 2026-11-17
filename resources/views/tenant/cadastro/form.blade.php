@@ -27,17 +27,24 @@
             <input type="tel" id="telefone" name="telefone" value="{{ old('telefone') }}" required maxlength="20" autocomplete="tel">
         </div>
         <div class="campo">
-            <label for="cidade_base">Cidade onde você atua</label>
-            <input type="text" id="cidade_base" name="cidade_base" value="{{ old('cidade_base') }}" required maxlength="80">
-        </div>
-        <div class="campo">
             <label for="uf_base">UF</label>
-            <select id="uf_base" name="uf_base" required>
+            <select id="uf_base" name="uf_base" required data-cidade="municipio_ibge" data-url="{{ route('municipios.uf', '__UF__') }}">
                 <option value="">Escolha</option>
                 @foreach ($ufs as $sigla => $nome)
                     <option value="{{ $sigla }}" @selected(old('uf_base') === $sigla)>{{ $nome }}</option>
                 @endforeach
             </select>
+        </div>
+        <div class="campo">
+            <label for="municipio_ibge">Cidade onde você atua</label>
+            <select id="municipio_ibge" name="municipio_ibge" required data-atual="{{ old('municipio_ibge') }}">
+                <option value="">Escolha a UF primeiro</option>
+            </select>
+        </div>
+        <div class="campo">
+            <label for="raio_km">Até quantos km da cidade você aceita trabalhar</label>
+            <input type="number" id="raio_km" name="raio_km" value="{{ old('raio_km', 30) }}" min="5" max="200" step="1">
+            <div class="dica">Entre 5 e 200 km. Você pode mudar depois com a sua agência.</div>
         </div>
         <div class="campo inteira">
             <label for="foto">Foto do rosto para o crachá digital (opcional)</label>
@@ -66,4 +73,5 @@
         </div>
         <button type="submit" class="botao" style="width:100%">Criar meu cadastro</button>
     </form>
+    <script src="{{ asset('js/municipios.js') }}" defer></script>
 </x-layout>

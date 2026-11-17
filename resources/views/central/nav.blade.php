@@ -2,6 +2,7 @@
 <a href="{{ route('central.clientes.index') }}" @class(['ativo' => request()->routeIs('central.clientes.index', 'central.dominios.*')])>Clientes</a>
 <a href="{{ route('central.clientes.create') }}" @class(['ativo' => request()->routeIs('central.clientes.create')])>Novo cliente</a>
 <a href="{{ route('central.vinculos.index') }}" @class(['ativo' => request()->routeIs('central.vinculos.*')])>Vínculos</a>
+<a href="{{ route('central.rede.index') }}" @class(['ativo' => request()->routeIs('central.rede.*')])>Rede de promotores</a>
 <a href="{{ route('central.site.edit') }}" @class(['ativo' => request()->routeIs('central.site.edit')])>Site institucional</a>
 <a href="{{ route('central.chamados.index') }}" @class(['ativo' => request()->routeIs('central.chamados.*')])>Chamados</a>
 <a href="{{ route('central.site.contatos') }}" @class(['ativo' => request()->routeIs('central.site.contatos')])>Pedidos de demonstração</a>

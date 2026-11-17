@@ -14,6 +14,7 @@ use App\Services\Promotores\FichaOperacional;
 use App\Services\Promotores\ImportacaoPromotores;
 use App\Services\Promotores\Redistribuicao;
 use App\Support\Estados;
+use App\Support\Municipios;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -258,6 +259,12 @@ class PromotorController extends Controller
             'tipo_vinculo' => ['required', Rule::enum(TipoVinculo::class)],
             'cidade_base' => ['nullable', 'string', 'max:80'],
             'uf_base' => ['nullable', Rule::in(Estados::UFS)],
+            'municipio_ibge' => ['nullable', 'digits:7', function ($atributo, $valor, $falhar) use ($request) {
+                if ($valor && ! Municipios::pertenceAUf((string) $valor, (string) $request->input('uf_base'))) {
+                    $falhar('A cidade escolhida não é da UF informada.');
+                }
+            }],
+            'raio_km' => ['nullable', 'integer', 'between:5,200'],
             'observacoes' => ['nullable', 'string', 'max:2000'],
             'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
         ], [

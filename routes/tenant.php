@@ -30,6 +30,7 @@ use App\Http\Controllers\Tenant\IndustriaController;
 use App\Http\Controllers\Tenant\LinkCadastroController;
 use App\Http\Controllers\Tenant\MarcaController;
 use App\Http\Controllers\Tenant\ModeloColetaController;
+use App\Http\Controllers\Tenant\MunicipiosController;
 use App\Http\Controllers\Tenant\OperacaoController;
 use App\Http\Controllers\Tenant\PdvController;
 use App\Http\Controllers\Tenant\PromotorController;
@@ -68,6 +69,8 @@ Route::middleware([
     Route::get('/convite/{token}', [ConviteController::class, 'mostrar'])->where('token', '[A-Za-z0-9]{48}')->middleware('throttle:30,1')->name('convite.mostrar');
     Route::post('/convite/{token}', [ConviteController::class, 'aceitar'])->where('token', '[A-Za-z0-9]{48}')->middleware('throttle:10,1')->name('convite.aceitar');
     Route::get('/convite', [ConviteController::class, 'pronto'])->name('convite.pronto');
+    // Lista de municípios por UF (seletor de cidade do cadastro).
+    Route::get('/municipios/{uf}', [MunicipiosController::class, 'porUf'])->where('uf', '[A-Za-z]{2}')->middleware('throttle:60,1')->name('municipios.uf');
     // Cadastro do promotor pelo link da agência (liga e desliga no painel).
     Route::get('/cadastro/{codigo}', [CadastroPublicoController::class, 'mostrar'])->where('codigo', '[A-Za-z0-9_-]{3,40}')->middleware('throttle:30,1')->name('cadastro.mostrar');
     Route::post('/cadastro/{codigo}', [CadastroPublicoController::class, 'enviar'])->where('codigo', '[A-Za-z0-9_-]{3,40}')->middleware('throttle:10,1')->name('cadastro.enviar');

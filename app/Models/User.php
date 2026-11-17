@@ -40,6 +40,8 @@ class User extends Authenticatable
         'foto',
         'cidade_base',
         'uf_base',
+        'municipio_ibge',
+        'raio_km',
         'observacoes',
         'aceite_privacidade_em',
     ];
