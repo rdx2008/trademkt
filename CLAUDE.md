@@ -150,6 +150,13 @@ Tela própria em **Equipe → Promotores** (só instalação de agência); o pro
   pagamento do freelancer (ruptura não conta); ocorrências podem ser editadas e removidas pelo admin.
 - Cidade base: nas telas de atribuição o promotor aparece com a cidade e, na decisão de demanda, quem é da
   cidade do PDV vem primeiro.
+- Link de cadastro (18/11/2026): `/cadastro/<código da agência>`, único por agência; o admin liga e desliga em
+  **Promotores → Link de cadastro** (nasce desligado) e pode editar o termo. O promotor se cadastra sozinho (nome, CPF,
+  e-mail, telefone, cidade/UF, senha, foto opcional) e aceita "os termos de uso compartilhado da rede da plataforma"
+  (`TermoDaRede`, versão pelo conteúdo). Nasce ativo, freelancer e sem indústria habilitada; sem aceite da agência.
+  Base da rede aberta: tabelas centrais `promotores_globais` (identidade por hash do CPF, cidade, coordenada, raio,
+  `disponivel_rede`) e `consentimentos_promotor` (finalidade, versão, origem, IP, aparelho, revogação);
+  `users.origem_cadastro` (painel, importacao, link). Revisão jurídica do termo é do fornecedor.
 - Crachá digital: `/promotores/{id}/cracha` (imprimir, QR) e página pública `/verificar/{codigo}` (código de
   40 caracteres, só foto, primeiro nome e ativo/inativo; nunca CPF, e-mail, telefone nem afastamento).
   O app tem "Meu crachá" no menu (QR do endereço vindo em `usuario.cracha_url`; sessão antiga precisa entrar de novo).

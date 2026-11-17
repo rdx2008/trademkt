@@ -8,6 +8,7 @@ use App\Models\AuditoriaUsuario;
 use App\Models\Convite;
 use App\Models\User;
 use App\Rules\Cpf;
+use App\Support\TermoDaRede;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -45,8 +46,40 @@ class Cadastro
                 $this->guardarFoto($usuario, $foto);
             }
             $this->auditar($usuario, $origem, $autor);
+            app(IdentidadeGlobal::class)->vincular($usuario);
 
             return ['usuario' => $usuario, 'convite' => $this->gerarConvite($usuario, $autor, false)];
+        });
+    }
+
+    /**
+     * Cadastro feito pelo próprio promotor, pelo link da agência. Sem aceite da agência: ele nasce
+     * ativo e freelancer, com a senha escolhida e o termo da rede aceito (prova no banco central).
+     * Continua sem nenhuma indústria habilitada: a agência marca onde ele atua.
+     *
+     * @param  array<string, mixed>  $dados  nome, email, telefone, cpf, cidade_base, uf_base
+     */
+    public function autocadastrar(array $dados, ?UploadedFile $foto, string $senha, ?string $ip, ?string $aparelho): User
+    {
+        return DB::transaction(function () use ($dados, $foto, $senha, $ip, $aparelho) {
+            $usuario = new User($this->preencher($dados + ['tipo_vinculo' => 'freelancer']));
+            $usuario->forceFill([
+                'perfil' => Perfil::Promotor,
+                'agencia_id' => $this->agenciaId(),
+                'password' => $senha,
+                'ativo' => true,
+                'habilitacao_restrita' => true,
+                'origem_cadastro' => 'link',
+                'aceite_privacidade_em' => now(),
+            ])->save();
+
+            if ($foto) {
+                $this->guardarFoto($usuario, $foto);
+            }
+            $this->auditar($usuario, 'autocadastro', null);
+            app(IdentidadeGlobal::class)->registrarConsentimento($usuario, TermoDaRede::FINALIDADE, TermoDaRede::versao(), 'link_agencia', $ip, $aparelho);
+
+            return $usuario;
         });
     }
 

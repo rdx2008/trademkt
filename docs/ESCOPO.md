@@ -301,6 +301,13 @@ Demanda vai para todos os promotores disponíveis na região; o primeiro que ace
 valor fixo. O promotor vê só o relatório do total a receber; quem paga é a agência, fora do
 sistema. Preparação: identidade única do promotor no painel central (`users.promotor_global_id`).
 
+**Preparação já feita (18/11/2026):** o cadastro pelo link da agência (`/cadastro/<código>`, ligado e desligado pelo
+admin) grava o aceite do "termo de uso compartilhado da rede da plataforma" por versão do texto, com data, IP e
+aparelho (`consentimentos_promotor`, banco central), e liga o promotor à identidade central (`promotores_globais`:
+hash do CPF, cidade/UF, coordenada, raio de atuação e `disponivel_rede`). Ainda não existe job, aceite do primeiro,
+valor nem avaliação. Modelo de trabalho: freelancer/autônomo; a redação do contrato do job deve passar por revisão
+jurídica antes da fase.
+
 
 ## Site institucional (10/11/2026)
 

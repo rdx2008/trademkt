@@ -13,6 +13,7 @@ use App\Http\Controllers\Tenant\AparenciaController;
 use App\Http\Controllers\Tenant\AtendimentoController;
 use App\Http\Controllers\Tenant\AuthController;
 use App\Http\Controllers\Tenant\BiController;
+use App\Http\Controllers\Tenant\CadastroPublicoController;
 use App\Http\Controllers\Tenant\ContratoVisitaController;
 use App\Http\Controllers\Tenant\ConviteController;
 use App\Http\Controllers\Tenant\CrachaController;
@@ -26,6 +27,7 @@ use App\Http\Controllers\Tenant\ImportacaoPdvController;
 use App\Http\Controllers\Tenant\ImportacaoSkuController;
 use App\Http\Controllers\Tenant\IndicadorController;
 use App\Http\Controllers\Tenant\IndustriaController;
+use App\Http\Controllers\Tenant\LinkCadastroController;
 use App\Http\Controllers\Tenant\MarcaController;
 use App\Http\Controllers\Tenant\ModeloColetaController;
 use App\Http\Controllers\Tenant\OperacaoController;
@@ -66,6 +68,9 @@ Route::middleware([
     Route::get('/convite/{token}', [ConviteController::class, 'mostrar'])->where('token', '[A-Za-z0-9]{48}')->middleware('throttle:30,1')->name('convite.mostrar');
     Route::post('/convite/{token}', [ConviteController::class, 'aceitar'])->where('token', '[A-Za-z0-9]{48}')->middleware('throttle:10,1')->name('convite.aceitar');
     Route::get('/convite', [ConviteController::class, 'pronto'])->name('convite.pronto');
+    // Cadastro do promotor pelo link da agência (liga e desliga no painel).
+    Route::get('/cadastro/{codigo}', [CadastroPublicoController::class, 'mostrar'])->where('codigo', '[A-Za-z0-9_-]{3,40}')->middleware('throttle:30,1')->name('cadastro.mostrar');
+    Route::post('/cadastro/{codigo}', [CadastroPublicoController::class, 'enviar'])->where('codigo', '[A-Za-z0-9_-]{3,40}')->middleware('throttle:10,1')->name('cadastro.enviar');
     // Conferência do crachá: quem lê o QR vê foto, primeiro nome e se o cadastro está ativo.
     Route::get('/verificar/{codigo}', [CrachaController::class, 'verificar'])->where('codigo', '[A-Za-z0-9]{40}')->middleware('throttle:60,1')->name('cracha.verificar');
     Route::get('/verificar/{codigo}/foto', [CrachaController::class, 'foto'])->where('codigo', '[A-Za-z0-9]{40}')->middleware('throttle:60,1')->name('cracha.foto');
@@ -134,6 +139,9 @@ Route::middleware([
         Route::middleware('perfil:admin_instalacao,admin_agencia,supervisor')->group(function () {
             Route::get('/promotores', [PromotorController::class, 'index'])->name('promotores.index');
             Route::get('/promotores/novo', [PromotorController::class, 'create'])->name('promotores.create');
+            Route::get('/promotores/link-de-cadastro', [LinkCadastroController::class, 'show'])->name('promotores.link');
+            Route::patch('/promotores/link-de-cadastro', [LinkCadastroController::class, 'alternar'])->name('promotores.link.alternar');
+            Route::put('/promotores/link-de-cadastro/termo', [LinkCadastroController::class, 'termo'])->name('promotores.link.termo');
             Route::post('/promotores', [PromotorController::class, 'store'])->name('promotores.store');
             Route::get('/promotores/importar', [PromotorController::class, 'importar'])->name('promotores.importar');
             Route::post('/promotores/importar', [PromotorController::class, 'importarEnviar'])->name('promotores.importar.enviar');

@@ -7,6 +7,7 @@
         </div>
         @if ($podeGerir)
             <div class="acoes">
+                <a class="botao secundario" href="{{ route('promotores.link') }}">Link de cadastro</a>
                 <a class="botao secundario" href="{{ route('promotores.importar') }}">Importar planilha</a>
                 <a class="botao" href="{{ route('promotores.create') }}">Novo promotor</a>
             </div>
