@@ -63,9 +63,9 @@ class Sku extends Model
     {
         return match ($usuario->perfil) {
             Perfil::AdminInstalacao => $query,
-            Perfil::AdminAgencia, Perfil::Supervisor => $usuario->agenciaVinculada()
-                ? $query->whereIn('industria_id', ContratoVisita::where('agencia_id', $usuario->agencia_id)->select('industria_id'))
-                : $query,
+            // A agência vinculada abre a operação da indústria e enxerga o catálogo inteiro dela
+            // (precisa dele para montar contratos e, se permitido, importar produtos).
+            Perfil::AdminAgencia, Perfil::Supervisor => $query,
             Perfil::GerenteTrade, Perfil::Representante => $query->where('industria_id', $usuario->industria_id),
             default => $query->whereRaw('1 = 0'),
         };

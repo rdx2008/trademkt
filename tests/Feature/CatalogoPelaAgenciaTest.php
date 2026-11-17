@@ -48,6 +48,17 @@ class CatalogoPelaAgenciaTest extends TestCase
         $this->actingAs($usuario)->post(self::SUL.'/operacao/gaboardi')->assertRedirect();
     }
 
+    public function test_agencia_ve_o_catalogo_da_industria_mesmo_sem_contrato(): void
+    {
+        $this->industria->run(function () {
+            $marca = Industria::first();
+            Sku::create(['industria_id' => $marca->id, 'codigo' => 'DET-01', 'descricao' => 'Detergente 500 ml', 'ativo' => true]);
+        });
+
+        $this->entrarNaOperacao($this->admin);
+        $this->get(self::SUL.'/skus')->assertOk()->assertSee('Detergente 500 ml');
+    }
+
     public function test_agencia_importa_o_catalogo_e_fica_a_trilha(): void
     {
         $this->entrarNaOperacao($this->admin);
