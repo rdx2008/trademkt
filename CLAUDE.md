@@ -288,7 +288,16 @@ Referência: `docs/FASE-3.md`, seção 3.4.
 - O promotor entra pelo código da **agência**; o roteiro junta as indústrias atendidas. Visita e
   indústria têm chave `empresa:id` (`Visita.chave`), e a execução vai para
   `industrias/{empresa}/visitas/{id}/...`. Banco local versão 2 (recriado na atualização).
-- `flutter analyze` e `flutter test` (94 testes) passam. Sem iOS (fase 8).
+- **Recursos do app (18/11/2026, versão 0.2.0):** login único só com e-mail e senha (o acesso por código da agência
+  fica escondido no menu de três pontos da tela de login); modo claro, escuro ou automático (`PreferenciasApp`, no menu
+  "Aparência"); botão "Como chegar" no PDV (link do Google Maps, `servicos/mapas.dart`); "Enviar agora" no rodapé de
+  sincronização; "Visita em andamento" no topo do roteiro; "Alterar minha senha" (`POST /api/v1/senha`, desconecta os
+  outros aparelhos e pode repetir a troca nas outras agências do aparelho); "Minha produção" (`GET /api/v1/producao?mes=`,
+  SKUs trabalhados por dia, ruptura não conta); "Ajuda" com o passo a passo (sem "check-in" nem indústria);
+  versão mínima do app (`GET /api/v1/app` no domínio central, variáveis `APP_VERSAO_MINIMA` e `APP_VERSAO_ATUAL`, link
+  de download da landing; só bloqueia com o servidor respondendo, nunca offline); lembrete diário local (notificação do
+  aparelho, opcional e desligado por padrão, `servicos/lembrete.dart`, sem push). O app respeita o tamanho de fonte do sistema.
+- `flutter analyze` e `flutter test` (132 testes) passam. Sem iOS (fase 8).
 
 ### Importação de catálogo (planilha e PDF, sem IA)
 
