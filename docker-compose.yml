@@ -5,13 +5,19 @@
 x-env: &env
   APP_NAME: ${APP_NAME:-Trade Promo}
   APP_ENV: ${APP_ENV:-production}
-  APP_KEY: ${APP_KEY}
+  APP_KEY: ${APP_KEY:?Defina APP_KEY (base64:... gerado com openssl rand -base64 32)}
   APP_DEBUG: ${APP_DEBUG:-false}
   APP_URL: ${APP_URL}
   APP_LOCALE: pt_BR
   APP_TIMEZONE: America/Sao_Paulo
-  CENTRAL_DOMAINS: ${CENTRAL_DOMAINS}
+  CENTRAL_DOMAINS: ${CENTRAL_DOMAINS:?Defina CENTRAL_DOMAINS (dominio do painel central)}
   TRADE_ESQUEMA_URL: ${TRADE_ESQUEMA_URL:-https}
+  TRADE_DOMINIO_CLIENTES: ${TRADE_DOMINIO_CLIENTES:-bra.net.br}
+  # Login do super admin (troque!) e, opcionalmente, o domínio só da landing page (ex.: bra.net.br).
+  INSTITUCIONAL_ACESSO: ${INSTITUCIONAL_ACESSO:-conexao-7f4c92}
+  INSTITUCIONAL_DOMINIO_SITE: ${INSTITUCIONAL_DOMINIO_SITE:-}
+  APP_VERSAO_MINIMA: ${APP_VERSAO_MINIMA:-0.0.0}
+  APP_VERSAO_ATUAL: ${APP_VERSAO_ATUAL:-0.0.0}
   SUPER_ADMIN_NOME: ${SUPER_ADMIN_NOME:-Super admin}
   SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL}
   SUPER_ADMIN_SENHA: ${SUPER_ADMIN_SENHA}
@@ -22,7 +28,7 @@ x-env: &env
   DB_PORT: 3306
   DB_DATABASE: ${DB_DATABASE:-trade_central}
   DB_USERNAME: ${DB_USERNAME:-trade}
-  DB_PASSWORD: ${DB_PASSWORD}
+  DB_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD}
   TENANT_DB_PREFIX: ${TENANT_DB_PREFIX:-cli_}
   SESSION_DRIVER: redis
   SESSION_LIFETIME: 480
@@ -33,6 +39,7 @@ x-env: &env
   REDIS_HOST: redis
   REDIS_PORT: 6379
   FILESYSTEM_DISK: ${FILESYSTEM_DISK:-local}
+  FOTOS_DISK: ${FOTOS_DISK:-local}
   AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
   AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
   AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
@@ -46,6 +53,7 @@ x-env: &env
   MAIL_PASSWORD: ${MAIL_PASSWORD:-}
   MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-}
   OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
 
 x-app: &app
   build:
@@ -68,6 +76,22 @@ services:
     environment:
       <<: *env
       CONTAINER_ROLE: web
+    # Qualquer <nome>.bra.net.br cai neste serviço sem cadastrar um a um no Coolify (Traefik).
+    # O certificado curinga usa o resolvedor "cloudflare" (desafio DNS), criado no proxy do servidor.
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.empresas.loadbalancer.server.port=8080"
+      - "traefik.http.routers.empresas.rule=HostRegexp(`^[a-z0-9-]+[.]bra[.]net[.]br$$`)"
+      - "traefik.http.routers.empresas.entrypoints=https"
+      - "traefik.http.routers.empresas.service=empresas"
+      - "traefik.http.routers.empresas.tls=true"
+      - "traefik.http.routers.empresas.tls.certresolver=cloudflare"
+      - "traefik.http.routers.empresas.tls.domains[0].main=bra.net.br"
+      - "traefik.http.routers.empresas.tls.domains[0].sans=*.bra.net.br"
+      - "traefik.http.routers.empresas-http.rule=HostRegexp(`^[a-z0-9-]+[.]bra[.]net[.]br$$`)"
+      - "traefik.http.routers.empresas-http.entrypoints=http"
+      - "traefik.http.routers.empresas-http.middlewares=empresas-https"
+      - "traefik.http.middlewares.empresas-https.redirectscheme.scheme=https"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/up"]
       interval: 30s
@@ -101,10 +125,10 @@ services:
       context: ./docker/mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Defina MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_DATABASE:-trade_central}
       MYSQL_USER: ${DB_USERNAME:-trade}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD}
       TENANT_DB_PREFIX: ${TENANT_DB_PREFIX:-cli_}
     volumes:
       - mysql:/var/lib/mysql

@@ -1,0 +1,321 @@
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../estado_app.dart';
+import '../servicos/lembrete.dart';
+import '../modelos/usuario.dart';
+import 'logo_marca.dart';
+import 'tela_ajuda.dart';
+import 'tela_cracha.dart';
+import 'tela_producao.dart';
+import 'tela_senha.dart';
+
+/// Menu do app: quem está logado, as contas do aparelho (uma por empresa/agência),
+/// troca de conta, acrescentar empresa e sair.
+class MenuLateral extends StatelessWidget {
+  const MenuLateral({super.key, required this.estado});
+
+  final EstadoApp estado;
+
+  Future<void> _trocar(BuildContext context, Sessao conta) async {
+    final navegador = Navigator.of(context);
+    final mensagens = ScaffoldMessenger.of(context);
+    if (estado.pendentes > 0) {
+      final seguir = await showDialog<bool>(
+        context: context,
+        builder: (contexto) => AlertDialog(
+          title: const Text('Trocar de conta'),
+          content: Text(
+            'Há ${estado.pendentes} item(ns) desta conta ainda não enviados. '
+            'Eles ficam guardados no aparelho e seguem para o servidor quando você voltar a ela.',
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(contexto, false), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(contexto, true), child: const Text('Trocar')),
+          ],
+        ),
+      );
+      if (seguir != true) {
+        return;
+      }
+    }
+    navegador.pop();
+    final erro = await estado.trocarConta(conta);
+    if (erro != null) {
+      mensagens.showSnackBar(SnackBar(content: Text(erro)));
+    }
+  }
+
+  static String _rotuloTema(ThemeMode modo) => switch (modo) {
+        ThemeMode.light => 'Claro',
+        ThemeMode.dark => 'Escuro',
+        ThemeMode.system => 'Automático (segue o celular)',
+      };
+
+  static String _horaTexto(ConfigLembrete c) =>
+      '${c.hora.toString().padLeft(2, '0')}:${c.minuto.toString().padLeft(2, '0')}';
+
+  Future<void> _configurarLembrete(BuildContext context) async {
+    final mensagens = ScaffoldMessenger.of(context);
+    final atual = estado.lembrete;
+    final acao = await showDialog<String>(
+      context: context,
+      builder: (contexto) => SimpleDialog(
+        title: const Text('Lembrete diário'),
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(24, 0, 24, 8),
+            child: Text('Uma notificação no aparelho, todo dia, para lembrar de conferir o roteiro. Funciona sem internet.'),
+          ),
+          ListTile(
+            key: const Key('lembrete-horario'),
+            leading: const Icon(Icons.schedule),
+            title: Text(atual.ativo ? 'Mudar o horário (${_horaTexto(atual)})' : 'Ligar às ${_horaTexto(atual)}…'),
+            onTap: () => Navigator.pop(contexto, 'horario'),
+          ),
+          if (atual.ativo)
+            ListTile(
+              key: const Key('lembrete-desligar'),
+              leading: const Icon(Icons.notifications_off_outlined),
+              title: const Text('Desligar'),
+              onTap: () => Navigator.pop(contexto, 'desligar'),
+            ),
+        ],
+      ),
+    );
+    if (acao == null || !context.mounted) {
+      return;
+    }
+    if (acao == 'desligar') {
+      await estado.configurarLembrete(atual.copiarCom(ativo: false));
+
+      return;
+    }
+    final hora = await showTimePicker(context: context, initialTime: atual.horario, helpText: 'Hora do lembrete');
+    if (hora == null) {
+      return;
+    }
+    final ok = await estado.configurarLembrete(atual.copiarCom(ativo: true, hora: hora.hour, minuto: hora.minute));
+    if (!ok) {
+      mensagens.showSnackBar(const SnackBar(content: Text('Para receber o lembrete, permita as notificações nas configurações do aparelho.')));
+    }
+  }
+
+  Future<void> _escolherAparencia(BuildContext context) async {
+    final escolhido = await showDialog<ThemeMode>(
+      context: context,
+      builder: (contexto) => SimpleDialog(
+        title: const Text('Aparência'),
+        children: [
+          for (final modo in ThemeMode.values)
+            ListTile(
+              key: Key('tema-${modo.name}'),
+              leading: Icon(modo == estado.modoTema ? Icons.radio_button_checked : Icons.radio_button_off),
+              title: Text(_rotuloTema(modo)),
+              onTap: () => Navigator.pop(contexto, modo),
+            ),
+        ],
+      ),
+    );
+    if (escolhido != null) {
+      await estado.mudarModoTema(escolhido);
+    }
+  }
+
+  Future<void> _sair(BuildContext context) async {
+    final navegador = Navigator.of(context);
+    final conta = estado.sessao!;
+    final pendentes = estado.pendentes;
+    final confirmou = await showDialog<bool>(
+      context: context,
+      builder: (contexto) => AlertDialog(
+        title: Text('Sair de ${conta.empresa.nomeExibido}?'),
+        content: Text(
+          pendentes > 0
+              ? 'Há $pendentes item(ns) ainda não enviados ao servidor. Se sair agora, eles serão perdidos. '
+                  'Sincronize antes de sair.'
+              : 'Você poderá entrar de novo com e-mail e senha. As outras contas continuam no aparelho.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(contexto, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(contexto, true),
+            child: Text(pendentes > 0 ? 'Sair e perder' : 'Sair'),
+          ),
+        ],
+      ),
+    );
+    if (confirmou != true) {
+      return;
+    }
+    navegador.pop();
+    await estado.sair(forcar: true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final atual = estado.sessao;
+    final marca = atual?.empresa.marca;
+    final outras = estado.contas.where((c) => c.chave != atual?.chave).toList();
+
+    return Drawer(
+      child: SafeArea(
+        top: false,
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            Container(
+              color: tema.colorScheme.primary,
+              padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                    child: LogoMarca(marca: marca, altura: 40),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    atual?.usuario.nome ?? '',
+                    style: tema.textTheme.titleMedium?.copyWith(color: tema.colorScheme.onPrimary),
+                  ),
+                  Text(
+                    [atual?.empresa.nomeExibido, atual?.usuario.agenciaNome].whereType<String>().toSet().join(' · '),
+                    style: tema.textTheme.bodyMedium?.copyWith(color: tema.colorScheme.onPrimary),
+                  ),
+                  Text(
+                    atual?.usuario.email ?? '',
+                    style: tema.textTheme.bodySmall?.copyWith(color: tema.colorScheme.onPrimary.withValues(alpha: 0.85)),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.refresh),
+              title: const Text('Atualizar roteiro'),
+              onTap: () {
+                Navigator.pop(context);
+                estado.atualizarRoteiro();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.cloud_upload_outlined),
+              title: const Text('Sincronizar agora'),
+              subtitle: estado.pendentes > 0 ? Text('${estado.pendentes} item(ns) aguardando envio') : null,
+              enabled: !estado.sincronizando,
+              onTap: () {
+                Navigator.pop(context);
+                estado.sincronizar();
+              },
+            ),
+            ListTile(
+              key: const Key('meu-cracha'),
+              leading: const Icon(Icons.badge_outlined),
+              title: const Text('Meu crachá'),
+              subtitle: const Text('QR para o supermercado conferir'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => TelaCracha(sessao: atual)));
+              },
+            ),
+            if (estado.atualizacaoDisponivel)
+              ListTile(
+                key: const Key('atualizacao-disponivel'),
+                leading: Icon(Icons.system_update, color: tema.colorScheme.primary),
+                title: const Text('Nova versão do aplicativo'),
+                subtitle: const Text('Toque para baixar'),
+                onTap: () async {
+                  final url = estado.urlAtualizacao;
+                  Navigator.pop(context);
+                  if (url != null) {
+                    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                  }
+                },
+              ),
+            ListTile(
+              key: const Key('minha-producao'),
+              leading: const Icon(Icons.bar_chart_outlined),
+              title: const Text('Minha produção'),
+              subtitle: const Text('SKUs trabalhados no mês'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => TelaProducao(estado: estado)));
+              },
+            ),
+            ListTile(
+              key: const Key('alterar-senha'),
+              leading: const Icon(Icons.lock_reset),
+              title: const Text('Alterar minha senha'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => TelaSenha(estado: estado)));
+              },
+            ),
+            ListTile(
+              key: const Key('ajuda'),
+              leading: const Icon(Icons.help_outline),
+              title: const Text('Ajuda'),
+              subtitle: const Text('Passo a passo da visita'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const TelaAjuda()));
+              },
+            ),
+            ListTile(
+              key: const Key('lembrete'),
+              leading: Icon(estado.lembrete.ativo ? Icons.notifications_active_outlined : Icons.notifications_none),
+              title: const Text('Lembrete diário'),
+              subtitle: Text(estado.lembrete.ativo ? 'Todo dia às ${_horaTexto(estado.lembrete)}' : 'Desligado'),
+              onTap: () => _configurarLembrete(context),
+            ),
+            ListTile(
+              key: const Key('aparencia'),
+              leading: const Icon(Icons.brightness_6_outlined),
+              title: const Text('Aparência'),
+              subtitle: Text(_rotuloTema(estado.modoTema)),
+              onTap: () => _escolherAparencia(context),
+            ),
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text('Contas neste aparelho', style: tema.textTheme.labelLarge),
+            ),
+            ListTile(
+              key: const Key('conta-ativa'),
+              leading: const Icon(Icons.check_circle, color: Colors.green),
+              title: Text(atual?.empresa.nomeExibido ?? ''),
+              subtitle: Text(atual?.usuario.nome ?? ''),
+            ),
+            for (final conta in outras)
+              ListTile(
+                key: Key('conta-${conta.chave}'),
+                leading: const Icon(Icons.swap_horiz),
+                title: Text(conta.empresa.nomeExibido),
+                subtitle: Text(conta.usuario.nome),
+                onTap: () => _trocar(context, conta),
+              ),
+            ListTile(
+              key: const Key('adicionar-conta'),
+              leading: const Icon(Icons.add_business_outlined),
+              title: const Text('Adicionar outra agência'),
+              subtitle: const Text('Para quem trabalha em mais de uma agência'),
+              onTap: () {
+                Navigator.pop(context);
+                estado.iniciarNovaConta();
+              },
+            ),
+            const Divider(),
+            ListTile(
+              key: const Key('sair'),
+              leading: Icon(Icons.logout, color: tema.colorScheme.error),
+              title: Text('Sair de ${atual?.empresa.nomeExibido ?? 'esta conta'}'),
+              onTap: () => _sair(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

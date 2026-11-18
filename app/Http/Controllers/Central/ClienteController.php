@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Central;
 use App\Enums\TipoInstalacao;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
+use App\Services\DominiosCliente;
 use App\Services\ProvisionarCliente;
+use App\Support\Fuso;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -15,7 +17,7 @@ class ClienteController extends Controller
     public function index(): View
     {
         return view('central.clientes.index', [
-            'clientes' => Tenant::with('domains')->orderBy('nome')->get(),
+            'clientes' => Tenant::with(['domains', 'dono'])->orderBy('nome')->get(),
         ]);
     }
 
@@ -26,20 +28,26 @@ class ClienteController extends Controller
         ]);
     }
 
-    public function store(Request $request, ProvisionarCliente $provisionar): RedirectResponse
+    public function store(Request $request, ProvisionarCliente $provisionar, DominiosCliente $enderecos): RedirectResponse
     {
-        $dominios = preg_split('/[\s,]+/', (string) $request->input('dominios'), -1, PREG_SPLIT_NO_EMPTY);
+        $dominios = $enderecos->resolver($request->only(['tipo_endereco', 'subdominio', 'dominios']));
 
         $resultado = $provisionar->executar([
             'id' => (string) $request->input('id'),
             'nome' => (string) $request->input('nome'),
             'tipo' => (string) $request->input('tipo'),
             'codigo' => $request->input('codigo'),
+            'cnpj' => $request->input('cnpj'),
             'dominios' => $dominios,
             'admin_nome' => (string) $request->input('admin_nome'),
             'admin_email' => (string) $request->input('admin_email'),
             'admin_senha' => $request->input('admin_senha'),
         ]);
+
+        if (isset(Fuso::OPCOES[(string) $request->input('fuso')])) {
+            $resultado['tenant']->fuso = (string) $request->input('fuso');
+            $resultado['tenant']->save();
+        }
 
         return redirect()->route('central.clientes.index')->with('criado', [
             'nome' => $resultado['tenant']->nome,

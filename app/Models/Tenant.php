@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\ModoEmpresa;
 use App\Enums\TipoInstalacao;
+use App\Rules\Cnpj;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
@@ -21,9 +24,29 @@ class Tenant extends BaseTenant implements TenantWithDatabase
 {
     use HasDatabase, HasDomains;
 
+    /**
+     * O id é o slug informado no provisionamento (sem gerador de id). Sem isto o
+     * pacote trata a chave como autoincremento e sobrescreve o id após o insert.
+     */
+    public function getIncrementing(): bool
+    {
+        return false;
+    }
+
+    public function getKeyType(): string
+    {
+        return 'string';
+    }
+
     protected $casts = [
         'tipo' => TipoInstalacao::class,
         'ativo' => 'boolean',
+        'modo' => ModoEmpresa::class,
+    ];
+
+    protected $attributes = [
+        'modo' => 'propria',
+        'origem' => 'super_admin',
     ];
 
     public static function getCustomColumns(): array
@@ -34,12 +57,58 @@ class Tenant extends BaseTenant implements TenantWithDatabase
             'tipo',
             'codigo',
             'ativo',
+            'cnpj',
+            'modo',
+            'dono_tenant_id',
+            'origem',
+            'criado_por_tenant_id',
         ];
+    }
+
+    /** Empresa dona deste cadastro (indústria da agência interna, agência da indústria gerida). */
+    public function dono(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'dono_tenant_id');
+    }
+
+    /**
+     * Rede de jobs de freelancers (fase futura): desligada por padrão e liberada pelo super admin,
+     * agência por agência. Só vale para agência.
+     */
+    public function redeJobsHabilitada(): bool
+    {
+        return $this->tipo === TipoInstalacao::Agencia && (bool) $this->rede_jobs;
+    }
+
+    public function cnpjFormatado(): ?string
+    {
+        if (! $this->cnpj) {
+            return null;
+        }
+        $c = Cnpj::limpar($this->cnpj);
+
+        return substr($c, 0, 2).'.'.substr($c, 2, 3).'.'.substr($c, 5, 3).'/'.substr($c, 8, 4).'-'.substr($c, 12, 2);
+    }
+
+    /** Marca própria (cor, logo e nome) liberada? Ligada por padrão; o fornecedor pode desligar. */
+    public function whiteLabelAtivo(): bool
+    {
+        return $this->white_label === null ? true : (bool) $this->white_label;
+    }
+
+    /** Mostra "Desenvolvido por Trade Promo" no rodapé? Desligado por padrão. */
+    public function mostrarCreditos(): bool
+    {
+        return (bool) $this->mostrar_creditos;
     }
 
     /** Domínio principal (o primeiro cadastrado). */
     public function dominioPrincipal(): ?string
     {
+        if ($this->dominio_principal && $this->domains()->where('domain', $this->dominio_principal)->exists()) {
+            return $this->dominio_principal;
+        }
+
         return $this->domains()->orderBy('id')->value('domain');
     }
 

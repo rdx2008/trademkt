@@ -9,3 +9,5 @@
 .DS_Store
 .idea
 .vscode
+/.phpunit.result.cache
+/database/dev_cli_*

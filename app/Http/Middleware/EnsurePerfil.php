@@ -18,7 +18,7 @@ class EnsurePerfil
 
         $permitidos = array_map(fn (string $p) => Perfil::from($p), $perfis);
 
-        if (! $usuario || ! in_array($usuario->perfil, $permitidos, true)) {
+        if (! $usuario || ! $usuario->temPerfil(...$permitidos)) {
             abort(403, 'Seu perfil não tem acesso a esta área.');
         }
 

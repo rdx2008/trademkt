@@ -35,6 +35,7 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
+        $request->session()->put('tenant_autenticado', tenant('id'));
         $request->user()->forceFill(['ultimo_acesso_em' => now()])->save();
 
         return redirect()->intended(route('dashboard'));

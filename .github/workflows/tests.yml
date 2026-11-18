@@ -1,0 +1,42 @@
+name: Testes
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: testes-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  testes:
+    name: PHP 8.4 / SQLite
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Preparar PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, sqlite3, gd, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Preparar ambiente local de teste
+        run: cp .env.example .env
+
+      - name: Instalar dependências fixadas
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Executar testes unitários e funcionais
+        run: php artisan test

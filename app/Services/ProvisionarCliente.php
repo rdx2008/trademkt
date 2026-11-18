@@ -8,6 +8,7 @@ use App\Models\Agencia;
 use App\Models\Industria;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Rules\Cnpj;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -36,6 +37,13 @@ class ProvisionarCliente
             (array) ($dados['dominios'] ?? [])
         ))));
 
+        $dados['cnpj'] = Cnpj::limpar($dados['cnpj'] ?? null) ?: null;
+        if ($dados['cnpj'] !== null) {
+            $gerida = Tenant::where('tipo', $dados['tipo'] ?? null)->where('cnpj', $dados['cnpj'])->where('modo', 'gerida')->first();
+            if ($gerida) {
+                throw ValidationException::withMessages(['cnpj' => 'Esta indústria já está no sistema, gerida pela agência '.($gerida->dono?->nome ?? $gerida->dono_tenant_id).'. Peça à agência para entregar o cadastro à indústria.']);
+            }
+        }
         $validados = $this->validar($dados);
 
         $senha = ($validados['admin_senha'] ?? null) ?: Str::password(12, symbols: false);
@@ -47,6 +55,11 @@ class ProvisionarCliente
             'tipo' => $validados['tipo'],
             'codigo' => $validados['codigo'],
             'ativo' => true,
+            'cnpj' => $validados['cnpj'] ?? null,
+            'modo' => $dados['modo'] ?? 'propria',
+            'dono_tenant_id' => $dados['dono_tenant_id'] ?? null,
+            'origem' => $dados['origem'] ?? 'super_admin',
+            'criado_por_tenant_id' => $dados['criado_por_tenant_id'] ?? null,
         ]);
 
         try {
@@ -94,29 +107,35 @@ class ProvisionarCliente
     private function validar(array $dados): array
     {
         $centrais = config('tenancy.central_domains');
+        // Validação sempre no banco central, mesmo quando uma empresa cria outra de dentro da própria instalação.
+        $central = config('tenancy.database.central_connection');
 
-        return Validator::make($dados, [
-            'id' => ['required', 'regex:/^[a-z][a-z0-9_]{2,39}$/', Rule::unique('tenants', 'id')],
+        $validados = Validator::make($dados, [
+            'id' => ['required', 'regex:/^[a-z][a-z0-9_]{2,39}$/', Rule::unique($central.'.tenants', 'id')],
             'nome' => ['required', 'string', 'max:120'],
             'tipo' => ['required', Rule::enum(TipoInstalacao::class)],
-            'codigo' => ['required', 'regex:/^[a-z0-9_-]{3,40}$/', Rule::unique('tenants', 'codigo')],
+            'codigo' => ['required', 'regex:/^[a-z0-9_-]{3,40}$/', Rule::unique($central.'.tenants', 'codigo')],
             'dominios' => ['required', 'array', 'min:1'],
             'dominios.*' => [
                 'required',
                 'regex:/^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/',
-                Rule::unique('domains', 'domain'),
+                Rule::unique($central.'.domains', 'domain'),
                 Rule::notIn($centrais),
             ],
             'admin_nome' => ['required', 'string', 'max:120'],
             'admin_email' => ['required', 'email'],
             'admin_senha' => ['nullable', 'string', 'min:8'],
+            'cnpj' => ['nullable', new Cnpj, Rule::unique($central.'.tenants', 'cnpj')->where('tipo', $dados['tipo'] ?? null)],
         ], [
+            'cnpj.unique' => 'Já existe uma empresa deste tipo com este CNPJ no sistema.',
             'id.regex' => 'O identificador deve começar com letra e ter só letras minúsculas, números e _ (3 a 40).',
             'codigo.regex' => 'O código deve ter só letras minúsculas, números, _ ou - (3 a 40).',
             'dominios.*.regex' => 'Domínio inválido: :input',
             'dominios.*.unique' => 'O domínio :input já está em uso.',
             'dominios.*.not_in' => 'O domínio :input é do painel central.',
         ])->validate();
+
+        return $validados;
     }
 
     private function criarPastas(Tenant $tenant): void

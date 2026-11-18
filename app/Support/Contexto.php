@@ -1,0 +1,116 @@
+<?php
+
+namespace App\Support;
+
+use App\Enums\ModoEmpresa;
+use App\Enums\TipoInstalacao;
+use App\Models\Agencia;
+use App\Models\Tenant;
+use App\Models\Vinculo;
+
+/**
+ * Em que instalação o usuário entrou e em qual operação ele está trabalhando.
+ *
+ * Normalmente são a mesma: a instalação identificada pelo domínio. Para a agência, porém, a
+ * operação (PDVs, contratos, roteiros, visitas) mora no banco da indústria vinculada: o usuário
+ * entra na instalação da agência e o sistema abre a operação da indústria escolhida.
+ */
+class Contexto
+{
+    private static ?Tenant $instalacao = null;
+
+    private static ?Tenant $operacao = null;
+
+    private static ?Agencia $agenciaLocal = null;
+
+    /** Instalação em que o usuário entrou (pelo domínio). */
+    public static function instalacao(): ?Tenant
+    {
+        return self::$instalacao ?? (function_exists('tenancy') && tenancy()->initialized ? tenant() : null);
+    }
+
+    /** Indústria cuja operação está aberta, quando a agência está operando nela. */
+    public static function operacao(): ?Tenant
+    {
+        return self::$operacao;
+    }
+
+    /** Linha da agência no banco da indústria aberta. */
+    public static function agenciaLocal(): ?Agencia
+    {
+        return self::$agenciaLocal;
+    }
+
+    /** O usuário é de uma agência vinculada e está dentro da operação de uma indústria. */
+    public static function viaAgencia(): bool
+    {
+        return self::$operacao !== null;
+    }
+
+    private static ?bool $catalogoPelaAgencia = null;
+
+    /** A agência está na operação de uma indústria gerida por ela (fase 9): age como gestora do cadastro. */
+    public static function agenciaGestora(): bool
+    {
+        return self::$operacao !== null && self::$instalacao !== null
+            && self::$operacao->modo === ModoEmpresa::Gerida
+            && self::$operacao->dono_tenant_id === self::$instalacao->id;
+    }
+
+    /**
+     * A agência (dentro da operação de uma indústria) pode importar e manter o catálogo? Sim na
+     * indústria gerida por ela; na independente, conforme a permissão do vínculo (padrão: sim).
+     */
+    public static function agenciaMantemCatalogo(): bool
+    {
+        if (self::$operacao === null || self::$instalacao === null) {
+            return false;
+        }
+
+        return self::$catalogoPelaAgencia ??= (function () {
+            $industria = self::$operacao;
+            if ($industria->modo === ModoEmpresa::Gerida && $industria->dono_tenant_id === self::$instalacao->id) {
+                return true;
+            }
+            $vinculo = Vinculo::where('industria_tenant_id', $industria->id)
+                ->where('agencia_tenant_id', self::$instalacao->id)->where('status', Vinculo::ATIVO)->first();
+
+            return (bool) $vinculo?->agenciaMantemCatalogo();
+        })();
+    }
+
+    /** A instalação de entrada é uma agência (com ou sem operação aberta). */
+    public static function instalacaoEhAgencia(): bool
+    {
+        return self::instalacao()?->tipo === TipoInstalacao::Agencia;
+    }
+
+    /**
+     * Rota da API do app para a operação em uso: na agência, a indústria vai na rota
+     * (`api.op.*`); na própria indústria, a rota simples (`api.*`).
+     */
+    public static function rotaApi(string $nome, array $parametros = []): string
+    {
+        if (self::viaAgencia()) {
+            return route('api.op.'.$nome, ['industria' => self::operacao()->codigo] + $parametros);
+        }
+
+        return route('api.'.$nome, $parametros);
+    }
+
+    public static function abrirOperacao(Tenant $instalacao, Tenant $industria, Agencia $agenciaLocal): void
+    {
+        self::$catalogoPelaAgencia = null;
+        self::$instalacao = $instalacao;
+        self::$operacao = $industria;
+        self::$agenciaLocal = $agenciaLocal;
+    }
+
+    public static function limpar(): void
+    {
+        self::$catalogoPelaAgencia = null;
+        self::$instalacao = null;
+        self::$operacao = null;
+        self::$agenciaLocal = null;
+    }
+}
