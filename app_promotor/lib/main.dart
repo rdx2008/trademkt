@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'dados/repositorio_local.dart';
 import 'estado_app.dart';
 import 'servicos/fotos.dart';
+import 'servicos/lembrete.dart';
 import 'servicos/localizacao.dart';
 import 'servicos/preferencias.dart';
 import 'servicos/versao.dart';
@@ -28,6 +29,7 @@ Future<void> main() async {
     armazenamento: ArmazenamentoSeguro(),
     preferencias: PreferenciasSeguras(),
     servicoVersao: const ServicoVersaoPacote(),
+    servicoLembrete: ServicoLembreteLocal(),
     repositorio: await RepositorioLocal.abrirDaConta('padrao'),
     fabricaRepositorio: RepositorioLocal.abrirDaConta,
     localizacao: const ServicoLocalizacaoGeolocator(),

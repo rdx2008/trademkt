@@ -14,6 +14,8 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // Exigido pelas notificações locais agendadas (lembrete diário).
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
@@ -55,6 +57,10 @@ android {
             signingConfig = if (arquivoChaves.exists()) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
         }
     }
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 
 kotlin {

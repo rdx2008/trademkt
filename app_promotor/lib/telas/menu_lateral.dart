@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../estado_app.dart';
+import '../servicos/lembrete.dart';
 import '../modelos/usuario.dart';
 import 'logo_marca.dart';
 import 'tela_ajuda.dart';
@@ -50,6 +51,55 @@ class MenuLateral extends StatelessWidget {
         ThemeMode.dark => 'Escuro',
         ThemeMode.system => 'Automático (segue o celular)',
       };
+
+  static String _horaTexto(ConfigLembrete c) =>
+      '${c.hora.toString().padLeft(2, '0')}:${c.minuto.toString().padLeft(2, '0')}';
+
+  Future<void> _configurarLembrete(BuildContext context) async {
+    final mensagens = ScaffoldMessenger.of(context);
+    final atual = estado.lembrete;
+    final acao = await showDialog<String>(
+      context: context,
+      builder: (contexto) => SimpleDialog(
+        title: const Text('Lembrete diário'),
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(24, 0, 24, 8),
+            child: Text('Uma notificação no aparelho, todo dia, para lembrar de conferir o roteiro. Funciona sem internet.'),
+          ),
+          ListTile(
+            key: const Key('lembrete-horario'),
+            leading: const Icon(Icons.schedule),
+            title: Text(atual.ativo ? 'Mudar o horário (${_horaTexto(atual)})' : 'Ligar às ${_horaTexto(atual)}…'),
+            onTap: () => Navigator.pop(contexto, 'horario'),
+          ),
+          if (atual.ativo)
+            ListTile(
+              key: const Key('lembrete-desligar'),
+              leading: const Icon(Icons.notifications_off_outlined),
+              title: const Text('Desligar'),
+              onTap: () => Navigator.pop(contexto, 'desligar'),
+            ),
+        ],
+      ),
+    );
+    if (acao == null || !context.mounted) {
+      return;
+    }
+    if (acao == 'desligar') {
+      await estado.configurarLembrete(atual.copiarCom(ativo: false));
+
+      return;
+    }
+    final hora = await showTimePicker(context: context, initialTime: atual.horario, helpText: 'Hora do lembrete');
+    if (hora == null) {
+      return;
+    }
+    final ok = await estado.configurarLembrete(atual.copiarCom(ativo: true, hora: hora.hour, minuto: hora.minute));
+    if (!ok) {
+      mensagens.showSnackBar(const SnackBar(content: Text('Para receber o lembrete, permita as notificações nas configurações do aparelho.')));
+    }
+  }
 
   Future<void> _escolherAparencia(BuildContext context) async {
     final escolhido = await showDialog<ThemeMode>(
@@ -212,6 +262,13 @@ class MenuLateral extends StatelessWidget {
                 Navigator.pop(context);
                 Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const TelaAjuda()));
               },
+            ),
+            ListTile(
+              key: const Key('lembrete'),
+              leading: Icon(estado.lembrete.ativo ? Icons.notifications_active_outlined : Icons.notifications_none),
+              title: const Text('Lembrete diário'),
+              subtitle: Text(estado.lembrete.ativo ? 'Todo dia às ${_horaTexto(estado.lembrete)}' : 'Desligado'),
+              onTap: () => _configurarLembrete(context),
             ),
             ListTile(
               key: const Key('aparencia'),

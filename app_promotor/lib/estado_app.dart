@@ -21,6 +21,7 @@ import 'modelos/roteiro.dart';
 import 'modelos/usuario.dart';
 import 'servicos/fotos.dart';
 import 'servicos/localizacao.dart';
+import 'servicos/lembrete.dart';
 import 'servicos/marca.dart';
 import 'servicos/preferencias.dart';
 import 'servicos/versao.dart';
@@ -43,7 +44,9 @@ class EstadoApp extends ChangeNotifier {
     ServicoMarca? servicoMarca,
     PreferenciasApp? preferencias,
     ServicoVersao? servicoVersao,
+    ServicoLembrete? servicoLembrete,
   })  : _http = httpClient,
+        _servicoLembrete = servicoLembrete ?? ServicoLembreteMemoria(),
         _servicoVersao = servicoVersao ?? const ServicoVersaoFixa('0.0.0'),
         _preferencias = preferencias ?? PreferenciasMemoria(),
         _servicoMarca = servicoMarca ?? ServicoMarca();
@@ -59,6 +62,10 @@ class EstadoApp extends ChangeNotifier {
   final ServicoMarca _servicoMarca;
   final PreferenciasApp _preferencias;
   final ServicoVersao _servicoVersao;
+  final ServicoLembrete _servicoLembrete;
+
+  /// Lembrete diário das visitas (notificação local, desligado até a pessoa ligar).
+  ConfigLembrete lembrete = const ConfigLembrete();
 
   /// Versão instalada e o que o servidor disse sobre ela.
   String versaoInstalada = '';
@@ -125,6 +132,7 @@ class EstadoApp extends ChangeNotifier {
   Future<void> carregar() async {
     modoTema = await _preferencias.carregarTema();
     versaoInstalada = await _servicoVersao.instalada();
+    lembrete = await _servicoLembrete.carregar();
     sessao = await armazenamento.carregar();
     contas = await armazenamento.listar();
     if (sessao != null) {
@@ -216,6 +224,17 @@ class EstadoApp extends ChangeNotifier {
     } on Object {
       // Fica como estava.
     }
+  }
+
+  /// Liga, desliga ou muda a hora do lembrete. Devolve `false` se o Android não deu permissão.
+  Future<bool> configurarLembrete(ConfigLembrete nova) async {
+    final ok = await _servicoLembrete.aplicar(nova);
+    if (ok) {
+      lembrete = nova;
+      notifyListeners();
+    }
+
+    return ok;
   }
 
   Future<void> mudarModoTema(ThemeMode modo) async {
